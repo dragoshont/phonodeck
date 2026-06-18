@@ -6,17 +6,17 @@ final class OAuthLoopbackServer: @unchecked Sendable {
 
     private let callbackPath: String
     private let listener: NWListener
+    private let lock = NSLock()
     private let queue = DispatchQueue(label: "PhonoDeck.OAuthLoopbackServer")
     private var continuation: CheckedContinuation<OAuthCallback, Error>?
     private var didComplete = false
+    private var pendingResult: Result<OAuthCallback, Error>?
 
     init(callbackPath: String) throws {
         self.callbackPath = callbackPath
-        listener = try NWListener(using: .tcp, on: .any)
-        guard let port = listener.port else {
-            throw GoogleOAuthError.invalidAuthorizationURL
-        }
-        redirectURI = "http://127.0.0.1:\(port.rawValue)\(callbackPath)"
+        let selected = try Self.makeListener()
+        listener = selected.listener
+        redirectURI = "http://127.0.0.1:\(selected.port)\(callbackPath)"
     }
 
     func start() throws {
@@ -33,7 +33,23 @@ final class OAuthLoopbackServer: @unchecked Sendable {
 
     func waitForCallback() async throws -> OAuthCallback {
         try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
+            let pendingResult: Result<OAuthCallback, Error>?
+            lock.lock()
+            pendingResult = self.pendingResult
+            self.pendingResult = nil
+            if pendingResult == nil {
+                self.continuation = continuation
+            }
+            lock.unlock()
+
+            if let pendingResult {
+                switch pendingResult {
+                case .success(let callback):
+                    continuation.resume(returning: callback)
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
         }
     }
 
@@ -89,21 +105,45 @@ final class OAuthLoopbackServer: @unchecked Sendable {
     }
 
     private func complete(with result: Result<OAuthCallback, Error>, connection: NWConnection?) {
+        let continuation: CheckedContinuation<OAuthCallback, Error>?
+
+        lock.lock()
         guard !didComplete else {
+            lock.unlock()
             connection?.cancel()
             return
         }
         didComplete = true
+        continuation = self.continuation
+        self.continuation = nil
+        if continuation == nil {
+            pendingResult = result
+        }
+        lock.unlock()
+
         listener.cancel()
         connection?.cancel()
 
-        switch result {
-        case .success(let callback):
-            continuation?.resume(returning: callback)
-        case .failure(let error):
-            continuation?.resume(throwing: error)
+        if let continuation {
+            switch result {
+            case .success(let callback):
+                continuation.resume(returning: callback)
+            case .failure(let error):
+                continuation.resume(throwing: error)
+            }
         }
-        continuation = nil
+    }
+
+    private static func makeListener() throws -> (listener: NWListener, port: UInt16) {
+        for port in 53100...53120 {
+            guard let endpointPort = NWEndpoint.Port(rawValue: UInt16(port)) else { continue }
+            do {
+                return (try NWListener(using: .tcp, on: endpointPort), UInt16(port))
+            } catch {
+                continue
+            }
+        }
+        throw GoogleOAuthError.noAvailableLoopbackPort
     }
 }
 

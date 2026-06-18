@@ -11,6 +11,7 @@ settings:
     SWIFT_VERSION: 6.0
     MACOSX_DEPLOYMENT_TARGET: 14.0
     GOOGLE_OAUTH_CLIENT_ID: ""
+    GOOGLE_OAUTH_CLIENT_SECRET: ""
 targets:
   PhonoDeck:
     type: application
@@ -24,6 +25,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         GoogleOAuthClientID: $(GOOGLE_OAUTH_CLIENT_ID)
+        GoogleOAuthClientSecret: $(GOOGLE_OAUTH_CLIENT_SECRET)
         LSApplicationCategoryType: public.app-category.music
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
