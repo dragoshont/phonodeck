@@ -9,6 +9,7 @@ final class YouTubeAccountViewModel: ObservableObject {
     private let dataClient = YouTubeDataClient()
     private var activeDeviceAuthorization: GoogleDeviceAuthorization?
     private var isPolling = false
+    private var pollingTask: Task<Void, Never>?
 
     init() {
         do {
@@ -29,8 +30,23 @@ final class YouTubeAccountViewModel: ObservableObject {
             state = .deviceCode(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
 
             _ = NSWorkspace.shared.open(authorization.preferredVerificationURL)
+            startPollingCurrentDeviceAuthorization()
         } catch {
             state = .failed(error.localizedDescription)
+        }
+    }
+
+    func startPollingCurrentDeviceAuthorization() {
+        pollingTask?.cancel()
+        pollingTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                await self.checkCurrentDeviceAuthorizationOnce()
+                if case .connected = await self.state {
+                    return
+                }
+            }
         }
     }
 
@@ -54,10 +70,32 @@ final class YouTubeAccountViewModel: ObservableObject {
         }
     }
 
+    func checkCurrentDeviceAuthorizationOnce() async {
+        guard let authorization = activeDeviceAuthorization else { return }
+        do {
+            guard let tokens = try await GoogleOAuthClient.fromBundle().pollDeviceTokenOnce(authorization) else {
+                return
+            }
+            try accountStore.save(tokens: tokens)
+            activeDeviceAuthorization = nil
+            pollingTask?.cancel()
+            pollingTask = nil
+
+            let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
+            state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
+        } catch GoogleOAuthError.deviceCodeExpired, GoogleOAuthError.authorizationDenied {
+            state = .failed(error.localizedDescription)
+        } catch {
+            return
+        }
+    }
+
     func disconnect() {
         do {
             try accountStore.disconnect()
             activeDeviceAuthorization = nil
+            pollingTask?.cancel()
+            pollingTask = nil
             state = .signedOut
         } catch {
             state = .failed(error.localizedDescription)

@@ -102,46 +102,49 @@ struct GoogleOAuthClient {
         return try JSONDecoder().decode(GoogleDeviceAuthorization.self, from: data)
     }
 
+    func pollDeviceTokenOnce(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet? {
+        var request = URLRequest(url: configuration.tokenEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = FormURLEncoder.encode([
+            "client_id": configuration.clientID,
+            "device_code": authorization.deviceCode,
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
+        ])
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw GoogleOAuthError.invalidTokenResponse
+        }
+
+        if (200..<300).contains(httpResponse.statusCode) {
+            var tokenSet = try JSONDecoder().decode(GoogleOAuthTokenSet.self, from: data)
+            tokenSet.obtainedAt = Date()
+            return tokenSet
+        }
+
+        let tokenError = try? JSONDecoder().decode(GoogleOAuthTokenError.self, from: data)
+        switch tokenError?.error {
+        case "authorization_pending", "slow_down":
+            return nil
+        case "access_denied":
+            throw GoogleOAuthError.authorizationDenied(tokenError?.errorDescription ?? "access_denied")
+        case "expired_token":
+            throw GoogleOAuthError.deviceCodeExpired
+        default:
+            let responseBody = String(data: data, encoding: .utf8) ?? ""
+            throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, responseBody)
+        }
+    }
+
     private func pollDeviceToken(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet {
         var pollInterval = authorization.interval ?? 5
         let expirationDate = Date().addingTimeInterval(TimeInterval(authorization.expiresIn))
 
         while Date() < expirationDate {
             try await Task.sleep(nanoseconds: UInt64(pollInterval) * 1_000_000_000)
-
-            var request = URLRequest(url: configuration.tokenEndpoint)
-            request.httpMethod = "POST"
-            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-            request.httpBody = FormURLEncoder.encode([
-                "client_id": configuration.clientID,
-                "device_code": authorization.deviceCode,
-                "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
-            ])
-
-            let (data, response) = try await urlSession.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw GoogleOAuthError.invalidTokenResponse
-            }
-
-            if (200..<300).contains(httpResponse.statusCode) {
-                var tokenSet = try JSONDecoder().decode(GoogleOAuthTokenSet.self, from: data)
-                tokenSet.obtainedAt = Date()
+            if let tokenSet = try await pollDeviceTokenOnce(authorization) {
                 return tokenSet
-            }
-
-            let tokenError = try? JSONDecoder().decode(GoogleOAuthTokenError.self, from: data)
-            switch tokenError?.error {
-            case "authorization_pending":
-                continue
-            case "slow_down":
-                pollInterval += 5
-            case "access_denied":
-                throw GoogleOAuthError.authorizationDenied(tokenError?.errorDescription ?? "access_denied")
-            case "expired_token":
-                throw GoogleOAuthError.deviceCodeExpired
-            default:
-                let responseBody = String(data: data, encoding: .utf8) ?? ""
-                throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, responseBody)
             }
         }
 
