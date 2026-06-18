@@ -8,17 +8,23 @@
 
 /* Begin PBXBuildFile section */
 		0752CDE67D88031A4B1ABBF3 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 771691B3DD065041A22297B6 /* DesignTokens.swift */; };
+		1C0E410774D3F4E384A0C579 /* YouTubeAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342225896C183C6D768BDD5F /* YouTubeAccountViewModel.swift */; };
 		314577E279B6F5D8FE1269E3 /* LibraryHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */; };
 		47D948FFBB01EC42FC1A3834 /* MediaSourceDescriptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */; };
 		4D353012678DFAD5512E582A /* YouTubeMusicNativeConceptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */; };
 		53974B2C8D725F8F490015E4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD062232B94BBCADC236D4 /* RootView.swift */; };
 		5B8A0EF862B3C791E6DC8C9B /* NowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EFC74203F0F66967D204B73 /* NowPlayingController.swift */; };
+		68FA75264BA7070571DED999 /* OAuthLoopbackServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A678ED91F39DD758B578A0DC /* OAuthLoopbackServer.swift */; };
+		70B76C1CE15B6CF3B2365755 /* GoogleAccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 403E008035B9B3BF8DC69D27 /* GoogleAccountStore.swift */; };
 		7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */; };
+		85373642D211CCC101FF1823 /* YouTubeDataClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DFDFC9D40A7DBEB933FCA2 /* YouTubeDataClient.swift */; };
 		8EF88300D8F7C30B432B9821 /* SpotifySource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD04B09AA72243E0686E028 /* SpotifySource.swift */; };
 		916EE2C7D0F1E42DB2C09D03 /* NowPlayingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076EB17497E8D325C406C734 /* NowPlayingBar.swift */; };
 		949AF9FC43D6C23FB5468149 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CC333E8B8721D7F41833838 /* SidebarView.swift */; };
+		A99C5D5DCDE4E65B355F43CD /* GoogleOAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B7FA81463D31DF5772CE9FD /* GoogleOAuthClient.swift */; };
 		A9AE0CFC256BE113F01AA39A /* PhonoDeckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028AF27ABC6325EBCF06A489 /* PhonoDeckApp.swift */; };
 		B0B5728600FD8940C6494705 /* PlexSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840C5306CF4AC96169D8280A /* PlexSource.swift */; };
+		B9BA30214B60A5BC2C2C793F /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923C00FDE468AE49ECA45282 /* KeychainStore.swift */; };
 		DA05578E7A52A13B9ED9147E /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E04624493003FF084E8BFD8 /* MediaSource.swift */; };
 		DAE330AF44DA5560EA2F36B7 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CE5040F9C98E9A9209CC54 /* AppState.swift */; };
 		F8EE197E7D2FF49AF332671C /* PlaybackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283F3207EF20BFC893264A39 /* PlaybackModels.swift */; };
@@ -41,7 +47,9 @@
 		25CE5040F9C98E9A9209CC54 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		283F3207EF20BFC893264A39 /* PlaybackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackModels.swift; sourceTree = "<group>"; };
 		2E04624493003FF084E8BFD8 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
+		342225896C183C6D768BDD5F /* YouTubeAccountViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAccountViewModel.swift; sourceTree = "<group>"; };
 		3CC333E8B8721D7F41833838 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		403E008035B9B3BF8DC69D27 /* GoogleAccountStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleAccountStore.swift; sourceTree = "<group>"; };
 		62613B99DCC06E1FF040B92E /* PhonoDeck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhonoDeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		71A092AB8929FBDC4073D683 /* PhonoDeckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhonoDeckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		73AD062232B94BBCADC236D4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -49,8 +57,13 @@
 		7BD04B09AA72243E0686E028 /* SpotifySource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySource.swift; sourceTree = "<group>"; };
 		7EFC74203F0F66967D204B73 /* NowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingController.swift; sourceTree = "<group>"; };
 		840C5306CF4AC96169D8280A /* PlexSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlexSource.swift; sourceTree = "<group>"; };
+		923C00FDE468AE49ECA45282 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		9B7FA81463D31DF5772CE9FD /* GoogleOAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleOAuthClient.swift; sourceTree = "<group>"; };
+		A678ED91F39DD758B578A0DC /* OAuthLoopbackServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuthLoopbackServer.swift; sourceTree = "<group>"; };
 		AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicNativeConceptView.swift; sourceTree = "<group>"; };
+		B0CE21641F5C0807C27C281D /* BuildSettings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = BuildSettings.xcconfig; sourceTree = "<group>"; };
 		E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourceDescriptorTests.swift; sourceTree = "<group>"; };
+		F0DFDFC9D40A7DBEB933FCA2 /* YouTubeDataClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeDataClient.swift; sourceTree = "<group>"; };
 		F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -73,6 +86,14 @@
 				3CC333E8B8721D7F41833838 /* SidebarView.swift */,
 			);
 			path = Shell;
+			sourceTree = "<group>";
+		};
+		1CB6CC2972A8ACB0793B6FFB /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B0CE21641F5C0807C27C281D /* BuildSettings.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		1D5A3F5217A64F43AA3CF1E4 /* PhonoDeckTests */ = {
@@ -113,6 +134,17 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		3B7F8339AB8F272E5530C602 /* Google */ = {
+			isa = PBXGroup;
+			children = (
+				403E008035B9B3BF8DC69D27 /* GoogleAccountStore.swift */,
+				9B7FA81463D31DF5772CE9FD /* GoogleOAuthClient.swift */,
+				923C00FDE468AE49ECA45282 /* KeychainStore.swift */,
+				A678ED91F39DD758B578A0DC /* OAuthLoopbackServer.swift */,
+			);
+			path = Google;
+			sourceTree = "<group>";
+		};
 		3BFBC4941DC86213E2998EE9 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -128,6 +160,8 @@
 				840C5306CF4AC96169D8280A /* PlexSource.swift */,
 				7BD04B09AA72243E0686E028 /* SpotifySource.swift */,
 				0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */,
+				3B7F8339AB8F272E5530C602 /* Google */,
+				71D4A7D53AEC0D684605D1A8 /* YouTube */,
 			);
 			path = Integrations;
 			sourceTree = "<group>";
@@ -138,6 +172,14 @@
 				771691B3DD065041A22297B6 /* DesignTokens.swift */,
 			);
 			path = Design;
+			sourceTree = "<group>";
+		};
+		71D4A7D53AEC0D684605D1A8 /* YouTube */ = {
+			isa = PBXGroup;
+			children = (
+				F0DFDFC9D40A7DBEB933FCA2 /* YouTubeDataClient.swift */,
+			);
+			path = YouTube;
 			sourceTree = "<group>";
 		};
 		9DC4C4E502D4D82E9CBE9E0C /* Products */ = {
@@ -160,6 +202,7 @@
 		B7BEC2FF22D011274E3068D4 /* YouTubeMusic */ = {
 			isa = PBXGroup;
 			children = (
+				342225896C183C6D768BDD5F /* YouTubeAccountViewModel.swift */,
 				AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */,
 			);
 			path = YouTubeMusic;
@@ -168,6 +211,7 @@
 		DB5B31C3EFE9E867A14F5B7B = {
 			isa = PBXGroup;
 			children = (
+				1CB6CC2972A8ACB0793B6FFB /* Config */,
 				A69CB619ABAC12057EBF8F9B /* Sources */,
 				3BFBC4941DC86213E2998EE9 /* Tests */,
 				9DC4C4E502D4D82E9CBE9E0C /* Products */,
@@ -258,16 +302,22 @@
 			files = (
 				DAE330AF44DA5560EA2F36B7 /* AppState.swift in Sources */,
 				0752CDE67D88031A4B1ABBF3 /* DesignTokens.swift in Sources */,
+				70B76C1CE15B6CF3B2365755 /* GoogleAccountStore.swift in Sources */,
+				A99C5D5DCDE4E65B355F43CD /* GoogleOAuthClient.swift in Sources */,
+				B9BA30214B60A5BC2C2C793F /* KeychainStore.swift in Sources */,
 				314577E279B6F5D8FE1269E3 /* LibraryHomeView.swift in Sources */,
 				DA05578E7A52A13B9ED9147E /* MediaSource.swift in Sources */,
 				916EE2C7D0F1E42DB2C09D03 /* NowPlayingBar.swift in Sources */,
 				5B8A0EF862B3C791E6DC8C9B /* NowPlayingController.swift in Sources */,
+				68FA75264BA7070571DED999 /* OAuthLoopbackServer.swift in Sources */,
 				A9AE0CFC256BE113F01AA39A /* PhonoDeckApp.swift in Sources */,
 				F8EE197E7D2FF49AF332671C /* PlaybackModels.swift in Sources */,
 				B0B5728600FD8940C6494705 /* PlexSource.swift in Sources */,
 				53974B2C8D725F8F490015E4 /* RootView.swift in Sources */,
 				949AF9FC43D6C23FB5468149 /* SidebarView.swift in Sources */,
 				8EF88300D8F7C30B432B9821 /* SpotifySource.swift in Sources */,
+				1C0E410774D3F4E384A0C579 /* YouTubeAccountViewModel.swift in Sources */,
+				85373642D211CCC101FF1823 /* YouTubeDataClient.swift in Sources */,
 				4D353012678DFAD5512E582A /* YouTubeMusicNativeConceptView.swift in Sources */,
 				7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */,
 			);
@@ -302,6 +352,7 @@
 		};
 		213D1ADB9AA4C7E13F9139FE /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B0CE21641F5C0807C27C281D /* BuildSettings.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/PhonoDeck.entitlements;
@@ -369,6 +420,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GOOGLE_OAUTH_CLIENT_ID = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -400,6 +452,7 @@
 		};
 		7C71BFBC73D8CE65B6AF273D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B0CE21641F5C0807C27C281D /* BuildSettings.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/PhonoDeck.entitlements;
@@ -461,6 +514,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				GOOGLE_OAUTH_CLIENT_ID = "";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;

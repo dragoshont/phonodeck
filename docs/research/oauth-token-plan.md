@@ -14,6 +14,7 @@ Initial setup:
 2. Enable the YouTube Data API only when the corresponding feature is implemented.
 3. Configure OAuth consent screen and desktop app credentials.
 4. Request only scopes needed by implemented features.
+5. Use system-browser OAuth with PKCE and a loopback redirect for macOS desktop. Do not use `WKWebView` for Google login.
 
 Likely scope phases:
 

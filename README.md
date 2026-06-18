@@ -43,6 +43,7 @@ open PhonoDeck.xcodeproj
 - [docs/architecture/overview.md](docs/architecture/overview.md)
 - [docs/roadmap.md](docs/roadmap.md)
 - [docs/security-privacy.md](docs/security-privacy.md)
+- [docs/setup/google-youtube.md](docs/setup/google-youtube.md)
 
 ## Working Product Name
 

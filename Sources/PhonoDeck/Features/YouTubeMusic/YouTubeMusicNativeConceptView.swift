@@ -2,6 +2,7 @@ import SwiftUI
 
 struct YouTubeMusicNativeConceptView: View {
     @State private var searchText = ""
+    @StateObject private var accountViewModel = YouTubeAccountViewModel()
 
     private let featuredTracks = YouTubeMusicConceptTrack.featured
     private let queueTracks = YouTubeMusicConceptTrack.queue
@@ -86,9 +87,12 @@ struct YouTubeMusicNativeConceptView: View {
                     } label: {
                         Label("Open YouTube Music", systemImage: "arrow.up.right.square")
                     }
-                    Button {} label: {
+                    Button {
+                        Task { await accountViewModel.connect() }
+                    } label: {
                         Label("Connect Google", systemImage: "person.crop.circle.badge.checkmark")
                     }
+                    .disabled(accountViewModel.state == .connecting)
                 }
 
                 HStack(spacing: 10) {
@@ -144,9 +148,21 @@ struct YouTubeMusicNativeConceptView: View {
             Text("Playback Route")
                 .font(.headline)
 
+            RouteStatusRow(
+                symbol: "person.crop.circle",
+                title: accountViewModel.state.title,
+                status: accountViewModel.state.detail,
+                color: accountViewModel.state.statusColor.color
+            )
             RouteStatusRow(symbol: "safari", title: "Official surface", status: "Ready", color: .green)
             RouteStatusRow(symbol: "keyboard", title: "Native controls", status: "Limited", color: .orange)
             RouteStatusRow(symbol: "arrow.down.circle", title: "Downloads", status: "Blocked", color: .red)
+
+            if case .connected = accountViewModel.state {
+                Button("Disconnect") {
+                    accountViewModel.disconnect()
+                }
+            }
 
             Divider()
 
@@ -165,6 +181,17 @@ struct YouTubeMusicNativeConceptView: View {
         .padding(16)
         .frame(minHeight: 420, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private extension ColorName {
+    var color: Color {
+        switch self {
+        case .blue: .blue
+        case .green: .green
+        case .orange: .orange
+        case .red: .red
+        }
     }
 }
 

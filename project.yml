@@ -10,6 +10,7 @@ settings:
     MARKETING_VERSION: 0.1.0
     SWIFT_VERSION: 6.0
     MACOSX_DEPLOYMENT_TARGET: 14.0
+    GOOGLE_OAUTH_CLIENT_ID: ""
 targets:
   PhonoDeck:
     type: application
@@ -22,6 +23,7 @@ targets:
         CFBundleDisplayName: PhonoDeck
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        GoogleOAuthClientID: $(GOOGLE_OAUTH_CLIENT_ID)
         LSApplicationCategoryType: public.app-category.music
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
@@ -30,12 +32,16 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.network.client: true
+        com.apple.security.network.server: true
         com.apple.security.files.user-selected.read-only: true
         com.apple.security.files.user-selected.read-write: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck
         ENABLE_USER_SCRIPT_SANDBOXING: true
+    configFiles:
+      Debug: Config/BuildSettings.xcconfig
+      Release: Config/BuildSettings.xcconfig
   PhonoDeckTests:
     type: bundle.unit-test
     platform: macOS
