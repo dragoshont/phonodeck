@@ -7,6 +7,8 @@ final class YouTubeAccountViewModel: ObservableObject {
 
     private let accountStore = GoogleAccountStore()
     private let dataClient = YouTubeDataClient()
+    private var activeDeviceAuthorization: GoogleDeviceAuthorization?
+    private var isPolling = false
 
     init() {
         do {
@@ -23,12 +25,28 @@ final class YouTubeAccountViewModel: ObservableObject {
         do {
             let oauthClient = try GoogleOAuthClient.fromBundle()
             let authorization = try await oauthClient.startDeviceAuthorization()
+            activeDeviceAuthorization = authorization
             state = .deviceCode(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
 
             _ = NSWorkspace.shared.open(authorization.preferredVerificationURL)
+            await finishCurrentDeviceAuthorization()
+        } catch {
+            state = .failed(error.localizedDescription)
+        }
+    }
 
-            let tokens = try await oauthClient.finishDeviceAuthorization(authorization)
+    func finishCurrentDeviceAuthorization() async {
+        guard !isPolling else { return }
+        guard let authorization = activeDeviceAuthorization else { return }
+
+        isPolling = true
+        state = .waitingForApproval(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
+        defer { isPolling = false }
+
+        do {
+            let tokens = try await GoogleOAuthClient.fromBundle().finishDeviceAuthorization(authorization)
             try accountStore.save(tokens: tokens)
+            activeDeviceAuthorization = nil
 
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
@@ -40,6 +58,7 @@ final class YouTubeAccountViewModel: ObservableObject {
     func disconnect() {
         do {
             try accountStore.disconnect()
+            activeDeviceAuthorization = nil
             state = .signedOut
         } catch {
             state = .failed(error.localizedDescription)
@@ -51,6 +70,7 @@ enum YouTubeAccountState: Equatable {
     case signedOut
     case connecting
     case deviceCode(userCode: String, verificationURL: URL)
+    case waitingForApproval(userCode: String, verificationURL: URL)
     case connected(channelTitle: String, scope: String)
     case stored(scope: String)
     case failed(String)
@@ -60,6 +80,7 @@ enum YouTubeAccountState: Equatable {
         case .signedOut: "Not connected"
         case .connecting: "Connecting"
         case .deviceCode: "Enter code"
+        case .waitingForApproval: "Waiting for approval"
         case .connected(let channelTitle, _): channelTitle
         case .stored: "Token stored"
         case .failed: "Connection failed"
@@ -74,6 +95,8 @@ enum YouTubeAccountState: Equatable {
             "Requesting Google code"
         case .deviceCode(let userCode, _):
             userCode
+        case .waitingForApproval(let userCode, _):
+            "Approved in browser? Code \(userCode)"
         case .connected(_, let scope):
             scope
         case .stored(let scope):
@@ -87,7 +110,7 @@ enum YouTubeAccountState: Equatable {
         switch self {
         case .signedOut, .stored:
             .orange
-        case .connecting, .deviceCode:
+        case .connecting, .deviceCode, .waitingForApproval:
             .blue
         case .connected:
             .green

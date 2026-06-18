@@ -164,18 +164,21 @@ struct YouTubeMusicNativeConceptView: View {
                 }
             }
 
-            if case .deviceCode(let userCode, let verificationURL) = accountViewModel.state {
+            if let authorization = accountViewModel.state.deviceAuthorization {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(userCode)
+                    Text(authorization.userCode)
                         .font(.system(.title2, design: .monospaced).weight(.semibold))
                         .textSelection(.enabled)
                     HStack {
                         Button("Copy Code") {
                             NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(userCode, forType: .string)
+                            NSPasteboard.general.setString(authorization.userCode, forType: .string)
                         }
                         Button("Open Google") {
-                            NSWorkspace.shared.open(verificationURL)
+                            NSWorkspace.shared.open(authorization.verificationURL)
+                        }
+                        Button("Check Again") {
+                            Task { await accountViewModel.finishCurrentDeviceAuthorization() }
                         }
                     }
                 }
@@ -200,6 +203,17 @@ struct YouTubeMusicNativeConceptView: View {
         .padding(16)
         .frame(minHeight: 420, alignment: .top)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private extension YouTubeAccountState {
+    var deviceAuthorization: (userCode: String, verificationURL: URL)? {
+        switch self {
+        case .deviceCode(let userCode, let verificationURL), .waitingForApproval(let userCode, let verificationURL):
+            (userCode, verificationURL)
+        default:
+            nil
+        }
     }
 }
 
