@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0752CDE67D88031A4B1ABBF3 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 771691B3DD065041A22297B6 /* DesignTokens.swift */; };
+		314577E279B6F5D8FE1269E3 /* LibraryHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */; };
+		47D948FFBB01EC42FC1A3834 /* MediaSourceDescriptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */; };
+		53974B2C8D725F8F490015E4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD062232B94BBCADC236D4 /* RootView.swift */; };
+		5B8A0EF862B3C791E6DC8C9B /* NowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EFC74203F0F66967D204B73 /* NowPlayingController.swift */; };
+		7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */; };
+		8EF88300D8F7C30B432B9821 /* SpotifySource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD04B09AA72243E0686E028 /* SpotifySource.swift */; };
+		916EE2C7D0F1E42DB2C09D03 /* NowPlayingBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 076EB17497E8D325C406C734 /* NowPlayingBar.swift */; };
+		949AF9FC43D6C23FB5468149 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CC333E8B8721D7F41833838 /* SidebarView.swift */; };
+		A9AE0CFC256BE113F01AA39A /* PhonoDeckApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 028AF27ABC6325EBCF06A489 /* PhonoDeckApp.swift */; };
+		B0B5728600FD8940C6494705 /* PlexSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840C5306CF4AC96169D8280A /* PlexSource.swift */; };
+		DA05578E7A52A13B9ED9147E /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E04624493003FF084E8BFD8 /* MediaSource.swift */; };
+		DAE330AF44DA5560EA2F36B7 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25CE5040F9C98E9A9209CC54 /* AppState.swift */; };
+		F8EE197E7D2FF49AF332671C /* PlaybackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283F3207EF20BFC893264A39 /* PlaybackModels.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B464EFBA9903F131F0BC8169 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CB6B715D633811200E51D285 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B806CEB57559E73D500E55E8;
+			remoteInfo = PhonoDeck;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		028AF27ABC6325EBCF06A489 /* PhonoDeckApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonoDeckApp.swift; sourceTree = "<group>"; };
+		076EB17497E8D325C406C734 /* NowPlayingBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingBar.swift; sourceTree = "<group>"; };
+		0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicSource.swift; sourceTree = "<group>"; };
+		25CE5040F9C98E9A9209CC54 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		283F3207EF20BFC893264A39 /* PlaybackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackModels.swift; sourceTree = "<group>"; };
+		2E04624493003FF084E8BFD8 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
+		3CC333E8B8721D7F41833838 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		62613B99DCC06E1FF040B92E /* PhonoDeck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhonoDeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71A092AB8929FBDC4073D683 /* PhonoDeckTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhonoDeckTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		73AD062232B94BBCADC236D4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		771691B3DD065041A22297B6 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		7BD04B09AA72243E0686E028 /* SpotifySource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySource.swift; sourceTree = "<group>"; };
+		7EFC74203F0F66967D204B73 /* NowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingController.swift; sourceTree = "<group>"; };
+		840C5306CF4AC96169D8280A /* PlexSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlexSource.swift; sourceTree = "<group>"; };
+		E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourceDescriptorTests.swift; sourceTree = "<group>"; };
+		F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHomeView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		02A7E52C5C8098836934B229 /* Playback */ = {
+			isa = PBXGroup;
+			children = (
+				7EFC74203F0F66967D204B73 /* NowPlayingController.swift */,
+				283F3207EF20BFC893264A39 /* PlaybackModels.swift */,
+			);
+			path = Playback;
+			sourceTree = "<group>";
+		};
+		18976D801141DCF25B2512CA /* Shell */ = {
+			isa = PBXGroup;
+			children = (
+				F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */,
+				076EB17497E8D325C406C734 /* NowPlayingBar.swift */,
+				73AD062232B94BBCADC236D4 /* RootView.swift */,
+				3CC333E8B8721D7F41833838 /* SidebarView.swift */,
+			);
+			path = Shell;
+			sourceTree = "<group>";
+		};
+		1D5A3F5217A64F43AA3CF1E4 /* PhonoDeckTests */ = {
+			isa = PBXGroup;
+			children = (
+				E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */,
+			);
+			path = PhonoDeckTests;
+			sourceTree = "<group>";
+		};
+		239A84B6F10B2157631B79AB /* PhonoDeck */ = {
+			isa = PBXGroup;
+			children = (
+				30D5A1A2E3EF5ED30063080F /* App */,
+				662B909EB8FAB3F6AAFF9B83 /* Design */,
+				2C3E436931B3D383DB520C0B /* Features */,
+				53136BFA6F50BD095C10E628 /* Integrations */,
+				02A7E52C5C8098836934B229 /* Playback */,
+			);
+			path = PhonoDeck;
+			sourceTree = "<group>";
+		};
+		2C3E436931B3D383DB520C0B /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				18976D801141DCF25B2512CA /* Shell */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		30D5A1A2E3EF5ED30063080F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				25CE5040F9C98E9A9209CC54 /* AppState.swift */,
+				028AF27ABC6325EBCF06A489 /* PhonoDeckApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3BFBC4941DC86213E2998EE9 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				1D5A3F5217A64F43AA3CF1E4 /* PhonoDeckTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		53136BFA6F50BD095C10E628 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				2E04624493003FF084E8BFD8 /* MediaSource.swift */,
+				840C5306CF4AC96169D8280A /* PlexSource.swift */,
+				7BD04B09AA72243E0686E028 /* SpotifySource.swift */,
+				0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */,
+			);
+			path = Integrations;
+			sourceTree = "<group>";
+		};
+		662B909EB8FAB3F6AAFF9B83 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				771691B3DD065041A22297B6 /* DesignTokens.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		9DC4C4E502D4D82E9CBE9E0C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				62613B99DCC06E1FF040B92E /* PhonoDeck.app */,
+				71A092AB8929FBDC4073D683 /* PhonoDeckTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A69CB619ABAC12057EBF8F9B /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				239A84B6F10B2157631B79AB /* PhonoDeck */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		DB5B31C3EFE9E867A14F5B7B = {
+			isa = PBXGroup;
+			children = (
+				A69CB619ABAC12057EBF8F9B /* Sources */,
+				3BFBC4941DC86213E2998EE9 /* Tests */,
+				9DC4C4E502D4D82E9CBE9E0C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		642FB2CDE66B0CFBA769D259 /* PhonoDeckTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D38B28BA48ABF1C7B115C62D /* Build configuration list for PBXNativeTarget "PhonoDeckTests" */;
+			buildPhases = (
+				33520FDC9C97642CE2C57607 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9188903C1DAB94696544F090 /* PBXTargetDependency */,
+			);
+			name = PhonoDeckTests;
+			packageProductDependencies = (
+			);
+			productName = PhonoDeckTests;
+			productReference = 71A092AB8929FBDC4073D683 /* PhonoDeckTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B806CEB57559E73D500E55E8 /* PhonoDeck */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 89CC8E509ECD322DB184CA7C /* Build configuration list for PBXNativeTarget "PhonoDeck" */;
+			buildPhases = (
+				E02ACAA2C76EDF96AA702C8D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PhonoDeck;
+			packageProductDependencies = (
+			);
+			productName = PhonoDeck;
+			productReference = 62613B99DCC06E1FF040B92E /* PhonoDeck.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CB6B715D633811200E51D285 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = C80B4B26A4BA5E71DA23522E /* Build configuration list for PBXProject "PhonoDeck" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = DB5B31C3EFE9E867A14F5B7B;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9DC4C4E502D4D82E9CBE9E0C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B806CEB57559E73D500E55E8 /* PhonoDeck */,
+				642FB2CDE66B0CFBA769D259 /* PhonoDeckTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		33520FDC9C97642CE2C57607 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47D948FFBB01EC42FC1A3834 /* MediaSourceDescriptorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E02ACAA2C76EDF96AA702C8D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DAE330AF44DA5560EA2F36B7 /* AppState.swift in Sources */,
+				0752CDE67D88031A4B1ABBF3 /* DesignTokens.swift in Sources */,
+				314577E279B6F5D8FE1269E3 /* LibraryHomeView.swift in Sources */,
+				DA05578E7A52A13B9ED9147E /* MediaSource.swift in Sources */,
+				916EE2C7D0F1E42DB2C09D03 /* NowPlayingBar.swift in Sources */,
+				5B8A0EF862B3C791E6DC8C9B /* NowPlayingController.swift in Sources */,
+				A9AE0CFC256BE113F01AA39A /* PhonoDeckApp.swift in Sources */,
+				F8EE197E7D2FF49AF332671C /* PlaybackModels.swift in Sources */,
+				B0B5728600FD8940C6494705 /* PlexSource.swift in Sources */,
+				53974B2C8D725F8F490015E4 /* RootView.swift in Sources */,
+				949AF9FC43D6C23FB5468149 /* SidebarView.swift in Sources */,
+				8EF88300D8F7C30B432B9821 /* SpotifySource.swift in Sources */,
+				7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9188903C1DAB94696544F090 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B806CEB57559E73D500E55E8 /* PhonoDeck */;
+			targetProxy = B464EFBA9903F131F0BC8169 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		190F4E6A16888A30692B1E05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.hont.phonodeck.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhonoDeck.app/Contents/MacOS/PhonoDeck";
+			};
+			name = Release;
+		};
+		213D1ADB9AA4C7E13F9139FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/PhonoDeck.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.hont.phonodeck;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		47758F41EE8D7B6D7E9CFC29 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		60E6FF81F60225CDD90DEFEB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.hont.phonodeck.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhonoDeck.app/Contents/MacOS/PhonoDeck";
+			};
+			name = Debug;
+		};
+		7C71BFBC73D8CE65B6AF273D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/PhonoDeck.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.hont.phonodeck;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		917A08BB8A2F595177872F76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		89CC8E509ECD322DB184CA7C /* Build configuration list for PBXNativeTarget "PhonoDeck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7C71BFBC73D8CE65B6AF273D /* Debug */,
+				213D1ADB9AA4C7E13F9139FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C80B4B26A4BA5E71DA23522E /* Build configuration list for PBXProject "PhonoDeck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				47758F41EE8D7B6D7E9CFC29 /* Debug */,
+				917A08BB8A2F595177872F76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D38B28BA48ABF1C7B115C62D /* Build configuration list for PBXNativeTarget "PhonoDeckTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60E6FF81F60225CDD90DEFEB /* Debug */,
+				190F4E6A16888A30692B1E05 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CB6B715D633811200E51D285 /* Project object */;
+}

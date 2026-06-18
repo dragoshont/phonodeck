@@ -1,0 +1,49 @@
+# PhonoDeck
+
+PhonoDeck is a native-first macOS music app concept: an Apple-style library and player for personal Plex music, YouTube Music discovery/playback where official policy allows it, and Spotify metadata plus Connect control.
+
+The product direction is deliberately conservative: feel native on day one, use official/public APIs, and keep each service's playback and download rules visible in the architecture.
+
+## Current Status
+
+- Private GitHub repo: `dragoshont/phonodeck`
+- Local path: `/Users/dragoshont/Repo/phonodeck`
+- Native scaffold: SwiftUI macOS app generated with XcodeGen
+- P0 target: Native macOS shell, library model, Plex/local playback path, system media keys, Now Playing metadata, source adapters, and design rules
+- P1 target: Offline downloads for eligible Plex personal media, AirPlay for AVFoundation-backed playback, Cast investigation, richer library sync
+- P2 target: iOS companion and Apple Watch remote control
+
+## Build
+
+Requirements on this Mac are already present: Xcode 26.5, Swift 6.3, and XcodeGen.
+
+```sh
+make generate
+make build
+```
+
+Open the generated project with:
+
+```sh
+open PhonoDeck.xcodeproj
+```
+
+## Non-Negotiables
+
+- Native macOS is P0. Use SwiftUI, AppKit where needed, AVFoundation, MediaPlayer, and system controls.
+- Do not use private Apple APIs, scraped YouTube/YouTube Music endpoints, or unofficial Spotify streaming routes.
+- YouTube downloads/offline playback are not in scope unless YouTube grants prior written approval.
+- Spotify full-track playback inside the macOS app is not assumed; treat Spotify as metadata plus Spotify Connect control until an official native route exists.
+- Plex personal music is the primary path for true native playback, downloads, AirPlay, and library ownership.
+
+## Key Docs
+
+- [docs/research/platform-analysis.md](docs/research/platform-analysis.md)
+- [docs/design/native-macos-guidelines.md](docs/design/native-macos-guidelines.md)
+- [docs/architecture/overview.md](docs/architecture/overview.md)
+- [docs/roadmap.md](docs/roadmap.md)
+- [docs/security-privacy.md](docs/security-privacy.md)
+
+## Working Product Name
+
+PhonoDeck is available enough to proceed: no exact repo in the user's GitHub namespace, no exact global GitHub repository found in the checked pass, no npm/PyPI/Homebrew/App Store public-search hit, and key domains appeared unregistered in RDAP at time of checking.

@@ -1,0 +1,87 @@
+import Foundation
+import MediaPlayer
+
+@MainActor
+final class NowPlayingController: NSObject {
+    private var playHandler: (@MainActor () -> Void)?
+    private var pauseHandler: (@MainActor () -> Void)?
+    private var nextHandler: (@MainActor () -> Void)?
+    private var previousHandler: (@MainActor () -> Void)?
+
+    func configure(
+        play: @escaping @MainActor () -> Void,
+        pause: @escaping @MainActor () -> Void,
+        next: @escaping @MainActor () -> Void,
+        previous: @escaping @MainActor () -> Void
+    ) {
+        playHandler = play
+        pauseHandler = pause
+        nextHandler = next
+        previousHandler = previous
+
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.pauseCommand.isEnabled = true
+        commandCenter.togglePlayPauseCommand.isEnabled = true
+        commandCenter.nextTrackCommand.isEnabled = true
+        commandCenter.previousTrackCommand.isEnabled = true
+
+        commandCenter.playCommand.addTarget(self, action: #selector(handlePlayCommand(_:)))
+        commandCenter.pauseCommand.addTarget(self, action: #selector(handlePauseCommand(_:)))
+        commandCenter.togglePlayPauseCommand.addTarget(self, action: #selector(handleToggleCommand(_:)))
+        commandCenter.nextTrackCommand.addTarget(self, action: #selector(handleNextCommand(_:)))
+        commandCenter.previousTrackCommand.addTarget(self, action: #selector(handlePreviousCommand(_:)))
+    }
+
+    func publish(track: Track, state: PlaybackState, elapsedTime: TimeInterval) {
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = [
+            MPMediaItemPropertyTitle: track.title,
+            MPMediaItemPropertyArtist: track.artist,
+            MPMediaItemPropertyAlbumTitle: track.album,
+            MPMediaItemPropertyPlaybackDuration: track.duration,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: elapsedTime,
+            MPNowPlayingInfoPropertyPlaybackRate: state == .playing ? 1.0 : 0.0,
+            MPNowPlayingInfoPropertyMediaType: MPNowPlayingInfoMediaType.audio.rawValue
+        ]
+        MPNowPlayingInfoCenter.default().playbackState = state.nowPlayingState
+    }
+
+    @objc private func handlePlayCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        playHandler?()
+        return .success
+    }
+
+    @objc private func handlePauseCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        pauseHandler?()
+        return .success
+    }
+
+    @objc private func handleToggleCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        if MPNowPlayingInfoCenter.default().playbackState == .playing {
+            pauseHandler?()
+        } else {
+            playHandler?()
+        }
+        return .success
+    }
+
+    @objc private func handleNextCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        nextHandler?()
+        return .success
+    }
+
+    @objc private func handlePreviousCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        previousHandler?()
+        return .success
+    }
+}
+
+private extension PlaybackState {
+    var nowPlayingState: MPNowPlayingPlaybackState {
+        switch self {
+        case .playing: .playing
+        case .paused: .paused
+        case .stopped: .stopped
+        }
+    }
+}
