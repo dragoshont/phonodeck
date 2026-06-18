@@ -181,6 +181,12 @@ struct YouTubeMusicNativeConceptView: View {
                             Task { await accountViewModel.checkCurrentDeviceAuthorizationOnce() }
                         }
                     }
+                    if !accountViewModel.pollStatus.isEmpty {
+                        Text(accountViewModel.pollStatus)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(12)
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))

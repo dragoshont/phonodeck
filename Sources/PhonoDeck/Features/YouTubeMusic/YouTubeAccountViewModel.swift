@@ -4,11 +4,13 @@ import Foundation
 @MainActor
 final class YouTubeAccountViewModel: ObservableObject {
     @Published private(set) var state: YouTubeAccountState = .signedOut
+    @Published private(set) var pollStatus: String = ""
 
     private let accountStore = GoogleAccountStore()
     private let dataClient = YouTubeDataClient()
     private var activeDeviceAuthorization: GoogleDeviceAuthorization?
     private var isPolling = false
+    private var pollCount = 0
     private var pollingTask: Task<Void, Never>?
 
     init() {
@@ -23,15 +25,19 @@ final class YouTubeAccountViewModel: ObservableObject {
 
     func connect() async {
         state = .connecting
+        pollStatus = "Requesting code from Google..."
         do {
             let oauthClient = try GoogleOAuthClient.fromBundle()
             let authorization = try await oauthClient.startDeviceAuthorization()
             activeDeviceAuthorization = authorization
             state = .deviceCode(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
+            pollCount = 0
+            pollStatus = "Enter the code in Google, then wait here. Polling will continue automatically."
 
             _ = NSWorkspace.shared.open(authorization.preferredVerificationURL)
             startPollingCurrentDeviceAuthorization()
         } catch {
+            pollStatus = error.localizedDescription
             state = .failed(error.localizedDescription)
         }
     }
@@ -62,35 +68,49 @@ final class YouTubeAccountViewModel: ObservableObject {
             let tokens = try await GoogleOAuthClient.fromBundle().finishDeviceAuthorization(authorization)
             try accountStore.save(tokens: tokens)
             activeDeviceAuthorization = nil
+            pollStatus = "Google tokens stored. Fetching YouTube channel..."
 
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
+            pollStatus = "Connected to YouTube."
         } catch {
+            pollStatus = error.localizedDescription
             state = .failed(error.localizedDescription)
         }
     }
 
     func checkCurrentDeviceAuthorizationOnce() async {
-        guard let authorization = activeDeviceAuthorization else { return }
+        guard let authorization = activeDeviceAuthorization else {
+            pollStatus = "No active Google code. Click Connect Google again."
+            return
+        }
+        pollCount += 1
+        pollStatus = "Checking Google authorization... attempt \(pollCount)"
         do {
             guard let tokens = try await GoogleOAuthClient.fromBundle().pollDeviceTokenOnce(authorization) else {
+                pollStatus = "Waiting for Google approval... attempt \(pollCount)"
                 return
             }
             try accountStore.save(tokens: tokens)
             activeDeviceAuthorization = nil
             pollingTask?.cancel()
             pollingTask = nil
+            pollStatus = "Google tokens stored. Fetching YouTube channel..."
 
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
+            pollStatus = "Connected to YouTube."
         } catch let oauthError as GoogleOAuthError {
             switch oauthError {
             case .deviceCodeExpired, .authorizationDenied:
+                pollStatus = oauthError.localizedDescription
                 state = .failed(oauthError.localizedDescription)
             default:
+                pollStatus = oauthError.localizedDescription
                 return
             }
         } catch {
+            pollStatus = error.localizedDescription
             return
         }
     }
@@ -101,8 +121,10 @@ final class YouTubeAccountViewModel: ObservableObject {
             activeDeviceAuthorization = nil
             pollingTask?.cancel()
             pollingTask = nil
+            pollStatus = ""
             state = .signedOut
         } catch {
+            pollStatus = error.localizedDescription
             state = .failed(error.localizedDescription)
         }
     }
