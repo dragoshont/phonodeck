@@ -164,6 +164,25 @@ struct YouTubeMusicNativeConceptView: View {
                 }
             }
 
+            if case .deviceCode(let userCode, let verificationURL) = accountViewModel.state {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(userCode)
+                        .font(.system(.title2, design: .monospaced).weight(.semibold))
+                        .textSelection(.enabled)
+                    HStack {
+                        Button("Copy Code") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(userCode, forType: .string)
+                        }
+                        Button("Open Google") {
+                            NSWorkspace.shared.open(verificationURL)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+
             Divider()
 
             VStack(alignment: .leading, spacing: 8) {

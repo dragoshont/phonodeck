@@ -23,6 +23,14 @@ struct GoogleOAuthClient {
         return try await authorizeWithLoopback()
     }
 
+    func startDeviceAuthorization() async throws -> GoogleDeviceAuthorization {
+        try await requestDeviceAuthorization()
+    }
+
+    func finishDeviceAuthorization(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet {
+        try await pollDeviceToken(authorization)
+    }
+
     private func authorizeWithLoopback() async throws -> GoogleOAuthTokenSet {
         let pkce = try PKCEPair()
         let state = try SecureRandom.urlSafeString(byteCount: 32)
@@ -248,6 +256,10 @@ struct GoogleDeviceAuthorization: Codable, Equatable {
     let verificationURLComplete: URL?
     let expiresIn: Int
     let interval: Int?
+
+    var preferredVerificationURL: URL {
+        verificationURLComplete ?? verificationURL
+    }
 
     enum CodingKeys: String, CodingKey {
         case deviceCode = "device_code"
