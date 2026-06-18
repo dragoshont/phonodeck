@@ -21,6 +21,7 @@ Reviewed on 2026-06-18.
 - https://developers.google.com/youtube/terms/developer-policies
 - https://developers.google.com/youtube/iframe_api_reference
 - https://developers.google.com/cast/docs/developers
+- See [youtube-premium-wiring-plan.md](youtube-premium-wiring-plan.md) for the current account connection plan.
 
 ## Spotify
 
