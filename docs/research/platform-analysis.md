@@ -10,7 +10,7 @@ This document captures the first official-doc pass for PhonoDeck. The main concl
 | Media keys and system controls | Yes | `MPRemoteCommandCenter` and `MPNowPlayingInfoCenter` are available on macOS and support play, pause, next, previous, metadata, and playback state. |
 | Plex library playback | Yes | Plex Media Server API supports library sections, metadata, playlists, media part details, playback progress, and server discovery. |
 | Local/iTunes import | Yes | User-owned local files and exported iTunes XML/M3U-style playlists can be imported without service policy risk. |
-| YouTube Music native playback | Limited | YouTube policy requires documented YouTube API Services and forbids separating audio/video, background hidden players, downloads, offline playback, and player modification. |
+| YouTube Music playback | P0 feasibility gate | YouTube policy requires documented YouTube API Services and forbids separating audio/video, background hidden players, downloads, offline playback, and player modification. |
 | Spotify native playback on macOS | Limited | Spotify Web API can control playback and read metadata. Spotify iOS SDK remotes the Spotify app, and streaming scope is for Web Playback SDK/Premium; no official native macOS streaming SDK found. |
 | AirPlay to Apple speakers | Yes for native streams | AVFoundation/AVKit provide AirPlay support for app-owned playback. This is most viable for Plex/local media. |
 | Chromecast/Cast | P1 investigation | Google Cast supports Web, Android, and iOS sender apps; no first-class native macOS sender was found in the official overview. |
@@ -63,7 +63,7 @@ Findings:
 
 Decision:
 
-- Treat YouTube Music as P0 discovery plus policy-compliant embedded playback, not as native audio extraction.
+- Treat YouTube Music as P0, but only through a visible official player surface or approved/native Google route. Hidden web playback is rejected.
 - Do not implement YouTube downloads or hidden/background audio extraction.
 - Keep YouTube source attribution and branding clear when displaying YouTube content.
 - Use the user's Premium subscription only where official YouTube surfaces honor it; do not assume Premium grants third-party download rights.

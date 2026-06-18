@@ -3,6 +3,7 @@
 ## P0: Native Foundation
 
 - Native macOS app shell with sidebar, toolbar, menu commands, keyboard shortcuts, and Now Playing bar.
+- YouTube Music P0 feasibility gate: visible official player or approved/native Google route, with hidden web playback rejected.
 - Source adapters for Plex, YouTube Music, Spotify, and Local/iTunes import.
 - Plex account/server connection and music library browsing.
 - Native AVFoundation playback for Plex/local media.

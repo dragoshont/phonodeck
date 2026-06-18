@@ -17,7 +17,17 @@ PhonoDeck must not:
 
 ## P0 Goal
 
-Let the user connect a Google account so PhonoDeck can display account-aware YouTube metadata and launch policy-compliant YouTube playback, while keeping Plex/local media as the native playback path.
+Let the user connect a Google account so PhonoDeck can display account-aware YouTube metadata and pursue YouTube Music playback through a visible official player surface or approved/native Google route, while keeping Plex/local media as the native AVFoundation playback path.
+
+## Rejected Direction: Hidden Web Player
+
+Do not hide a YouTube or YouTube Music web player behind native controls. This would be a background player that is not displayed to the user, and it would effectively replace the official YouTube player UI. It conflicts with the YouTube policy boundaries this project is using as non-negotiable constraints.
+
+Native controls are acceptable only when they control:
+
+- PhonoDeck-owned native playback, such as Plex/local media;
+- a visible official player surface whose API permits those controls; or
+- a Google/YouTube-approved playback integration.
 
 ## Account Setup
 
@@ -84,7 +94,7 @@ What Premium does not give PhonoDeck:
 2. Add `GoogleOAuthClient` using `ASWebAuthenticationSession`.
 3. Add `YouTubeDataClient` with quota-aware request wrappers.
 4. Add `YouTubeCapabilityProvider` that reports search, read-only playlist access, embedded playback, and unavailable downloads/native playback.
-5. Add visible YouTube playback surface prototype with IFrame Player API in `WKWebView`.
+5. Investigate visible official playback surfaces and partner/API options; do not build hidden web playback.
 6. Add privacy/disconnect UI and token revocation.
 7. Add tests for scope escalation, capability gating, and no-download policy.
 
