@@ -18,7 +18,7 @@ struct GoogleOAuthClient {
 
     func authorize() async throws -> GoogleOAuthTokenSet {
         if configuration.clientSecret == nil {
-            return try await authorizeWithDeviceFlow()
+            throw GoogleOAuthError.missingClientSecret
         }
         return try await authorizeWithLoopback()
     }
@@ -293,6 +293,7 @@ enum GoogleOAuthError: LocalizedError, Equatable {
     case invalidTokenResponse
     case missingAuthorizationCode
     case missingClientID
+    case missingClientSecret
     case noAvailableLoopbackPort
     case randomGenerationFailed(OSStatus)
     case stateMismatch
@@ -316,6 +317,8 @@ enum GoogleOAuthError: LocalizedError, Equatable {
             "Google did not return an authorization code."
         case .missingClientID:
             "Missing Google OAuth client ID. Add GOOGLE_OAUTH_CLIENT_ID to Config/Secrets.xcconfig."
+        case .missingClientSecret:
+            "Missing Google OAuth client secret. Add GOOGLE_OAUTH_CLIENT_SECRET to Config/Secrets.xcconfig."
         case .noAvailableLoopbackPort:
             "Could not open a localhost callback port for Google OAuth."
         case .randomGenerationFailed(let status):

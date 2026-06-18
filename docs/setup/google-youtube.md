@@ -9,8 +9,9 @@ Required:
 1. A Google Cloud project for PhonoDeck.
 2. YouTube Data API v3 enabled in that project.
 3. OAuth consent screen configured for PhonoDeck.
-4. An OAuth client of type **TVs and Limited Input devices** for the current no-secret device-flow wiring.
+4. An OAuth client of type **Desktop app**.
 5. The OAuth **Client ID** copied into local config.
+6. The OAuth **Client secret** copied into local config.
 
 Not needed:
 
@@ -39,11 +40,11 @@ Not needed:
 
 1. Open Credentials / Clients.
 2. Create client.
-3. Application type: **TVs and Limited Input devices**.
-4. Name: `PhonoDeck Device Flow`.
-5. Copy the Client ID.
+3. Application type: **Desktop app**.
+4. Name: `PhonoDeck macOS`.
+5. Copy the Client ID and Client secret.
 
-PhonoDeck currently uses Google's device authorization flow because it avoids storing a Desktop client secret and avoids localhost callback fragility. A Desktop app client can still be used later if we wire a local-only client secret.
+PhonoDeck uses Google's installed-app flow: system browser + PKCE + loopback callback. Google documents `client_secret` as optional for some installed-app token exchanges, but the OAuth clients created in this project returned `client_secret is missing` without it. Keep the secret local and ignored by Git.
 
 ## Local Config
 
@@ -57,9 +58,10 @@ Edit `Config/Secrets.xcconfig`:
 
 ```xcconfig
 GOOGLE_OAUTH_CLIENT_ID = <your-client-id>.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET = <your-client-secret>
 ```
 
-`Config/Secrets.xcconfig` is ignored by Git.
+`Config/Secrets.xcconfig` is ignored by Git. Do not commit it and do not paste the secret into chat.
 
 ## Initial Scopes
 
@@ -85,10 +87,10 @@ If that returns the signed-in user's YouTube channel metadata, account wiring is
 ## Implementation Sequence
 
 1. Local config ingestion for `GOOGLE_OAUTH_CLIENT_ID` exists.
-2. Device authorization request exists.
-3. Google OAuth opens in the system browser.
-4. Token polling exists.
-5. Desktop PKCE/loopback code exists as a fallback when a local-only client secret is configured.
+2. PKCE generation exists.
+3. Loopback callback server exists.
+4. Google OAuth opens in the system browser.
+5. Authorization code exchange exists.
 6. Refresh/access tokens are stored in Keychain.
 7. `channels.list?part=snippet&mine=true` is called after sign-in.
 8. Signed-in account state is displayed in the YouTube Music screen.
