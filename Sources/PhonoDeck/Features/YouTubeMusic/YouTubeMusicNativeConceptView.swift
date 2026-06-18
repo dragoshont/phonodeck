@@ -177,7 +177,7 @@ struct YouTubeMusicNativeConceptView: View {
                         Button("Open Google") {
                             NSWorkspace.shared.open(authorization.verificationURL)
                         }
-                        Button("Check Again") {
+                        Button("I Approved") {
                             Task { await accountViewModel.finishCurrentDeviceAuthorization() }
                         }
                     }

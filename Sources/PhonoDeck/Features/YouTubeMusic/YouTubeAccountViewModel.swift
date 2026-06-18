@@ -29,7 +29,6 @@ final class YouTubeAccountViewModel: ObservableObject {
             state = .deviceCode(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
 
             _ = NSWorkspace.shared.open(authorization.preferredVerificationURL)
-            await finishCurrentDeviceAuthorization()
         } catch {
             state = .failed(error.localizedDescription)
         }
@@ -79,7 +78,7 @@ enum YouTubeAccountState: Equatable {
         switch self {
         case .signedOut: "Not connected"
         case .connecting: "Connecting"
-        case .deviceCode: "Enter code"
+        case .deviceCode: "Enter code in browser"
         case .waitingForApproval: "Waiting for approval"
         case .connected(let channelTitle, _): channelTitle
         case .stored: "Token stored"
@@ -94,7 +93,7 @@ enum YouTubeAccountState: Equatable {
         case .connecting:
             "Requesting Google code"
         case .deviceCode(let userCode, _):
-            userCode
+            "Code \(userCode)"
         case .waitingForApproval(let userCode, _):
             "Approved in browser? Code \(userCode)"
         case .connected(_, let scope):
