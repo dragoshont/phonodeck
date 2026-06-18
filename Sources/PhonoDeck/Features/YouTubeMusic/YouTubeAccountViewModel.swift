@@ -43,7 +43,7 @@ final class YouTubeAccountViewModel: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
                 await self.checkCurrentDeviceAuthorizationOnce()
-                if case .connected = await self.state {
+                if case .connected = self.state {
                     return
                 }
             }
@@ -83,8 +83,13 @@ final class YouTubeAccountViewModel: ObservableObject {
 
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
-        } catch GoogleOAuthError.deviceCodeExpired, GoogleOAuthError.authorizationDenied {
-            state = .failed(error.localizedDescription)
+        } catch let oauthError as GoogleOAuthError {
+            switch oauthError {
+            case .deviceCodeExpired, .authorizationDenied:
+                state = .failed(oauthError.localizedDescription)
+            default:
+                return
+            }
         } catch {
             return
         }

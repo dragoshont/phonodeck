@@ -138,7 +138,7 @@ struct GoogleOAuthClient {
     }
 
     private func pollDeviceToken(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet {
-        var pollInterval = authorization.interval ?? 5
+        let pollInterval = authorization.interval ?? 5
         let expirationDate = Date().addingTimeInterval(TimeInterval(authorization.expiresIn))
 
         while Date() < expirationDate {
