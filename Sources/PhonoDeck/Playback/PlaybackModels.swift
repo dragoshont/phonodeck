@@ -10,10 +10,10 @@ struct Track: Identifiable, Equatable {
 
     static let placeholder = Track(
         id: "placeholder",
-        title: "Ready to Play",
-        artist: "PhonoDeck",
-        album: "Native macOS Preview",
-        source: .plex,
+        title: "YouTube Music Ready",
+        artist: "Official route pending",
+        album: "PhonoDeck Preview",
+        source: .youtubeMusic,
         duration: 240
     )
 

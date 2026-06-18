@@ -9,11 +9,7 @@ struct RootView: View {
             SidebarView(selection: $appState.selectedSection)
                 .navigationSplitViewColumnWidth(min: DesignTokens.sidebarMinWidth, ideal: 250)
         } detail: {
-            LibraryHomeView(
-                section: appState.selectedSection ?? .listenNow,
-                sources: appState.sources,
-                activeSource: appState.activeSource
-            )
+            detailView
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             NowPlayingBar(playback: appState.playback)
@@ -43,6 +39,19 @@ struct RootView: View {
                 }
                 .help("Search")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        if appState.activeSource == .youtubeMusic {
+            YouTubeMusicNativeConceptView()
+        } else {
+            LibraryHomeView(
+                section: appState.selectedSection ?? .listenNow,
+                sources: appState.sources,
+                activeSource: appState.activeSource
+            )
         }
     }
 

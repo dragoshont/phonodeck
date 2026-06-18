@@ -38,6 +38,15 @@ Use Apple Music as an interaction reference, not a visual copy target:
 - Devices: AirPlay, Spotify Connect, Plex sessions, future Cast routes.
 - Settings: accounts, library import, privacy, downloads, cache, and keyboard controls.
 
+## YouTube Music Native Shell Direction
+
+The YouTube Music surface must not be a large browser slab. The preferred visual model is a native command room:
+
+- native search, shelves, queue, route status, account controls, and source badges;
+- official YouTube playback opened or controlled only through permitted surfaces;
+- no hidden player, no obscured player, no native controls pretending to own a YouTube stream;
+- clear route state for official playback, native-control limitations, and downloads.
+
 ## Accessibility
 
 - All icon-only buttons require labels/help.

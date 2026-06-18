@@ -10,6 +10,7 @@
 		0752CDE67D88031A4B1ABBF3 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 771691B3DD065041A22297B6 /* DesignTokens.swift */; };
 		314577E279B6F5D8FE1269E3 /* LibraryHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */; };
 		47D948FFBB01EC42FC1A3834 /* MediaSourceDescriptorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */; };
+		4D353012678DFAD5512E582A /* YouTubeMusicNativeConceptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */; };
 		53974B2C8D725F8F490015E4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73AD062232B94BBCADC236D4 /* RootView.swift */; };
 		5B8A0EF862B3C791E6DC8C9B /* NowPlayingController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EFC74203F0F66967D204B73 /* NowPlayingController.swift */; };
 		7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0797AF2F1ACAFDDF5C116244 /* YouTubeMusicSource.swift */; };
@@ -48,6 +49,7 @@
 		7BD04B09AA72243E0686E028 /* SpotifySource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySource.swift; sourceTree = "<group>"; };
 		7EFC74203F0F66967D204B73 /* NowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingController.swift; sourceTree = "<group>"; };
 		840C5306CF4AC96169D8280A /* PlexSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlexSource.swift; sourceTree = "<group>"; };
+		AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeMusicNativeConceptView.swift; sourceTree = "<group>"; };
 		E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourceDescriptorTests.swift; sourceTree = "<group>"; };
 		F2DC8F4A926B045B8077A23E /* LibraryHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryHomeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -97,6 +99,7 @@
 			isa = PBXGroup;
 			children = (
 				18976D801141DCF25B2512CA /* Shell */,
+				B7BEC2FF22D011274E3068D4 /* YouTubeMusic */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -152,6 +155,14 @@
 				239A84B6F10B2157631B79AB /* PhonoDeck */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		B7BEC2FF22D011274E3068D4 /* YouTubeMusic */ = {
+			isa = PBXGroup;
+			children = (
+				AB0C4EB0643C17399A3EF797 /* YouTubeMusicNativeConceptView.swift */,
+			);
+			path = YouTubeMusic;
 			sourceTree = "<group>";
 		};
 		DB5B31C3EFE9E867A14F5B7B = {
@@ -257,6 +268,7 @@
 				53974B2C8D725F8F490015E4 /* RootView.swift in Sources */,
 				949AF9FC43D6C23FB5468149 /* SidebarView.swift in Sources */,
 				8EF88300D8F7C30B432B9821 /* SpotifySource.swift in Sources */,
+				4D353012678DFAD5512E582A /* YouTubeMusicNativeConceptView.swift in Sources */,
 				7B6C5944E90E3C7181D66A59 /* YouTubeMusicSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 final class AppState: ObservableObject {
     @Published var selectedSection: LibrarySection? = .listenNow
-    @Published var activeSource: MediaSourceKind = .plex
+    @Published var activeSource: MediaSourceKind = .youtubeMusic
 
     let playback = PlaybackCoordinator()
     let sources: [MediaSourceDescriptor] = MediaSourceKind.allCases.map(\.descriptor)
