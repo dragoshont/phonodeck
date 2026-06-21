@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhonoDeck UI Mockup</title>
+<!--
+  PhonoDeck UI Mockup — static, self-contained, openable in any browser.
+  Purpose: validate layout/IA/visual direction BEFORE building in SwiftUI.
+  Grounded in docs/design/design-system-research.md (HIG rules) + design-process.md.
+  NOTE: This is an HTML approximation. The real app uses SF Pro + real SF Symbols +
+  system materials (Liquid Glass) + AVFoundation/MediaPlayer. Glyphs here are simplified
+  stand-ins (SF Symbols are licensed and not used in mockups). Use this to react to
+  structure, density, hierarchy, and flow — not pixel-exact rendering.
+-->
+<style>
+  :root {
+    color-scheme: light dark;
+    /* macOS-dark-approximate semantic palette (see research §9) */
+    --win-bg: #1e1e1f;
+    --content-bg: #232325;
+    --sidebar-bg: rgba(40,40,43,0.72);
+    --bar-bg: rgba(38,38,41,0.80);
+    --elev: #2c2c2e;
+    --elev-2: #353539;
+    --hairline: rgba(255,255,255,0.10);
+    --label: #f2f2f7;
+    --label-2: rgba(235,235,245,0.62);
+    --label-3: rgba(235,235,245,0.35);
+    --accent: #0a84ff;
+    --accent-soft: rgba(10,132,255,0.20);
+    --selection: rgba(10,132,255,0.22);
+    --yt: #ff3b30; --ytm: #ff375f; --spotify: #1ed760; --plex: #ff8c00;
+    --radius: 8px;
+    --shadow: 0 18px 50px rgba(0,0,0,0.45);
+    --font: -apple-system, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  }
+  body.light {
+    --win-bg: #ececec;
+    --content-bg: #ffffff;
+    --sidebar-bg: rgba(246,246,247,0.80);
+    --bar-bg: rgba(250,250,250,0.82);
+    --elev: #f4f4f6;
+    --elev-2: #ececef;
+    --hairline: rgba(0,0,0,0.10);
+    --label: #1d1d1f;
+    --label-2: rgba(60,60,67,0.62);
+    --label-3: rgba(60,60,67,0.34);
+    --accent: #0a84ff;
+    --selection: rgba(10,132,255,0.16);
+    --shadow: 0 18px 50px rgba(0,0,0,0.22);
+  }
+
+  * { box-sizing: border-box; }
+  html,body { margin:0; height:100%; }
+  body {
+    font-family: var(--font);
+    background:
+      radial-gradient(1200px 700px at 20% -10%, #3a2a55 0%, transparent 55%),
+      radial-gradient(1000px 700px at 100% 0%, #123 0%, transparent 50%),
+      #0c0c0e;
+    color: var(--label);
+    -webkit-font-smoothing: antialiased;
+    display:flex; flex-direction:column; align-items:center;
+    padding: 22px 22px 60px;
+    min-height:100%;
+  }
+  body.light { background: #d7d7da; }
+
+  /* ---- top control strip (not part of the app) ---- */
+  .controls {
+    width: min(1180px, 96vw);
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    margin-bottom:16px; color:#fff;
+  }
+  body.light .controls { color:#1d1d1f; }
+  .controls .brand { font-weight:700; font-size:15px; letter-spacing:.2px; margin-right:6px; }
+  .controls .hint { font-size:12px; color:rgba(255,255,255,0.55); }
+  body.light .controls .hint { color: rgba(0,0,0,0.5); }
+  .seg { display:inline-flex; background:rgba(255,255,255,0.10); border-radius:9px; padding:3px; gap:2px; }
+  body.light .seg { background: rgba(0,0,0,0.08); }
+  .seg button {
+    appearance:none; border:0; background:transparent; color:inherit;
+    font:inherit; font-size:12px; font-weight:560; padding:6px 12px; border-radius:7px; cursor:pointer;
+    white-space:nowrap;
+  }
+  .seg button.active { background: var(--accent); color:#fff; }
+  .spacer { flex:1; }
+  .toggle { appearance:none; border:0; cursor:pointer; font:inherit; font-size:12px; font-weight:560;
+    color:inherit; background:rgba(255,255,255,0.10); border-radius:8px; padding:7px 12px; }
+  body.light .toggle { background: rgba(0,0,0,0.08); }
+
+  /* ---- macOS window ---- */
+  .window {
+    width: min(1180px, 96vw);
+    height: min(760px, 82vh);
+    background: var(--win-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+    display:flex; flex-direction:column;
+    border: 0.5px solid rgba(255,255,255,0.10);
+  }
+  .titlebar {
+    height: 52px; flex:0 0 auto; display:flex; align-items:center; gap:14px;
+    padding: 0 16px; background: var(--bar-bg);
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  .traffic { display:flex; gap:8px; }
+  .traffic i { width:12px; height:12px; border-radius:50%; display:block; }
+  .traffic .r{ background:#ff5f57;} .traffic .y{ background:#febc2e;} .traffic .g{ background:#28c840;}
+  .tb-icon { width:26px; height:26px; display:grid; place-items:center; border-radius:6px; color:var(--label-2); cursor:pointer; }
+  .tb-icon:hover { background: rgba(255,255,255,0.08); }
+  .tb-title { font-size:13px; font-weight:680; color:var(--label); }
+  .tb-search {
+    margin-left:auto; display:flex; align-items:center; gap:7px; width:240px;
+    background: rgba(255,255,255,0.08); border:0.5px solid var(--hairline);
+    border-radius:7px; padding:6px 9px; color:var(--label-2); font-size:12.5px;
+  }
+  body.light .tb-search { background: rgba(0,0,0,0.05); }
+  .tb-actions { display:flex; gap:4px; }
+
+  .body { flex:1; display:flex; min-height:0; }
+
+  /* ---- sidebar (research §2) ---- */
+  .sidebar {
+    width: 220px; flex:0 0 auto; background: var(--sidebar-bg);
+    backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border-right: 0.5px solid var(--hairline);
+    padding: 10px 10px; overflow:auto;
+  }
+  .side-group { margin-bottom: 16px; }
+  .side-head { font-size:11px; font-weight:680; color:var(--label-3); text-transform:none;
+    padding: 4px 8px 6px; letter-spacing:.3px; }
+  .side-item { display:flex; align-items:center; gap:9px; padding:7px 8px; border-radius:7px;
+    font-size:13px; color:var(--label); cursor:pointer; }
+  .side-item svg { width:17px; height:17px; color: var(--accent); flex:0 0 auto; }
+  .side-item:hover { background: rgba(255,255,255,0.06); }
+  .side-item.active { background: var(--selection); }
+  .side-item .count { margin-left:auto; font-size:11px; color:var(--label-3); }
+
+  /* ---- content ---- */
+  .content { flex:1; min-width:0; background: var(--content-bg); overflow:auto; position:relative; }
+  .scroll { padding: 22px 26px 120px; }
+  .page-h { display:flex; align-items:flex-end; gap:12px; margin-bottom:6px; }
+  .page-title { font-size:26px; font-weight:760; letter-spacing:-.3px; } /* Large Title 26 (research §6) */
+  .page-sub { font-size:12.5px; color:var(--label-2); margin: 2px 0 18px; }
+  .breadcrumb { font-size:11.5px; color:var(--label-3); margin-bottom:4px; }
+
+  /* shelves */
+  .shelf { margin-bottom: 26px; }
+  .shelf-h { display:flex; align-items:center; margin-bottom:11px; }
+  .shelf-h h3 { font-size:15px; font-weight:680; margin:0; } /* Headline-ish */
+  .shelf-h a { margin-left:auto; font-size:12px; color:var(--accent); text-decoration:none; cursor:pointer; }
+  .row { display:flex; gap:16px; overflow:auto; padding-bottom:4px; }
+  .card { width:150px; flex:0 0 auto; cursor:pointer; }
+  .art { width:150px; height:150px; border-radius:var(--radius); position:relative; overflow:hidden;
+    box-shadow: inset 0 0 0 0.5px var(--hairline); }
+  .art.sq { border-radius:var(--radius); }
+  .art .play { position:absolute; right:8px; bottom:8px; width:30px; height:30px; border-radius:50%;
+    background: rgba(0,0,0,0.55); color:#fff; display:grid; place-items:center; opacity:0; transition:.15s; }
+  .card:hover .art .play { opacity:1; }
+  .c-title { font-size:12.5px; font-weight:600; margin-top:8px; line-height:1.25;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .c-sub { font-size:11.5px; color:var(--label-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .avatar { width:84px; height:84px; border-radius:50%; box-shadow: inset 0 0 0 0.5px var(--hairline); }
+  .card.ch { width:92px; text-align:center; }
+  .card.ch .c-title { white-space:normal; }
+
+  /* gradient artworks */
+  .g1{background:linear-gradient(135deg,#ff6a3d,#f9468b);} .g2{background:linear-gradient(135deg,#3a7bd5,#00d2ff);}
+  .g3{background:linear-gradient(135deg,#7b4397,#dc2430);} .g4{background:linear-gradient(135deg,#11998e,#38ef7d);}
+  .g5{background:linear-gradient(135deg,#373b44,#4286f4);} .g6{background:linear-gradient(135deg,#ee0979,#ff6a00);}
+  .g7{background:linear-gradient(135deg,#c94b4b,#4b134f);} .g8{background:linear-gradient(135deg,#16a085,#f4d03f);}
+  .g9{background:linear-gradient(135deg,#603813,#b29f94);} .g10{background:linear-gradient(135deg,#1f4037,#99f2c8);}
+
+  /* songs table (research §8) */
+  .table { border-radius:var(--radius); overflow:hidden; border:0.5px solid var(--hairline); }
+  .thead, .trow { display:grid; grid-template-columns: 34px 1fr 1fr 0.8fr 56px; align-items:center; }
+  .thead { padding: 7px 14px; font-size:11px; color:var(--label-2); font-weight:640;
+    border-bottom:0.5px solid var(--hairline); background: var(--elev); }
+  .thead .sortable { cursor:pointer; } .thead .sortable.asc::after{ content:" ▲"; color:var(--label-3); }
+  .trow { padding: 8px 14px; font-size:12.5px; cursor:default; }
+  .trow:nth-child(odd){ background: rgba(255,255,255,0.022); } /* alternating rows */
+  body.light .trow:nth-child(odd){ background: rgba(0,0,0,0.025); }
+  .trow:hover { background: rgba(255,255,255,0.06); } body.light .trow:hover{ background: rgba(0,0,0,0.05); }
+  .trow.playing { background: var(--selection); }
+  .trow .idx { color:var(--label-3); font-size:12px; }
+  .trow.playing .idx { color: var(--accent); }
+  .cell-main { display:flex; align-items:center; gap:10px; min-width:0; }
+  .cell-main .mini { width:34px; height:34px; border-radius:5px; flex:0 0 auto; box-shadow: inset 0 0 0 .5px var(--hairline); }
+  .cell-main .t { min-width:0; }
+  .cell-main .t .n { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cell-main .t .badge { font-size:10px; color:var(--label-2); }
+  .muted { color: var(--label-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .time { color: var(--label-2); text-align:right; font-variant-numeric: tabular-nums; }
+  .src-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+
+  /* now playing bar (research §7) */
+  .nowbar {
+    position:absolute; left:0; right:0; bottom:0; height:74px;
+    display:flex; align-items:center; gap:16px; padding: 0 18px;
+    background: var(--bar-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border-top: 0.5px solid var(--hairline);
+  }
+  .np-art { width:48px; height:48px; border-radius:6px; flex:0 0 auto; box-shadow: inset 0 0 0 .5px var(--hairline); }
+  .np-meta { width:210px; min-width:0; }
+  .np-meta .n { font-size:13px; font-weight:640; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .np-meta .a { font-size:12px; color:var(--label-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .np-meta .src { font-size:10.5px; font-weight:640; margin-top:2px; }
+  .np-transport { display:flex; align-items:center; gap:8px; }
+  .np-btn { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; color:var(--label); cursor:pointer; }
+  .np-btn:hover { background: rgba(255,255,255,0.08); }
+  .np-btn.play { width:34px; height:34px; }
+  .np-btn.disabled { color:var(--label-3); cursor:not-allowed; }
+  .np-progress { flex:1; display:flex; align-items:center; gap:9px; max-width:380px; }
+  .np-progress .bar { flex:1; height:4px; border-radius:3px; background: rgba(255,255,255,0.16); position:relative; }
+  body.light .np-progress .bar{ background: rgba(0,0,0,0.14); }
+  .np-progress .bar i { position:absolute; left:0; top:0; bottom:0; width:38%; border-radius:3px; background: var(--label-2); }
+  .np-progress .t { font-size:10.5px; color:var(--label-2); font-variant-numeric:tabular-nums; }
+  .np-right { margin-left:auto; display:flex; align-items:center; gap:6px; color:var(--label-2); }
+  .np-note { font-size:10px; color:var(--label-3); max-width:150px; line-height:1.2; }
+
+  /* empty / first-run (research §14) */
+  .empty { display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; height:100%; gap:14px; padding:40px; }
+  .empty .glyph { width:72px; height:72px; color:var(--label-3); }
+  .empty h2 { font-size:22px; font-weight:740; margin:0; }
+  .empty p { font-size:13px; color:var(--label-2); max-width:430px; margin:0; line-height:1.45; }
+  .btns { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; justify-content:center; }
+  .btn { appearance:none; border:0; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+    border-radius:8px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px; }
+  .btn.primary { background: var(--accent); color:#fff; }
+  .btn.bordered { background: rgba(255,255,255,0.10); color:var(--label); }
+  body.light .btn.bordered { background: rgba(0,0,0,0.07); }
+  .btn svg{ width:15px; height:15px; }
+
+  /* welcome sheet overlay (research §14) */
+  .sheet-scrim { position:absolute; inset:0; background:rgba(0,0,0,0.32); display:grid; place-items:center; }
+  .sheet { width:430px; background: var(--elev); border-radius:12px; padding:22px;
+    box-shadow: var(--shadow); border:0.5px solid var(--hairline); }
+  .sheet .head { display:flex; gap:13px; align-items:flex-start; margin-bottom:14px; }
+  .sheet .icon { width:46px;height:46px;border-radius:9px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent); }
+  .sheet h2 { font-size:19px; margin:0 0 4px; font-weight:740; }
+  .sheet .lead { font-size:13px; color:var(--label-2); font-weight:600; margin:0 0 4px; }
+  .sheet p { font-size:12.5px; color:var(--label-2); margin:0; line-height:1.45; }
+  .sheet .foot { display:flex; justify-content:flex-end; margin-top:16px; }
+
+  /* settings rows */
+  .panel { background: var(--elev); border:0.5px solid var(--hairline); border-radius:var(--radius);
+    padding:14px; margin-bottom:14px; }
+  .panel h3 { margin:0 0 10px; font-size:14px; font-weight:680; }
+  .srow { display:flex; align-items:center; gap:12px; padding:10px 0; border-top:0.5px solid var(--hairline); }
+  .srow:first-of-type { border-top:0; }
+  .srow .ic { width:30px;height:30px;border-radius:7px;display:grid;place-items:center; flex:0 0 auto; }
+  .srow .t { min-width:0; } .srow .t .n{ font-size:13px; font-weight:620; } .srow .t .d{ font-size:11.5px; color:var(--label-2); }
+  .pill { margin-left:auto; font-size:11px; font-weight:640; padding:4px 9px; border-radius:999px; }
+  .pill.ok{ background:rgba(48,209,88,0.16); color:#30d158;} .pill.plan{ background:rgba(235,235,245,0.10); color:var(--label-2);} .pill.warn{ background:rgba(255,159,10,0.16); color:#ff9f0a;}
+
+  .legend { width:min(1180px,96vw); margin-top:14px; font-size:11.5px; color:rgba(255,255,255,0.5); line-height:1.5; }
+  body.light .legend{ color: rgba(0,0,0,0.5); }
+  .legend code{ background:rgba(255,255,255,0.10); padding:1px 5px; border-radius:4px; }
+  body.light .legend code{ background:rgba(0,0,0,0.08); }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body class="dark">
+
+<!-- icon sprite (simplified stand-ins for SF Symbols) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-note" viewBox="0 0 24 24"><path fill="currentColor" d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17" r="2.5" fill="currentColor"/><circle cx="16.5" cy="15" r="2.5" fill="currentColor"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path fill="currentColor" d="M4 6h16v2H4zM4 11h16v2H4zM4 16h10v2H4z"/></symbol>
+  <symbol id="i-stack" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v8m0 0l-3-3m3 3l3-3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-airplay" viewBox="0 0 24 24"><path d="M6 16a8 8 0 0 1 0-10h12a8 8 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 14l5 6H7z" fill="currentColor"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h4v14H7zM13 5h4v14h-4z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path fill="currentColor" d="M18 5v14l-9-7zM7 5h2v14H7z"/></symbol>
+  <symbol id="i-fwd" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5v14l9-7zM15 5h2v14h-2z"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M3 7h4l10 10h4M3 17h4l3-3M14 7h3M17 4l3 3-3 3M17 14l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M4 9a5 5 0 0 1 5-5h8l-3-3M20 15a5 5 0 0 1-5 5H7l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21a8 8 0 0 1 16 0" fill="currentColor"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path fill="currentColor" d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 5v14" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M5 12v7h14v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-house" viewBox="0 0 24 24"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" fill="currentColor"/></symbol>
+</defs></svg>
+
+<div class="controls">
+  <span class="brand">PhonoDeck · UI Mockup</span>
+  <div class="seg" id="screens">
+    <button data-s="library" class="active">Library</button>
+    <button data-s="firstrun">First run</button>
+    <button data-s="playlist">Playlist</button>
+    <button data-s="queue">Queue</button>
+    <button data-s="search">Search</button>
+    <button data-s="settings">Settings</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="toggle" id="theme">◐ Light / Dark</button>
+</div>
+
+<div class="window">
+  <!-- titlebar / toolbar -->
+  <div class="titlebar">
+    <div class="traffic"><i class="r"></i><i class="y"></i><i class="g"></i></div>
+    <div class="tb-icon" title="Toggle sidebar"><svg width="17" height="17"><use href="#i-sidebar"/></svg></div>
+    <div class="tb-title" id="tbTitle">Library</div>
+    <div class="tb-search"><svg width="14" height="14"><use href="#i-search"/></svg><span>Search songs</span></div>
+    <div class="tb-actions">
+      <div class="tb-icon" title="Share"><svg width="16" height="16"><use href="#i-share"/></svg></div>
+      <div class="tb-icon" title="Account"><svg width="17" height="17"><use href="#i-person"/></svg></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- sidebar -->
+    <nav class="sidebar">
+      <div class="side-group">
+        <div class="side-head">PhonoDeck</div>
+        <div class="side-item active" data-go="library"><svg><use href="#i-house"/></svg>Library</div>
+        <div class="side-item" data-go="search"><svg><use href="#i-search"/></svg>Search</div>
+      </div>
+      <div class="side-group">
+        <div class="side-head">Library</div>
+        <div class="side-item" data-go="playlist"><svg><use href="#i-list"/></svg>Playlists<span class="count">7</span></div>
+        <div class="side-item"><svg><use href="#i-stack"/></svg>Albums</div>
+        <div class="side-item"><svg><use href="#i-mic"/></svg>Artists</div>
+        <div class="side-item" data-go="queue"><svg><use href="#i-list"/></svg>Queue<span class="count">5</span></div>
+        <div class="side-item"><svg><use href="#i-down"/></svg>Downloads</div>
+      </div>
+      <div class="side-group">
+        <div class="side-head">System</div>
+        <div class="side-item"><svg><use href="#i-airplay"/></svg>Devices</div>
+        <div class="side-item" data-go="settings"><svg><use href="#i-gear"/></svg>Settings</div>
+      </div>
+    </nav>
+
+    <!-- content -->
+    <main class="content">
+
+      <!-- ============ LIBRARY (populated) ============ -->
+      <section class="scroll screen" data-screen="library">
+        <div class="breadcrumb">Music › Library</div>
+        <div class="page-h"><div class="page-title">Library</div></div>
+        <div class="page-sub">YouTube Music songs, playlists, and activity in one place.</div>
+
+        <div class="shelf">
+          <div class="shelf-h"><h3>Recently Played</h3><a>Show All ›</a></div>
+          <div class="row" id="rowRecent"></div>
+        </div>
+        <div class="shelf">
+          <div class="shelf-h"><h3>Made for You</h3></div>
+          <div class="row" id="rowMade"></div>
+        </div>
+        <div class="shelf">
+          <div class="shelf-h"><h3>Your Playlists</h3><a>Show All ›</a></div>
+          <div class="row" id="rowPl"></div>
+        </div>
+        <div class="shelf">
+          <div class="shelf-h"><h3>Your Subscriptions</h3></div>
+          <div class="row" id="rowSubs"></div>
+        </div>
+      </section>
+
+      <!-- ============ FIRST RUN (empty + welcome sheet) ============ -->
+      <section class="screen hidden" data-screen="firstrun" style="height:100%">
+        <div class="empty">
+          <svg class="glyph"><use href="#i-note"/></svg>
+          <h2>Bring All Music Into One Place</h2>
+          <p>Connect your music services to build a single library across YouTube Music, Spotify, and Plex.</p>
+          <div class="btns">
+            <button class="btn primary"><svg><use href="#i-note"/></svg>Connect YouTube</button>
+            <button class="btn bordered"><svg><use href="#i-speaker"/></svg>Add Spotify</button>
+            <button class="btn bordered"><svg><use href="#i-stack"/></svg>Add Plex</button>
+          </div>
+        </div>
+        <div class="sheet-scrim">
+          <div class="sheet">
+            <div class="head">
+              <div class="icon"><svg width="24" height="24"><use href="#i-house"/></svg></div>
+              <div>
+                <h2>Welcome to PhonoDeck</h2>
+                <p class="lead">Bringing all music into one place.</p>
+                <p>Start with the Library, then add the music services you want PhonoDeck to bring together.</p>
+              </div>
+            </div>
+            <div class="foot"><button class="btn primary">Continue</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PLAYLIST detail (songs table) ============ -->
+      <section class="scroll screen hidden" data-screen="playlist">
+        <div class="breadcrumb">Music › Playlists › Late Night Drive</div>
+        <div class="page-h"><div class="page-title">Late Night Drive</div></div>
+        <div class="page-sub">YouTube Music playlist · 18 songs · official account playlist API</div>
+        <div class="table" id="songTable"></div>
+      </section>
+
+      <!-- ============ QUEUE ============ -->
+      <section class="scroll screen hidden" data-screen="queue">
+        <div class="breadcrumb">Music › Queue</div>
+        <div class="page-h"><div class="page-title">Queue</div></div>
+        <div class="page-sub">The local PhonoDeck queue used by Next, Previous, and Watch remote later.</div>
+        <div class="table" id="queueTable"></div>
+      </section>
+
+      <!-- ============ SEARCH ============ -->
+      <section class="scroll screen hidden" data-screen="search">
+        <div class="breadcrumb">Music › Search</div>
+        <div class="page-h"><div class="page-title">Songs</div></div>
+        <div class="page-sub">YouTube Music · Songs — switch to Video for clips and music videos.</div>
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap">
+          <span class="pill plan" style="background:var(--selection); color:var(--label)">Recent: synthwave</span>
+          <span class="pill plan">lo-fi beats</span>
+          <span class="pill plan">80s hits</span>
+          <span class="pill plan">focus</span>
+        </div>
+        <div class="table" id="searchTable"></div>
+        <div style="text-align:center; margin-top:14px"><button class="btn bordered"><svg><use href="#i-down"/></svg>Load More</button></div>
+      </section>
+
+      <!-- ============ SETTINGS ============ -->
+      <section class="scroll screen hidden" data-screen="settings">
+        <div class="breadcrumb">Music › Settings</div>
+        <div class="page-h"><div class="page-title">Settings</div></div>
+        <div class="page-sub">Accounts, sources, and playback policy.</div>
+
+        <div class="panel">
+          <h3>Google Account</h3>
+          <div class="srow">
+            <div class="ic" style="background:var(--accent-soft); color:var(--accent)"><svg width="17" height="17"><use href="#i-person"/></svg></div>
+            <div class="t"><div class="n">PhonoDeck Listener</div><div class="d">Connected · youtube playlist scope granted</div></div>
+            <span class="pill ok">Connected</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Sources</h3>
+          <div class="srow"><div class="ic" style="background:rgba(255,55,95,0.16); color:var(--ytm)"><svg width="17" height="17"><use href="#i-note"/></svg></div>
+            <div class="t"><div class="n">YouTube Music</div><div class="d">Search, playlists, visible official playback.</div></div><span class="pill ok">Active</span></div>
+          <div class="srow"><div class="ic" style="background:rgba(30,215,96,0.16); color:var(--spotify)"><svg width="17" height="17"><use href="#i-speaker"/></svg></div>
+            <div class="t"><div class="n">Spotify</div><div class="d">Metadata, library, Spotify Connect control.</div></div><span class="pill plan">Planned</span></div>
+          <div class="srow"><div class="ic" style="background:rgba(255,140,0,0.16); color:var(--plex)"><svg width="17" height="17"><use href="#i-stack"/></svg></div>
+            <div class="t"><div class="n">Plex</div><div class="d">Personal library, native playback, downloads.</div></div><span class="pill plan">Planned</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>Playback</h3>
+          <div class="srow"><div class="t"><div class="n">Result mode</div><div class="d">Song-first filters toward official audio and Topic uploads.</div></div>
+            <div class="seg" style="margin-left:auto"><button class="active">Songs</button><button>Video</button><button>Balanced</button></div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- now playing bar (hidden on first run) -->
+  <div class="nowbar" id="nowbar">
+    <div class="np-art g6"></div>
+    <div class="np-meta">
+      <div class="n">Neon Skyline</div>
+      <div class="a">The Midnight</div>
+      <div class="src" style="color:var(--ytm)">● YT Music</div>
+    </div>
+    <div class="np-transport">
+      <div class="np-btn"><svg width="16" height="16"><use href="#i-back"/></svg></div>
+      <div class="np-btn play"><svg width="20" height="20"><use href="#i-pause"/></svg></div>
+      <div class="np-btn"><svg width="16" height="16"><use href="#i-fwd"/></svg></div>
+    </div>
+    <div class="np-progress">
+      <span class="t">1:24</span>
+      <div class="bar"><i></i></div>
+      <span class="t">-2:11</span>
+    </div>
+    <div class="np-right">
+      <div class="np-note">Visible official YouTube player · native controls limited</div>
+      <div class="np-btn disabled" title="Volume governed by the embedded player"><svg width="17" height="17"><use href="#i-speaker"/></svg></div>
+      <div class="np-btn" title="AirPlay route"><svg width="17" height="17"><use href="#i-airplay"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  Mockup of PhonoDeck grounded in <code>docs/design/design-system-research.md</code>. Validates: sidebar IA (≤2 levels),
+  Library shelves, songs table (alternating rows, sortable headers, now-playing highlight), persistent Now Playing bar
+  with <em>honest</em> per-source controls, first-run empty state + lean welcome sheet, search scope + suggestions, and
+  Settings as the home for source detail. Toggle screens and Light/Dark above. Real app = SF&nbsp;Pro + real SF&nbsp;Symbols + system materials.
+</div>
+
+<script>
+  // sample data
+  const songs = [
+    ["Neon Skyline","The Midnight · Official Audio","Monsters","3:35","ytm",true],
+    ["Sunset","Petit Biscuit","Presence","3:58","ytm"],
+    ["Midnight City","M83 · Topic","Hurry Up, We're Dreaming","4:03","ytm"],
+    ["Resonance","HOME","Odyssey","3:32","yt"],
+    ["Nightcall","Kavinsky","OutRun","4:18","ytm"],
+    ["A Real Hero","College & Electric Youth","Drive OST","4:30","ytm"],
+    ["Days","The Drums","Portamento","3:18","yt"],
+    ["Instant Crush","Daft Punk","Random Access Memories","5:37","ytm"],
+  ];
+  const arts = ["g1","g2","g3","g4","g5","g6","g7","g8","g9","g10"];
+  const srcColor = { ytm:"var(--ytm)", yt:"var(--yt)", spotify:"var(--spotify)", plex:"var(--plex)" };
+  const srcName = { ytm:"YT Music", yt:"YouTube", spotify:"Spotify", plex:"Plex" };
+
+  function card(i, title, sub){
+    return `<div class="card"><div class="art ${arts[i%arts.length]}"><div class="play"><svg width="15" height="15"><use href="#i-play"/></svg></div></div>
+      <div class="c-title">${title}</div><div class="c-sub">${sub}</div></div>`;
+  }
+  function chCard(i, title){
+    return `<div class="card ch"><div class="avatar ${arts[i%arts.length]}"></div><div class="c-title">${title}</div></div>`;
+  }
+  const recent = [["Neon Skyline","The Midnight"],["Resonance","HOME"],["Nightcall","Kavinsky"],["Days","The Drums"],["Sunset","Petit Biscuit"],["Instant Crush","Daft Punk"]];
+  const made = [["Synthwave Mix","For you"],["Focus Flow","For you"],["Late Night","For you"],["Drive","For you"],["Chill Topic","For you"]];
+  const pls = [["Late Night Drive","18 songs"],["Focus","42 songs"],["Throwbacks","60 songs"],["Workout","25 songs"],["Coding","88 songs"]];
+  const subs = [["Majestic Casual"],["Mr.SuicideSheep"],["NoCopyrightSounds"],["Proximity"],["The Midnight"],["Monstercat"]];
+  document.getElementById("rowRecent").innerHTML = recent.map((r,i)=>card(i,r[0],r[1])).join("");
+  document.getElementById("rowMade").innerHTML = made.map((r,i)=>card(i+2,r[0],r[1])).join("");
+  document.getElementById("rowPl").innerHTML = pls.map((r,i)=>card(i+4,r[0],r[1])).join("");
+  document.getElementById("rowSubs").innerHTML = subs.map((r,i)=>chCard(i+1,r[0])).join("");
+
+  function songRows(list, opts={}){
+    const head = `<div class="thead"><span>#</span><span class="sortable asc">Title</span><span class="sortable">Artist</span><span class="sortable">Album</span><span style="text-align:right">Time</span></div>`;
+    const rows = list.map((s,i)=>{
+      const [n,a,al,t,src,playing] = s;
+      return `<div class="trow ${playing?'playing':''}">
+        <span class="idx">${playing?'<svg width=12 height=12><use href=#i-play></use></svg>':(i+1)}</span>
+        <span class="cell-main"><span class="mini ${arts[i%arts.length]}"></span><span class="t"><div class="n">${n.split(' · ')[0]}</div><div class="badge">${(n.includes('Official')||src==='ytm')?'Official Audio':'YouTube'}</div></span></span>
+        <span class="muted">${a.split(' · ')[0]}</span>
+        <span class="muted"><span class="src-dot" style="background:${srcColor[src]}"></span>${al}</span>
+        <span class="time">${t}</span></div>`;
+    }).join("");
+    return head + rows;
+  }
+  document.getElementById("songTable").innerHTML = songRows(songs);
+  document.getElementById("searchTable").innerHTML = songRows(songs.slice(0,6));
+  const q = [["Sunset","Petit Biscuit","Presence","3:58","ytm",true],["Midnight City","M83","Hurry Up","4:03","ytm"],["Resonance","HOME","Odyssey","3:32","yt"],["Days","The Drums","Portamento","3:18","yt"],["A Real Hero","College","Drive OST","4:30","ytm"]];
+  document.getElementById("queueTable").innerHTML = songRows(q);
+
+  // screen switching
+  const tbTitle = document.getElementById("tbTitle");
+  const nowbar = document.getElementById("nowbar");
+  const titles = {library:"Library", firstrun:"Library", playlist:"Late Night Drive", queue:"Queue", search:"Search", settings:"Settings"};
+  function show(s){
+    document.querySelectorAll(".screen").forEach(el=>el.classList.toggle("hidden", el.dataset.screen!==s));
+    document.querySelectorAll("#screens button").forEach(b=>b.classList.toggle("active", b.dataset.s===s));
+    tbTitle.textContent = titles[s] || "Library";
+    nowbar.classList.toggle("hidden", s==="firstrun"); // no now-playing on signed-out first run
+  }
+  document.querySelectorAll("#screens button").forEach(b=> b.addEventListener("click",()=>show(b.dataset.s)));
+  document.querySelectorAll(".side-item[data-go]").forEach(it=> it.addEventListener("click",()=>{
+    document.querySelectorAll(".side-item").forEach(x=>x.classList.remove("active"));
+    it.classList.add("active"); show(it.dataset.go);
+  }));
+
+  // theme
+  document.getElementById("theme").addEventListener("click",()=>{
+    document.body.classList.toggle("dark"); document.body.classList.toggle("light");
+  });
+</script>
+</body>
+</html>

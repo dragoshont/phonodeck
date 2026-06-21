@@ -1,5 +1,5 @@
-import AppKit
 import Foundation
+import OSLog
 
 @MainActor
 final class YouTubeAccountViewModel: ObservableObject {
@@ -8,124 +8,81 @@ final class YouTubeAccountViewModel: ObservableObject {
 
     private let accountStore = GoogleAccountStore()
     private let dataClient = YouTubeDataClient()
-    private var activeDeviceAuthorization: GoogleDeviceAuthorization?
-    private var isPolling = false
-    private var pollCount = 0
-    private var pollingTask: Task<Void, Never>?
 
     init() {
+        AppLog.auth.info("Initializing YouTube account state")
         do {
             if let tokens = try accountStore.loadTokens() {
                 state = .stored(scope: tokens.scope)
+                AppLog.auth.info("Stored Google tokens found; scope count=\(tokens.scope.split(separator: " ").count, privacy: .public)")
+            } else {
+                let status = GoogleOAuthConfiguration.bundleStatus()
+                if status.hasClientID, !status.hasClientSecret {
+                    pollStatus = "Google OAuth is missing the local client secret. Add GOOGLE_OAUTH_CLIENT_SECRET to Config/Secrets.xcconfig."
+                    AppLog.auth.warning("Google OAuth client ID exists but client secret is missing")
+                } else {
+                    AppLog.auth.info("No stored Google tokens found; signed out")
+                }
             }
         } catch {
             state = .failed(error.localizedDescription)
+            AppLog.auth.error("Failed to load stored Google token state: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func connect() async {
+        AppLog.auth.info("Google login started")
         state = .connecting
-        pollStatus = "Requesting code from Google..."
+        pollStatus = "Opening Google sign-in..."
         do {
-            let oauthClient = try GoogleOAuthClient.fromBundle()
-            let authorization = try await oauthClient.startDeviceAuthorization()
-            activeDeviceAuthorization = authorization
-            state = .deviceCode(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
-            pollCount = 0
-            pollStatus = "Enter the code in Google, then wait here. Polling will continue automatically."
-
-            _ = NSWorkspace.shared.open(authorization.preferredVerificationURL)
-            startPollingCurrentDeviceAuthorization()
-        } catch {
-            pollStatus = error.localizedDescription
-            state = .failed(error.localizedDescription)
-        }
-    }
-
-    func startPollingCurrentDeviceAuthorization() {
-        pollingTask?.cancel()
-        pollingTask = Task { [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                await self.checkCurrentDeviceAuthorizationOnce()
-                if case .connected = self.state {
-                    return
-                }
-            }
-        }
-    }
-
-    func finishCurrentDeviceAuthorization() async {
-        guard !isPolling else { return }
-        guard let authorization = activeDeviceAuthorization else { return }
-
-        isPolling = true
-        state = .waitingForApproval(userCode: authorization.userCode, verificationURL: authorization.preferredVerificationURL)
-        defer { isPolling = false }
-
-        do {
-            let tokens = try await GoogleOAuthClient.fromBundle().finishDeviceAuthorization(authorization)
+            let tokens = try await GoogleOAuthClient.fromBundle().authorize()
+            AppLog.auth.info("Google OAuth authorization completed; scope count=\(tokens.scope.split(separator: " ").count, privacy: .public)")
             try accountStore.save(tokens: tokens)
-            activeDeviceAuthorization = nil
+            AppLog.auth.info("Google tokens saved to Keychain")
             pollStatus = "Google tokens stored. Fetching YouTube channel..."
 
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
             pollStatus = "Connected to YouTube."
+            AppLog.auth.info("Google login connected; channel loaded=\((channel != nil).description, privacy: .public)")
         } catch {
             pollStatus = error.localizedDescription
             state = .failed(error.localizedDescription)
+            AppLog.auth.error("Google login failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    func checkCurrentDeviceAuthorizationOnce() async {
-        guard let authorization = activeDeviceAuthorization else {
-            pollStatus = "No active Google code. Click Connect Google again."
-            return
-        }
-        pollCount += 1
-        pollStatus = "Checking Google authorization... attempt \(pollCount)"
+    func refreshStoredAccount() async {
+        guard case .stored = state else { return }
+        AppLog.auth.info("Refreshing stored Google account")
         do {
-            guard let tokens = try await GoogleOAuthClient.fromBundle().pollDeviceTokenOnce(authorization) else {
-                pollStatus = "Waiting for Google approval... attempt \(pollCount)"
+            guard let tokens = try await accountStore.loadFreshTokens() else {
+                state = .signedOut
+                AppLog.auth.warning("Stored Google account refresh found no tokens; signed out")
                 return
             }
-            try accountStore.save(tokens: tokens)
-            activeDeviceAuthorization = nil
-            pollingTask?.cancel()
-            pollingTask = nil
-            pollStatus = "Google tokens stored. Fetching YouTube channel..."
-
             let channel = try await dataClient.currentChannel(accessToken: tokens.accessToken)
             state = .connected(channelTitle: channel?.snippet.title ?? "YouTube account", scope: tokens.scope)
-            pollStatus = "Connected to YouTube."
-        } catch let oauthError as GoogleOAuthError {
-            switch oauthError {
-            case .deviceCodeExpired, .authorizationDenied:
-                pollStatus = oauthError.localizedDescription
-                state = .failed(oauthError.localizedDescription)
-            default:
-                pollStatus = oauthError.localizedDescription
-                return
-            }
+            pollStatus = ""
+            AppLog.auth.info("Stored Google account refreshed; channel loaded=\((channel != nil).description, privacy: .public)")
         } catch {
             pollStatus = error.localizedDescription
-            return
+            state = .failed(error.localizedDescription)
+            AppLog.auth.error("Stored Google account refresh failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func disconnect() {
+        AppLog.auth.info("Google logout requested")
         do {
             try accountStore.disconnect()
-            activeDeviceAuthorization = nil
-            pollingTask?.cancel()
-            pollingTask = nil
             pollStatus = ""
             state = .signedOut
+            AppLog.auth.info("Google logout completed; Keychain token removed")
         } catch {
             pollStatus = error.localizedDescription
             state = .failed(error.localizedDescription)
+            AppLog.auth.error("Google logout failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -133,8 +90,6 @@ final class YouTubeAccountViewModel: ObservableObject {
 enum YouTubeAccountState: Equatable {
     case signedOut
     case connecting
-    case deviceCode(userCode: String, verificationURL: URL)
-    case waitingForApproval(userCode: String, verificationURL: URL)
     case connected(channelTitle: String, scope: String)
     case stored(scope: String)
     case failed(String)
@@ -143,8 +98,6 @@ enum YouTubeAccountState: Equatable {
         switch self {
         case .signedOut: "Not connected"
         case .connecting: "Connecting"
-        case .deviceCode: "Enter code in browser"
-        case .waitingForApproval: "Waiting for approval"
         case .connected(let channelTitle, _): channelTitle
         case .stored: "Token stored"
         case .failed: "Connection failed"
@@ -156,11 +109,7 @@ enum YouTubeAccountState: Equatable {
         case .signedOut:
             "Google OAuth required"
         case .connecting:
-            "Requesting Google code"
-        case .deviceCode(let userCode, _):
-            "Code \(userCode)"
-        case .waitingForApproval(let userCode, _):
-            "Approved in browser? Code \(userCode)"
+            "Browser sign-in"
         case .connected(_, let scope):
             scope
         case .stored(let scope):
@@ -174,7 +123,7 @@ enum YouTubeAccountState: Equatable {
         switch self {
         case .signedOut, .stored:
             .orange
-        case .connecting, .deviceCode, .waitingForApproval:
+        case .connecting:
             .blue
         case .connected:
             .green
@@ -189,4 +138,5 @@ enum ColorName: Equatable {
     case green
     case orange
     case red
+    case secondary
 }

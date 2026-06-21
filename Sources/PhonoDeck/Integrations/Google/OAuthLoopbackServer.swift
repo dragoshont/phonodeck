@@ -1,82 +1,116 @@
 import Foundation
-import Network
+import Darwin
 
 final class OAuthLoopbackServer: @unchecked Sendable {
     let redirectURI: String
 
     private let callbackPath: String
-    private let listener: NWListener
+    private let socketFileDescriptor: Int32
     private let lock = NSLock()
-    private let queue = DispatchQueue(label: "PhonoDeck.OAuthLoopbackServer")
     private var continuation: CheckedContinuation<OAuthCallback, Error>?
     private var didComplete = false
+    private var didCloseSocket = false
     private var pendingResult: Result<OAuthCallback, Error>?
+    private var acceptTask: Task<Void, Never>?
 
-    init(callbackPath: String) throws {
+    init(callbackPath: String, portRange: ClosedRange<Int> = 53100...53200) throws {
         self.callbackPath = callbackPath
-        let selected = try Self.makeListener()
-        listener = selected.listener
+        let selected = try Self.makeSocket(portRange: portRange)
+        socketFileDescriptor = selected.socketFileDescriptor
         redirectURI = "http://127.0.0.1:\(selected.port)\(callbackPath)"
     }
 
     func start() throws {
-        listener.newConnectionHandler = { [weak self] connection in
-            self?.handle(connection: connection)
-        }
-        listener.stateUpdateHandler = { [weak self] state in
-            if case .failed(let error) = state {
-                self?.complete(with: .failure(error), connection: nil)
+        lock.lock()
+        let shouldStart = acceptTask == nil
+        if shouldStart {
+            acceptTask = Task.detached(priority: .userInitiated) { [weak self] in
+                self?.acceptOneConnection()
             }
         }
-        listener.start(queue: queue)
+        lock.unlock()
     }
 
     func waitForCallback() async throws -> OAuthCallback {
-        try await withCheckedThrowingContinuation { continuation in
-            let pendingResult: Result<OAuthCallback, Error>?
-            lock.lock()
-            pendingResult = self.pendingResult
-            self.pendingResult = nil
-            if pendingResult == nil {
-                self.continuation = continuation
-            }
-            lock.unlock()
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                let pendingResult: Result<OAuthCallback, Error>?
+                lock.lock()
+                pendingResult = self.pendingResult
+                self.pendingResult = nil
+                if pendingResult == nil {
+                    self.continuation = continuation
+                }
+                lock.unlock()
 
-            if let pendingResult {
-                switch pendingResult {
-                case .success(let callback):
-                    continuation.resume(returning: callback)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
+                if let pendingResult {
+                    switch pendingResult {
+                    case .success(let callback):
+                        continuation.resume(returning: callback)
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
                 }
             }
+        } onCancel: {
+            cancel()
         }
     }
 
-    private func handle(connection: NWConnection) {
-        connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { [weak self] data, _, _, error in
-            guard let self else { return }
-            if let error {
-                self.complete(with: .failure(error), connection: connection)
-                return
+    func cancel() {
+        complete(with: .failure(CancellationError()))
+    }
+
+    private func acceptOneConnection() {
+        var address = sockaddr_storage()
+        var length = socklen_t(MemoryLayout<sockaddr_storage>.size)
+        let clientFileDescriptor = withUnsafeMutablePointer(to: &address) { pointer in
+            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                Darwin.accept(socketFileDescriptor, sockaddrPointer, &length)
             }
-            guard let data, let request = String(data: data, encoding: .utf8) else {
-                self.complete(with: .failure(GoogleOAuthError.invalidCallbackRequest), connection: connection)
-                return
+        }
+
+        guard clientFileDescriptor >= 0 else {
+            if errno != EBADF {
+                complete(with: .failure(POSIXError(POSIXErrorCode(rawValue: errno) ?? .ECONNABORTED)))
             }
-            do {
-                let callback = try self.parse(request: request)
-                self.sendResponse(connection: connection, success: callback.error == nil)
-                self.complete(with: .success(callback), connection: connection)
-            } catch {
-                self.sendResponse(connection: connection, success: false)
-                self.complete(with: .failure(error), connection: connection)
-            }
+            return
+        }
+
+        handle(clientFileDescriptor: clientFileDescriptor)
+    }
+
+    private func handle(clientFileDescriptor: Int32) {
+        defer {
+            Darwin.close(clientFileDescriptor)
+        }
+
+        var noSigPipe: Int32 = 1
+        setsockopt(clientFileDescriptor, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, socklen_t(MemoryLayout<Int32>.size))
+
+        var buffer = [UInt8](repeating: 0, count: 8192)
+        let bytesRead = recv(clientFileDescriptor, &buffer, buffer.count, 0)
+        guard bytesRead > 0 else {
+            complete(with: .failure(GoogleOAuthError.invalidCallbackRequest))
+            return
+        }
+
+        guard let request = String(data: Data(buffer.prefix(bytesRead)), encoding: .utf8) else {
+            complete(with: .failure(GoogleOAuthError.invalidCallbackRequest))
+            return
+        }
+
+        do {
+            let callback = try Self.parseCallback(request: request, callbackPath: callbackPath)
+            sendResponse(clientFileDescriptor: clientFileDescriptor, success: callback.error == nil)
+            complete(with: .success(callback))
+        } catch {
+            sendResponse(clientFileDescriptor: clientFileDescriptor, success: false)
+            complete(with: .failure(error))
         }
     }
 
-    private func parse(request: String) throws -> OAuthCallback {
+    static func parseCallback(request: String, callbackPath: String) throws -> OAuthCallback {
         guard let requestLine = request.components(separatedBy: "\r\n").first else {
             throw GoogleOAuthError.invalidCallbackRequest
         }
@@ -98,19 +132,28 @@ final class OAuthLoopbackServer: @unchecked Sendable {
         )
     }
 
-    private func sendResponse(connection: NWConnection, success: Bool) {
+    private func sendResponse(clientFileDescriptor: Int32, success: Bool) {
         let title = success ? "PhonoDeck connected" : "PhonoDeck connection failed"
-        let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!doctype html><html><head><title>\(title)</title></head><body><h1>\(title)</h1><p>You can return to PhonoDeck.</p></body></html>"
-        connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in })
+        let body = "<!doctype html><html><head><title>\(title)</title></head><body><h1>\(title)</h1><p>You can return to PhonoDeck.</p></body></html>"
+        let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)"
+        let bytes = [UInt8](response.utf8)
+        bytes.withUnsafeBufferPointer { pointer in
+            guard let baseAddress = pointer.baseAddress else { return }
+            var totalSent = 0
+            while totalSent < bytes.count {
+                let sent = send(clientFileDescriptor, baseAddress.advanced(by: totalSent), bytes.count - totalSent, 0)
+                guard sent > 0 else { return }
+                totalSent += sent
+            }
+        }
     }
 
-    private func complete(with result: Result<OAuthCallback, Error>, connection: NWConnection?) {
+    private func complete(with result: Result<OAuthCallback, Error>) {
         let continuation: CheckedContinuation<OAuthCallback, Error>?
 
         lock.lock()
         guard !didComplete else {
             lock.unlock()
-            connection?.cancel()
             return
         }
         didComplete = true
@@ -121,8 +164,7 @@ final class OAuthLoopbackServer: @unchecked Sendable {
         }
         lock.unlock()
 
-        listener.cancel()
-        connection?.cancel()
+        closeServerSocket()
 
         if let continuation {
             switch result {
@@ -134,16 +176,54 @@ final class OAuthLoopbackServer: @unchecked Sendable {
         }
     }
 
-    private static func makeListener() throws -> (listener: NWListener, port: UInt16) {
-        for port in 53100...53120 {
-            guard let endpointPort = NWEndpoint.Port(rawValue: UInt16(port)) else { continue }
-            do {
-                return (try NWListener(using: .tcp, on: endpointPort), UInt16(port))
-            } catch {
+    private func closeServerSocket() {
+        lock.lock()
+        guard !didCloseSocket else {
+            lock.unlock()
+            return
+        }
+        didCloseSocket = true
+        lock.unlock()
+
+        Darwin.close(socketFileDescriptor)
+    }
+
+    private static func makeSocket(portRange: ClosedRange<Int>) throws -> (socketFileDescriptor: Int32, port: UInt16) {
+        for port in portRange {
+            let socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0)
+            guard socketFileDescriptor >= 0 else { continue }
+
+            var reuseAddress: Int32 = 1
+            setsockopt(socketFileDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseAddress, socklen_t(MemoryLayout<Int32>.size))
+
+            var address = sockaddr_in()
+            address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+            address.sin_family = sa_family_t(AF_INET)
+            address.sin_port = in_port_t(port).bigEndian
+            address.sin_addr = in_addr(s_addr: inet_addr("127.0.0.1"))
+
+            let didBind = withUnsafePointer(to: &address) { pointer in
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
+                    Darwin.bind(socketFileDescriptor, sockaddrPointer, socklen_t(MemoryLayout<sockaddr_in>.size))
+                }
+            }
+            guard didBind == 0 else {
+                Darwin.close(socketFileDescriptor)
                 continue
             }
+
+            guard listen(socketFileDescriptor, 1) == 0 else {
+                Darwin.close(socketFileDescriptor)
+                continue
+            }
+
+            return (socketFileDescriptor, UInt16(port))
         }
         throw GoogleOAuthError.noAvailableLoopbackPort
+    }
+
+    deinit {
+        closeServerSocket()
     }
 }
 

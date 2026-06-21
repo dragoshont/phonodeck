@@ -3,10 +3,12 @@ import XCTest
 
 final class MediaSourceDescriptorTests: XCTestCase {
     func testPrimarySourcesRemainExplicit() {
+        XCTAssertEqual(MediaSourceKind.youtube.descriptor.displayName, "YouTube")
         XCTAssertEqual(MediaSourceKind.plex.descriptor.displayName, "Plex")
         XCTAssertEqual(MediaSourceKind.youtubeMusic.descriptor.displayName, "YouTube Music")
         XCTAssertEqual(MediaSourceKind.spotify.descriptor.displayName, "Spotify")
-        XCTAssertEqual(MediaSourceKind.localFiles.descriptor.displayName, "Local")
+        XCTAssertEqual(MediaSourceKind.ownFiles.descriptor.displayName, "Own Files")
+        XCTAssertEqual(MediaSourceKind.ownFiles.rawValue, "localFiles")
     }
 
     func testYouTubeMusicSourceDocumentsPolicyBoundary() async {

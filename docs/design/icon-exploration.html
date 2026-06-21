@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhonoDeck Icon Exploration</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --page: #f5f5f7;
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --card: #ffffff;
+      --line: rgba(0, 0, 0, 0.10);
+      --accent: #0a84ff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --page: #151517;
+        --ink: #f5f5f7;
+        --muted: #a1a1a6;
+        --card: #202024;
+        --line: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 34px 28px 48px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0; color: var(--muted); }
+
+    .rules {
+      max-width: 460px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--card), transparent 12%);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    .spec {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    .tag {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .previews {
+      display: grid;
+      grid-template-columns: 160px 72px 36px;
+      gap: 18px;
+      align-items: center;
+      justify-content: start;
+      min-height: 170px;
+    }
+
+    .preview {
+      display: grid;
+      place-items: center;
+      background: color-mix(in srgb, var(--page), var(--card) 35%);
+      border-radius: 14px;
+      border: 1px solid var(--line);
+    }
+
+    .large { width: 160px; height: 160px; }
+    .dock { width: 72px; height: 72px; }
+    .tiny { width: 36px; height: 36px; border-radius: 8px; }
+
+    .large svg { width: 128px; height: 128px; }
+    .dock svg { width: 58px; height: 58px; }
+    .tiny svg { width: 28px; height: 28px; }
+
+    svg { display: block; }
+
+    .notes {
+      color: var(--muted);
+      font-size: 13px;
+      min-height: 38px;
+    }
+
+    .pick {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .variant-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: -4px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>PhonoDeck Icon Directions</h1>
+      <p>Clean, conservative marks. Optimized for Dock readability before detail.</p>
+    </div>
+    <div class="rules">Rules: one core shape, one accent, no fake Apple Music clone, no tiny scenery, no busy box-in-box construction.</div>
+  </header>
+
+  <svg width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="record-play" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#101318"/>
+        <circle cx="512" cy="512" r="310" fill="#05070b"/>
+        <circle cx="512" cy="512" r="252" fill="none" stroke="#0a84ff" stroke-width="62" stroke-linecap="round" stroke-dasharray="1080 380" transform="rotate(-20 512 512)"/>
+        <circle cx="512" cy="512" r="118" fill="#f5f7fa"/>
+        <circle cx="512" cy="512" r="42" fill="#101318"/>
+        <path d="M470 400 L470 624 L650 512 Z" fill="#ffffff"/>
+      </symbol>
+
+      <symbol id="record-play-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <circle cx="512" cy="512" r="310" fill="#ffffff"/>
+        <circle cx="512" cy="512" r="252" fill="none" stroke="#0a84ff" stroke-width="62" stroke-linecap="round" stroke-dasharray="1080 380" transform="rotate(-20 512 512)"/>
+        <circle cx="512" cy="512" r="118" fill="#172030"/>
+        <circle cx="512" cy="512" r="42" fill="#f5f7fa"/>
+        <path d="M470 400 L470 624 L650 512 Z" fill="#ffffff"/>
+      </symbol>
+
+      <symbol id="queue-note-blue" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#eaf6ff"/>
+        <path d="M286 352 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 438 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 524 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M584 280 V628" stroke="#161d26" stroke-width="70" stroke-linecap="round"/>
+        <path d="M584 280 L784 224 V328 L584 384 Z" fill="#161d26"/>
+        <ellipse cx="486" cy="674" rx="120" ry="78" fill="#161d26"/>
+      </symbol>
+
+      <symbol id="queue-note-white" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f8fafc"/>
+        <path d="M286 352 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 438 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 524 H426" stroke="#161d26" stroke-width="54" stroke-linecap="round"/>
+        <path d="M584 280 V628" stroke="#161d26" stroke-width="70" stroke-linecap="round"/>
+        <path d="M584 280 L784 224 V328 L584 384 Z" fill="#161d26"/>
+        <ellipse cx="486" cy="674" rx="120" ry="78" fill="#161d26"/>
+      </symbol>
+
+      <symbol id="queue-note-blue-soft" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#dff2ff"/>
+        <path d="M286 352 H426" stroke="#26323d" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 438 H426" stroke="#26323d" stroke-width="54" stroke-linecap="round"/>
+        <path d="M286 524 H426" stroke="#26323d" stroke-width="54" stroke-linecap="round"/>
+        <path d="M584 280 V628" stroke="#26323d" stroke-width="70" stroke-linecap="round"/>
+        <path d="M584 280 L784 224 V328 L584 384 Z" fill="#26323d"/>
+        <ellipse cx="486" cy="674" rx="120" ry="78" fill="#26323d"/>
+      </symbol>
+
+      <symbol id="circle-note-a" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f8fafc"/>
+        <path d="M418 304 C300 328 214 432 214 556 C214 692 324 802 460 802 C512 802 560 786 600 760" fill="none" stroke="#2e3a46" stroke-width="66" stroke-linecap="round"/>
+        <path d="M420 452 L420 652 L584 552 Z" fill="#0a84ff"/>
+        <path d="M690 252 V672" stroke="#2e3a46" stroke-width="78" stroke-linecap="round"/>
+        <path d="M690 252 C806 312 842 426 778 528" fill="none" stroke="#2e3a46" stroke-width="72" stroke-linecap="round"/>
+        <ellipse cx="610" cy="700" rx="118" ry="78" fill="#2e3a46"/>
+      </symbol>
+
+      <symbol id="circle-note-b" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#eef8ff"/>
+        <path d="M438 280 C296 292 184 410 184 556 C184 710 308 834 462 834 C526 834 584 812 630 776" fill="none" stroke="#26323d" stroke-width="58" stroke-linecap="round"/>
+        <path d="M414 438 L414 664 L602 550 Z" fill="#0a84ff"/>
+        <path d="M710 220 V666" stroke="#26323d" stroke-width="70" stroke-linecap="round"/>
+        <path d="M710 220 C828 292 846 416 778 530" fill="none" stroke="#26323d" stroke-width="60" stroke-linecap="round"/>
+        <ellipse cx="620" cy="704" rx="124" ry="82" fill="#26323d"/>
+      </symbol>
+
+      <symbol id="circle-note-c" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f8fafc"/>
+        <path d="M406 314 C298 348 222 448 222 564 C222 706 338 822 480 822" fill="none" stroke="#1f2933" stroke-width="70" stroke-linecap="round"/>
+        <circle cx="480" cy="564" r="196" fill="none" stroke="#1f2933" stroke-width="24" opacity="0.16"/>
+        <path d="M424 454 L424 654 L590 554 Z" fill="#0a84ff"/>
+        <path d="M694 258 V676" stroke="#1f2933" stroke-width="78" stroke-linecap="round"/>
+        <path d="M694 258 Q830 340 780 520" fill="none" stroke="#1f2933" stroke-width="68" stroke-linecap="round"/>
+        <ellipse cx="610" cy="704" rx="118" ry="78" fill="#1f2933"/>
+      </symbol>
+
+      <symbol id="circle-note-d" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#ffffff"/>
+        <path d="M420 306 C304 330 220 432 220 554 C220 688 328 796 462 796 C506 796 546 786 582 766" fill="none" stroke="#334155" stroke-width="64" stroke-linecap="round"/>
+        <path d="M416 452 L416 648 L578 550 Z" fill="#2f80d1"/>
+        <path d="M682 250 V660" stroke="#334155" stroke-width="74" stroke-linecap="round"/>
+        <path d="M682 250 C788 304 828 404 782 510" fill="none" stroke="#334155" stroke-width="62" stroke-linecap="round"/>
+        <ellipse cx="606" cy="692" rx="112" ry="74" fill="#334155"/>
+      </symbol>
+
+      <symbol id="headset-play-a" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#eef8ff"/>
+        <path d="M272 548 C272 376 374 268 512 268 C650 268 752 376 752 548" fill="none" stroke="#24313d" stroke-width="66" stroke-linecap="round"/>
+        <rect x="214" y="524" width="128" height="214" rx="56" fill="#24313d"/>
+        <rect x="682" y="524" width="128" height="214" rx="56" fill="#24313d"/>
+        <path d="M458 430 L458 638 L632 534 Z" fill="#0a84ff"/>
+        <path d="M682 724 C648 770 588 796 512 796" fill="none" stroke="#24313d" stroke-width="42" stroke-linecap="round"/>
+      </symbol>
+
+      <symbol id="headset-note-b" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f8fafc"/>
+        <path d="M270 562 C270 376 376 264 512 264 C648 264 754 376 754 562" fill="none" stroke="#26323d" stroke-width="62" stroke-linecap="round"/>
+        <rect x="216" y="530" width="126" height="206" rx="54" fill="#26323d"/>
+        <rect x="682" y="530" width="126" height="206" rx="54" fill="#26323d"/>
+        <path d="M546 382 V640" stroke="#0a84ff" stroke-width="64" stroke-linecap="round"/>
+        <path d="M546 382 L690 344 V432 L546 470 Z" fill="#0a84ff"/>
+        <ellipse cx="464" cy="666" rx="106" ry="70" fill="#0a84ff"/>
+      </symbol>
+
+      <symbol id="headset-circle-c" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#eaf6ff"/>
+        <circle cx="512" cy="548" r="204" fill="none" stroke="#24313d" stroke-width="54"/>
+        <path d="M276 554 C276 382 378 276 512 276 C646 276 748 382 748 554" fill="none" stroke="#24313d" stroke-width="64" stroke-linecap="round"/>
+        <rect x="222" y="528" width="116" height="196" rx="52" fill="#24313d"/>
+        <rect x="686" y="528" width="116" height="196" rx="52" fill="#24313d"/>
+        <path d="M472 456 L472 640 L626 548 Z" fill="#0a84ff"/>
+      </symbol>
+
+      <symbol id="headset-minimal-d" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#ffffff"/>
+        <path d="M278 566 C278 380 382 272 512 272 C642 272 746 380 746 566" fill="none" stroke="#334155" stroke-width="66" stroke-linecap="round"/>
+        <path d="M256 544 V712" stroke="#334155" stroke-width="92" stroke-linecap="round"/>
+        <path d="M768 544 V712" stroke="#334155" stroke-width="92" stroke-linecap="round"/>
+        <path d="M454 454 L454 638 L606 546 Z" fill="#2f80d1"/>
+      </symbol>
+
+      <symbol id="final-headset-note" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="122" fill="#f7f7fb"/>
+        <path fill="#909297" d="M512 86C300 86 154 252 120 480C91 515 75 558 78 608C80 640 96 668 124 692L139 834C143 875 175 900 215 894L238 891C271 886 292 855 286 822L258 658C249 603 268 562 305 555C340 549 363 573 373 621L404 766C417 828 458 864 512 864C566 864 607 828 620 766L651 621C661 573 684 549 719 555C756 562 775 603 766 658L738 822C732 855 753 886 786 891L809 894C849 900 881 875 885 834L900 692C928 668 944 640 946 608C949 558 933 515 904 480C870 252 724 86 512 86Z"/>
+        <path d="M166 520C211 296 344 164 512 164C680 164 813 296 858 520" fill="none" stroke="#f7f7fb" stroke-width="15" stroke-linecap="round"/>
+        <path fill="#ffffff" d="M235 423C185 432 165 496 178 575L211 774C222 840 264 858 302 820C337 785 347 728 334 660L304 492C296 449 270 417 235 423Z"/>
+        <path fill="#ffffff" d="M789 423C839 432 859 496 846 575L813 774C802 840 760 858 722 820C687 785 677 728 690 660L720 492C728 449 754 417 789 423Z"/>
+        <path fill="#1698f4" d="M530 322C530 303 543 287 562 282L696 247C727 239 756 262 756 294V374C756 394 743 411 724 416L604 448V600C604 621 587 638 566 638C546 638 530 622 530 602V322Z"/>
+        <ellipse cx="451" cy="673" rx="116" ry="75" transform="rotate(-9 451 673)" fill="#1698f4"/>
+      </symbol>
+
+      <symbol id="deck-line" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#111318"/>
+        <rect x="218" y="265" width="588" height="494" rx="90" fill="none" stroke="#f5f7fa" stroke-width="54"/>
+        <circle cx="430" cy="512" r="126" fill="none" stroke="#0a84ff" stroke-width="46"/>
+        <circle cx="430" cy="512" r="34" fill="#f5f7fa"/>
+        <path d="M650 372 L720 470 L612 602" fill="none" stroke="#ff2d55" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <symbol id="deck-line-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <rect x="218" y="265" width="588" height="494" rx="90" fill="none" stroke="#172030" stroke-width="54"/>
+        <circle cx="430" cy="512" r="126" fill="none" stroke="#0a84ff" stroke-width="46"/>
+        <circle cx="430" cy="512" r="34" fill="#172030"/>
+        <path d="M650 372 L720 470 L612 602" fill="none" stroke="#ff2d55" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <symbol id="note-disc" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#101318"/>
+        <circle cx="512" cy="512" r="286" fill="none" stroke="#e8ecf2" stroke-width="62"/>
+        <circle cx="512" cy="512" r="94" fill="#0a84ff"/>
+        <path d="M430 626 C430 690 344 712 312 664 C278 610 340 556 406 580 L406 318 L676 270 L676 350 L472 386 L472 604 C459 614 446 622 430 626 Z" fill="#ff2d55"/>
+      </symbol>
+
+      <symbol id="note-disc-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <circle cx="512" cy="512" r="286" fill="none" stroke="#172030" stroke-width="62"/>
+        <circle cx="512" cy="512" r="94" fill="#0a84ff"/>
+        <path d="M430 626 C430 690 344 712 312 664 C278 610 340 556 406 580 L406 318 L676 270 L676 350 L472 386 L472 604 C459 614 446 622 430 626 Z" fill="#ff2d55"/>
+      </symbol>
+
+      <symbol id="p-mark" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#101318"/>
+        <path d="M344 768 V258 H558 C708 258 800 342 800 474 C800 608 704 690 558 690 H456 V768 Z" fill="none" stroke="#f5f7fa" stroke-width="74" stroke-linejoin="round"/>
+        <path d="M456 372 H552 C652 372 694 410 694 476 C694 540 652 576 552 576 H456 Z" fill="#101318"/>
+        <circle cx="552" cy="476" r="72" fill="#0a84ff"/>
+        <path d="M532 426 L532 526 L612 476 Z" fill="#ffffff"/>
+        <path d="M350 762 H492" stroke="#ff2d55" stroke-width="40" stroke-linecap="round"/>
+      </symbol>
+
+      <symbol id="p-mark-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <path d="M344 768 V258 H558 C708 258 800 342 800 474 C800 608 704 690 558 690 H456 V768 Z" fill="none" stroke="#172030" stroke-width="74" stroke-linejoin="round"/>
+        <path d="M456 372 H552 C652 372 694 410 694 476 C694 540 652 576 552 576 H456 Z" fill="#f4f7fb"/>
+        <circle cx="552" cy="476" r="72" fill="#0a84ff"/>
+        <path d="M532 426 L532 526 L612 476 Z" fill="#ffffff"/>
+        <path d="M350 762 H492" stroke="#ff2d55" stroke-width="40" stroke-linecap="round"/>
+      </symbol>
+
+      <symbol id="two-lines" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#101318"/>
+        <path d="M300 338 H724" stroke="#f5f7fa" stroke-width="72" stroke-linecap="round"/>
+        <path d="M300 512 H724" stroke="#0a84ff" stroke-width="72" stroke-linecap="round"/>
+        <path d="M300 686 H724" stroke="#f5f7fa" stroke-width="72" stroke-linecap="round"/>
+        <circle cx="374" cy="512" r="56" fill="#ff2d55"/>
+        <path d="M492 432 L492 592 L626 512 Z" fill="#ffffff"/>
+      </symbol>
+
+      <symbol id="two-lines-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <path d="M300 338 H724" stroke="#172030" stroke-width="72" stroke-linecap="round"/>
+        <path d="M300 512 H724" stroke="#0a84ff" stroke-width="72" stroke-linecap="round"/>
+        <path d="M300 686 H724" stroke="#172030" stroke-width="72" stroke-linecap="round"/>
+        <circle cx="374" cy="512" r="56" fill="#ff2d55"/>
+        <path d="M492 432 L492 592 L626 512 Z" fill="#ffffff"/>
+      </symbol>
+
+      <symbol id="needle-circle" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#101318"/>
+        <circle cx="462" cy="546" r="240" fill="none" stroke="#f5f7fa" stroke-width="58"/>
+        <circle cx="462" cy="546" r="52" fill="#0a84ff"/>
+        <path d="M690 272 L760 346 L554 590" fill="none" stroke="#ff2d55" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="704" cy="294" r="58" fill="#f5f7fa"/>
+        <circle cx="704" cy="294" r="24" fill="#101318"/>
+      </symbol>
+      <symbol id="needle-circle-light" viewBox="0 0 1024 1024">
+        <rect x="64" y="64" width="896" height="896" rx="210" fill="#f4f7fb"/>
+        <circle cx="462" cy="546" r="240" fill="none" stroke="#172030" stroke-width="58"/>
+        <circle cx="462" cy="546" r="52" fill="#0a84ff"/>
+        <path d="M690 272 L760 346 L554 590" fill="none" stroke="#ff2d55" stroke-width="58" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="704" cy="294" r="58" fill="#172030"/>
+        <circle cx="704" cy="294" r="24" fill="#f4f7fb"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <section class="grid">
+    <article class="card">
+      <div class="spec"><h2>Final Headset Note</h2><span class="tag">currently applied</span></div>
+      <div class="variant-label">App Icon</div>
+      <div class="previews"><div class="preview large"><svg><use href="#final-headset-note"></use></svg></div><div class="preview dock"><svg><use href="#final-headset-note"></use></svg></div><div class="preview tiny"><svg><use href="#final-headset-note"></use></svg></div></div>
+      <div class="notes">Standalone SVG first: light tile, filled gray headset interior, white ear pads and inner arch, blue note.</div>
+      <div class="pick">Use this for approval before regenerating AppIcon assets.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>00 Queue Note</h2><span class="tag">clean candidate</span></div>
+      <div class="variant-label">Light Blue</div>
+      <div class="previews"><div class="preview large"><svg><use href="#queue-note-blue"></use></svg></div><div class="preview dock"><svg><use href="#queue-note-blue"></use></svg></div><div class="preview tiny"><svg><use href="#queue-note-blue"></use></svg></div></div>
+      <div class="variant-label">White</div>
+      <div class="previews"><div class="preview large"><svg><use href="#queue-note-white"></use></svg></div><div class="preview dock"><svg><use href="#queue-note-white"></use></svg></div><div class="preview tiny"><svg><use href="#queue-note-white"></use></svg></div></div>
+      <div class="variant-label">Soft Blue</div>
+      <div class="previews"><div class="preview large"><svg><use href="#queue-note-blue-soft"></use></svg></div><div class="preview dock"><svg><use href="#queue-note-blue-soft"></use></svg></div><div class="preview tiny"><svg><use href="#queue-note-blue-soft"></use></svg></div></div>
+      <div class="notes">Minimal queue + note direction based on the clean screenshot. This is the current recommended direction.</div>
+      <div class="pick">Say: use 00 Light Blue, White, or Soft Blue.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>07 Circle Note</h2><span class="tag">based on your reference</span></div>
+      <div class="variant-label">A - balanced</div>
+      <div class="previews"><div class="preview large"><svg><use href="#circle-note-a"></use></svg></div><div class="preview dock"><svg><use href="#circle-note-a"></use></svg></div><div class="preview tiny"><svg><use href="#circle-note-a"></use></svg></div></div>
+      <div class="variant-label">B - lighter blue tile</div>
+      <div class="previews"><div class="preview large"><svg><use href="#circle-note-b"></use></svg></div><div class="preview dock"><svg><use href="#circle-note-b"></use></svg></div><div class="preview tiny"><svg><use href="#circle-note-b"></use></svg></div></div>
+      <div class="variant-label">C - subtle inner ring</div>
+      <div class="previews"><div class="preview large"><svg><use href="#circle-note-c"></use></svg></div><div class="preview dock"><svg><use href="#circle-note-c"></use></svg></div><div class="preview tiny"><svg><use href="#circle-note-c"></use></svg></div></div>
+      <div class="variant-label">D - white background</div>
+      <div class="previews"><div class="preview large"><svg><use href="#circle-note-d"></use></svg></div><div class="preview dock"><svg><use href="#circle-note-d"></use></svg></div><div class="preview tiny"><svg><use href="#circle-note-d"></use></svg></div></div>
+      <div class="notes">Open circle, blue play, and note. This is closest to your attached reference while still being custom.</div>
+      <div class="pick">Say: use 07 A, B, C, or D.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>08 Headset</h2><span class="tag">listener-focused</span></div>
+      <div class="variant-label">A - headset + play</div>
+      <div class="previews"><div class="preview large"><svg><use href="#headset-play-a"></use></svg></div><div class="preview dock"><svg><use href="#headset-play-a"></use></svg></div><div class="preview tiny"><svg><use href="#headset-play-a"></use></svg></div></div>
+      <div class="variant-label">B - headset + note</div>
+      <div class="previews"><div class="preview large"><svg><use href="#headset-note-b"></use></svg></div><div class="preview dock"><svg><use href="#headset-note-b"></use></svg></div><div class="preview tiny"><svg><use href="#headset-note-b"></use></svg></div></div>
+      <div class="variant-label">C - headset + circle</div>
+      <div class="previews"><div class="preview large"><svg><use href="#headset-circle-c"></use></svg></div><div class="preview dock"><svg><use href="#headset-circle-c"></use></svg></div><div class="preview tiny"><svg><use href="#headset-circle-c"></use></svg></div></div>
+      <div class="variant-label">D - minimal headset</div>
+      <div class="previews"><div class="preview large"><svg><use href="#headset-minimal-d"></use></svg></div><div class="preview dock"><svg><use href="#headset-minimal-d"></use></svg></div><div class="preview tiny"><svg><use href="#headset-minimal-d"></use></svg></div></div>
+      <div class="notes">Headset directions are listener-first. A and D read best at Dock size; B is more explicitly music.</div>
+      <div class="pick">Say: use 08 A, B, C, or D.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>01 Record Play</h2><span class="tag">most conservative</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#record-play"></use></svg></div><div class="preview dock"><svg><use href="#record-play"></use></svg></div><div class="preview tiny"><svg><use href="#record-play"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#record-play-light"></use></svg></div><div class="preview dock"><svg><use href="#record-play-light"></use></svg></div><div class="preview tiny"><svg><use href="#record-play-light"></use></svg></div></div>
+      <div class="notes">A simple disc and play mark. Reads clearly in Dock, keeps one blue accent.</div>
+      <div class="pick">Say: use 01, make it lighter, remove accent, etc.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>02 Deck Line</h2><span class="tag">more product-specific</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#deck-line"></use></svg></div><div class="preview dock"><svg><use href="#deck-line"></use></svg></div><div class="preview tiny"><svg><use href="#deck-line"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#deck-line-light"></use></svg></div><div class="preview dock"><svg><use href="#deck-line-light"></use></svg></div><div class="preview tiny"><svg><use href="#deck-line-light"></use></svg></div></div>
+      <div class="notes">Still simple, but more like a physical deck. Slightly less readable at 32 px.</div>
+      <div class="pick">Good if you want the deck idea to survive.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>03 Note Disc</h2><span class="tag">music-first</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#note-disc"></use></svg></div><div class="preview dock"><svg><use href="#note-disc"></use></svg></div><div class="preview tiny"><svg><use href="#note-disc"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#note-disc-light"></use></svg></div><div class="preview dock"><svg><use href="#note-disc-light"></use></svg></div><div class="preview tiny"><svg><use href="#note-disc-light"></use></svg></div></div>
+      <div class="notes">Music note plus record. More familiar, but closer to generic music-app territory.</div>
+      <div class="pick">Good if recognizability matters more than uniqueness.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>04 P Mark</h2><span class="tag">brand mark</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#p-mark"></use></svg></div><div class="preview dock"><svg><use href="#p-mark"></use></svg></div><div class="preview tiny"><svg><use href="#p-mark"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#p-mark-light"></use></svg></div><div class="preview dock"><svg><use href="#p-mark-light"></use></svg></div><div class="preview tiny"><svg><use href="#p-mark-light"></use></svg></div></div>
+      <div class="notes">A PhonoDeck initial with a play center. Best for a distinct brand, least literal.</div>
+      <div class="pick">Good if you want this to feel like a real product icon.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>05 Queue Lines</h2><span class="tag">player/queue</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#two-lines"></use></svg></div><div class="preview dock"><svg><use href="#two-lines"></use></svg></div><div class="preview tiny"><svg><use href="#two-lines"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#two-lines-light"></use></svg></div><div class="preview dock"><svg><use href="#two-lines-light"></use></svg></div><div class="preview tiny"><svg><use href="#two-lines-light"></use></svg></div></div>
+      <div class="notes">Abstract queue plus play. Clean, but less music-specific.</div>
+      <div class="pick">Good if queue/watch remote becomes the brand identity.</div>
+    </article>
+
+    <article class="card">
+      <div class="spec"><h2>06 Needle Circle</h2><span class="tag">classic audio</span></div>
+      <div class="variant-label">Dark</div>
+      <div class="previews"><div class="preview large"><svg><use href="#needle-circle"></use></svg></div><div class="preview dock"><svg><use href="#needle-circle"></use></svg></div><div class="preview tiny"><svg><use href="#needle-circle"></use></svg></div></div>
+      <div class="variant-label">Light</div>
+      <div class="previews"><div class="preview large"><svg><use href="#needle-circle-light"></use></svg></div><div class="preview dock"><svg><use href="#needle-circle-light"></use></svg></div><div class="preview tiny"><svg><use href="#needle-circle-light"></use></svg></div></div>
+      <div class="notes">A sparse record and tonearm. Conservative, but the needle detail shrinks faster.</div>
+      <div class="pick">Good if you want a hi-fi/audio feel.</div>
+    </article>
+  </section>
+</main>
+</body>
+</html>

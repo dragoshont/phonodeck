@@ -37,7 +37,7 @@ Give the user a quiet, native, Apple-quality music desk for browsing, playing, c
 | Downloads | Plex personal media downloads with Plex Pass and server permission checks | YouTube/Spotify downloads remain out of scope unless official approval/API exists |
 | AirPlay | AirPlay route support for native AVFoundation playback | Best for Plex/local media |
 | Cast | Investigate official Cast route | Native macOS sender support is not first-class in official Cast overview |
-| Playlists | Create/edit Plex/local playlists and manage Spotify/YouTube playlists only with proper scopes | Keep source attribution and consent explicit |
+| Playlists | Create/edit Plex/local playlists and manage Spotify/YouTube Music playlists only with proper scopes | Keep source attribution and consent explicit |
 | Library matching | Match Plex/local/Spotify/YouTube metadata by title, artist, album, duration, track number, and ISRC where available | Avoid derived service metrics |
 
 ## P2 Requirements

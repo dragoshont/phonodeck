@@ -4,6 +4,8 @@ import Foundation
 import Security
 
 struct GoogleOAuthClient {
+    private static let callbackTimeoutNanoseconds: UInt64 = 300_000_000_000
+
     private let configuration: GoogleOAuthConfiguration
     private let urlSession: URLSession
 
@@ -23,12 +25,42 @@ struct GoogleOAuthClient {
         return try await authorizeWithLoopback()
     }
 
-    func startDeviceAuthorization() async throws -> GoogleDeviceAuthorization {
-        try await requestDeviceAuthorization()
-    }
+    func refreshTokenSet(_ tokenSet: GoogleOAuthTokenSet) async throws -> GoogleOAuthTokenSet {
+        guard let refreshToken = tokenSet.refreshToken else {
+            throw GoogleOAuthError.missingRefreshToken
+        }
+        guard let clientSecret = configuration.clientSecret else {
+            throw GoogleOAuthError.missingClientSecret
+        }
 
-    func finishDeviceAuthorization(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet {
-        try await pollDeviceToken(authorization)
+        var request = URLRequest(url: configuration.tokenEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = FormURLEncoder.encode([
+            "client_id": configuration.clientID,
+            "client_secret": clientSecret,
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ])
+
+        let (data, response) = try await urlSession.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw GoogleOAuthError.invalidTokenResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, GoogleOAuthErrorResponse.message(from: data))
+        }
+
+        let refreshed = try JSONDecoder().decode(GoogleOAuthRefreshTokenSet.self, from: data)
+        return GoogleOAuthTokenSet(
+            accessToken: refreshed.accessToken,
+            expiresIn: refreshed.expiresIn,
+            refreshToken: tokenSet.refreshToken,
+            refreshTokenExpiresIn: tokenSet.refreshTokenExpiresIn,
+            scope: refreshed.scope ?? tokenSet.scope,
+            tokenType: refreshed.tokenType ?? tokenSet.tokenType,
+            obtainedAt: Date()
+        )
     }
 
     private func authorizeWithLoopback() async throws -> GoogleOAuthTokenSet {
@@ -43,17 +75,15 @@ struct GoogleOAuthClient {
             codeChallenge: pkce.challenge
         )
 
-        let callbackTask = Task {
-            try await server.waitForCallback()
+        let openedBrowser = await MainActor.run {
+            NSWorkspace.shared.open(authorizationURL)
+        }
+        guard openedBrowser else {
+            server.cancel()
+            throw GoogleOAuthError.browserOpenFailed
         }
 
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        await MainActor.run {
-            _ = NSWorkspace.shared.open(authorizationURL)
-        }
-
-        let callback = try await callbackTask.value
+        let callback = try await Self.waitForCallback(on: server, timeoutNanoseconds: Self.callbackTimeoutNanoseconds)
         guard callback.state == state else {
             throw GoogleOAuthError.stateMismatch
         }
@@ -71,84 +101,22 @@ struct GoogleOAuthClient {
         )
     }
 
-    private func authorizeWithDeviceFlow() async throws -> GoogleOAuthTokenSet {
-        let deviceAuthorization = try await requestDeviceAuthorization()
-
-        await MainActor.run {
-            _ = NSWorkspace.shared.open(deviceAuthorization.verificationURLComplete ?? deviceAuthorization.verificationURL)
-        }
-
-        return try await pollDeviceToken(deviceAuthorization)
-    }
-
-    private func requestDeviceAuthorization() async throws -> GoogleDeviceAuthorization {
-        var request = URLRequest(url: configuration.deviceCodeEndpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = FormURLEncoder.encode([
-            "client_id": configuration.clientID,
-            "scope": configuration.scopes.joined(separator: " ")
-        ])
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw GoogleOAuthError.invalidTokenResponse
-        }
-        guard (200..<300).contains(httpResponse.statusCode) else {
-            let responseBody = String(data: data, encoding: .utf8) ?? ""
-            throw GoogleOAuthError.deviceAuthorizationFailed(httpResponse.statusCode, responseBody)
-        }
-
-        return try JSONDecoder().decode(GoogleDeviceAuthorization.self, from: data)
-    }
-
-    func pollDeviceTokenOnce(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet? {
-        var request = URLRequest(url: configuration.tokenEndpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = FormURLEncoder.encode([
-            "client_id": configuration.clientID,
-            "device_code": authorization.deviceCode,
-            "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
-        ])
-
-        let (data, response) = try await urlSession.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw GoogleOAuthError.invalidTokenResponse
-        }
-
-        if (200..<300).contains(httpResponse.statusCode) {
-            var tokenSet = try JSONDecoder().decode(GoogleOAuthTokenSet.self, from: data)
-            tokenSet.obtainedAt = Date()
-            return tokenSet
-        }
-
-        let tokenError = try? JSONDecoder().decode(GoogleOAuthTokenError.self, from: data)
-        switch tokenError?.error {
-        case "authorization_pending", "slow_down":
-            return nil
-        case "access_denied":
-            throw GoogleOAuthError.authorizationDenied(tokenError?.errorDescription ?? "access_denied")
-        case "expired_token":
-            throw GoogleOAuthError.deviceCodeExpired
-        default:
-            let responseBody = String(data: data, encoding: .utf8) ?? ""
-            throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, responseBody)
-        }
-    }
-
-    private func pollDeviceToken(_ authorization: GoogleDeviceAuthorization) async throws -> GoogleOAuthTokenSet {
-        let pollInterval = authorization.interval ?? 5
-        let expirationDate = Date().addingTimeInterval(TimeInterval(authorization.expiresIn))
-
-        while Date() < expirationDate {
-            try await Task.sleep(nanoseconds: UInt64(pollInterval) * 1_000_000_000)
-            if let tokenSet = try await pollDeviceTokenOnce(authorization) {
-                return tokenSet
+    private static func waitForCallback(on server: OAuthLoopbackServer, timeoutNanoseconds: UInt64) async throws -> OAuthCallback {
+        try await withThrowingTaskGroup(of: OAuthCallback.self) { group in
+            group.addTask {
+                try await server.waitForCallback()
             }
-        }
+            group.addTask {
+                try await Task.sleep(nanoseconds: timeoutNanoseconds)
+                throw GoogleOAuthError.authorizationTimedOut
+            }
 
-        throw GoogleOAuthError.deviceCodeExpired
+            guard let callback = try await group.next() else {
+                throw GoogleOAuthError.authorizationTimedOut
+            }
+            group.cancelAll()
+            return callback
+        }
     }
 
     private func exchangeAuthorizationCode(_ code: String, codeVerifier: String, redirectURI: String) async throws -> GoogleOAuthTokenSet {
@@ -172,8 +140,7 @@ struct GoogleOAuthClient {
             throw GoogleOAuthError.invalidTokenResponse
         }
         guard (200..<300).contains(httpResponse.statusCode) else {
-            let responseBody = String(data: data, encoding: .utf8) ?? ""
-            throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, responseBody)
+            throw GoogleOAuthError.tokenExchangeFailed(httpResponse.statusCode, GoogleOAuthErrorResponse.message(from: data))
         }
 
         var tokenSet = try JSONDecoder().decode(GoogleOAuthTokenSet.self, from: data)
@@ -189,27 +156,35 @@ struct GoogleOAuthConfiguration {
     let redirectPath: String
 
     let authorizationEndpoint = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!
-    let deviceCodeEndpoint = URL(string: "https://oauth2.googleapis.com/device/code")!
     let tokenEndpoint = URL(string: "https://oauth2.googleapis.com/token")!
 
-    static func fromBundle() throws -> GoogleOAuthConfiguration {
-        let rawClientID = (Bundle.main.object(forInfoDictionaryKey: "GoogleOAuthClientID") as? String ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+    static func fromBundle(_ bundle: Bundle = .main) throws -> GoogleOAuthConfiguration {
+        let rawClientID = usableBundleString(named: "GoogleOAuthClientID", in: bundle)
 
-        guard !rawClientID.isEmpty, !rawClientID.contains("$(") else {
+        guard let clientID = rawClientID else {
             throw GoogleOAuthError.missingClientID
         }
 
-        let rawClientSecret = (Bundle.main.object(forInfoDictionaryKey: "GoogleOAuthClientSecret") as? String ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let clientSecret = rawClientSecret.isEmpty || rawClientSecret.contains("$(") ? nil : rawClientSecret
-
         return GoogleOAuthConfiguration(
-            clientID: rawClientID,
-            clientSecret: clientSecret,
-            scopes: ["https://www.googleapis.com/auth/youtube.readonly"],
+            clientID: clientID,
+            clientSecret: usableBundleString(named: "GoogleOAuthClientSecret", in: bundle),
+            scopes: ["https://www.googleapis.com/auth/youtube"],
             redirectPath: "/oauth/google/callback"
         )
+    }
+
+    static func bundleStatus(_ bundle: Bundle = .main) -> GoogleOAuthConfigurationStatus {
+        GoogleOAuthConfigurationStatus(
+            hasClientID: usableBundleString(named: "GoogleOAuthClientID", in: bundle) != nil,
+            hasClientSecret: usableBundleString(named: "GoogleOAuthClientSecret", in: bundle) != nil
+        )
+    }
+
+    static func usableBundleString(named key: String, in bundle: Bundle = .main) -> String? {
+        let rawValue = (bundle.object(forInfoDictionaryKey: key) as? String ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rawValue.isEmpty, !rawValue.contains("$(") else { return nil }
+        return rawValue
     }
 
     func authorizationURL(redirectURI: String, state: String, codeChallenge: String) throws -> URL {
@@ -232,7 +207,12 @@ struct GoogleOAuthConfiguration {
     }
 }
 
-struct GoogleOAuthTokenSet: Codable, Equatable {
+struct GoogleOAuthConfigurationStatus: Equatable {
+    let hasClientID: Bool
+    let hasClientSecret: Bool
+}
+
+struct GoogleOAuthTokenSet: Codable, Equatable, Sendable {
     let accessToken: String
     let expiresIn: Int
     let refreshToken: String?
@@ -252,29 +232,21 @@ struct GoogleOAuthTokenSet: Codable, Equatable {
     }
 }
 
-struct GoogleDeviceAuthorization: Codable, Equatable {
-    let deviceCode: String
-    let userCode: String
-    let verificationURL: URL
-    let verificationURLComplete: URL?
+private struct GoogleOAuthRefreshTokenSet: Codable, Equatable {
+    let accessToken: String
     let expiresIn: Int
-    let interval: Int?
-
-    var preferredVerificationURL: URL {
-        verificationURLComplete ?? verificationURL
-    }
+    let scope: String?
+    let tokenType: String?
 
     enum CodingKeys: String, CodingKey {
-        case deviceCode = "device_code"
-        case userCode = "user_code"
-        case verificationURL = "verification_url"
-        case verificationURLComplete = "verification_url_complete"
+        case accessToken = "access_token"
         case expiresIn = "expires_in"
-        case interval
+        case scope
+        case tokenType = "token_type"
     }
 }
 
-struct GoogleOAuthTokenError: Codable, Equatable {
+private struct GoogleOAuthErrorResponse: Codable, Equatable {
     let error: String
     let errorDescription: String?
 
@@ -282,18 +254,28 @@ struct GoogleOAuthTokenError: Codable, Equatable {
         case error
         case errorDescription = "error_description"
     }
+
+    static func message(from data: Data) -> String {
+        if let decoded = try? JSONDecoder().decode(GoogleOAuthErrorResponse.self, from: data) {
+            return decoded.errorDescription ?? decoded.error
+        }
+        let body = String(data: data, encoding: .utf8) ?? "Unknown Google error."
+        return body.count > 500 ? String(body.prefix(500)) : body
+    }
 }
 
 enum GoogleOAuthError: LocalizedError, Equatable {
     case authorizationDenied(String)
-    case deviceAuthorizationFailed(Int, String)
-    case deviceCodeExpired
+    case authorizationTimedOut
+    case browserOpenFailed
     case invalidAuthorizationURL
     case invalidCallbackRequest
     case invalidTokenResponse
     case missingAuthorizationCode
     case missingClientID
     case missingClientSecret
+    case missingRequiredScope(String)
+    case missingRefreshToken
     case noAvailableLoopbackPort
     case randomGenerationFailed(OSStatus)
     case stateMismatch
@@ -303,10 +285,10 @@ enum GoogleOAuthError: LocalizedError, Equatable {
         switch self {
         case .authorizationDenied(let message):
             "Google authorization failed: \(message)"
-        case .deviceAuthorizationFailed(let statusCode, let body):
-            "Google device authorization failed (HTTP \(statusCode)): \(body)"
-        case .deviceCodeExpired:
-            "Google device authorization expired. Try connecting again."
+        case .authorizationTimedOut:
+            "Google sign-in timed out. Try connecting again."
+        case .browserOpenFailed:
+            "Could not open the system browser for Google sign-in."
         case .invalidAuthorizationURL:
             "Could not build Google authorization URL."
         case .invalidCallbackRequest:
@@ -319,6 +301,10 @@ enum GoogleOAuthError: LocalizedError, Equatable {
             "Missing Google OAuth client ID. Add GOOGLE_OAUTH_CLIENT_ID to Config/Secrets.xcconfig."
         case .missingClientSecret:
             "Missing Google OAuth client secret. Add GOOGLE_OAUTH_CLIENT_SECRET to Config/Secrets.xcconfig."
+        case .missingRequiredScope:
+            "Reconnect Google to allow YouTube Music playlist changes."
+        case .missingRefreshToken:
+            "Missing Google refresh token. Disconnect and connect Google again."
         case .noAvailableLoopbackPort:
             "Could not open a localhost callback port for Google OAuth."
         case .randomGenerationFailed(let status):
@@ -353,7 +339,7 @@ private enum SecureRandom {
     }
 }
 
-private enum FormURLEncoder {
+enum FormURLEncoder {
     static func encode(_ values: [String: String]) -> Data {
         values
             .map { key, value in

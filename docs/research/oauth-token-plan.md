@@ -22,7 +22,7 @@ Likely scope phases:
 | --- | --- | --- |
 | P0 public search | YouTube search/discovery | API key or non-authorized requests where possible |
 | P0 user playlists | Read user playlists/subscriptions if implemented | Read-only YouTube scopes in context |
-| P1 playlist management | Create/update YouTube playlists | Write scopes only when the UI supports the action |
+| P1 playlist management | Create/update YouTube Music playlists through official YouTube account playlist APIs | Write scopes only when the UI supports the action |
 
 Rules:
 

@@ -17,12 +17,6 @@ struct Track: Identifiable, Equatable {
         duration: 240
     )
 
-    static let previewTracks: [Track] = [
-        Track(id: "plex-1", title: "Local Signal", artist: "Plex Library", album: "Personal Media", source: .plex, duration: 284),
-        Track(id: "ytm-1", title: "Embedded Light", artist: "YouTube Music", album: "Official Player", source: .youtubeMusic, duration: 213),
-        Track(id: "spotify-1", title: "Remote Green", artist: "Spotify Connect", album: "External Device", source: .spotify, duration: 196),
-        Track(id: "local-1", title: "Imported Groove", artist: "Local Files", album: "iTunes XML", source: .localFiles, duration: 247)
-    ]
 }
 
 enum PlaybackState: Equatable {
@@ -58,6 +52,10 @@ final class PlaybackCoordinator: ObservableObject {
         publishNowPlaying()
     }
 
+    func setRemoteCommandsEnabled(_ isEnabled: Bool) {
+        nowPlayingController.setCommandsEnabled(isEnabled)
+    }
+
     func play() {
         state = .playing
     }
@@ -71,24 +69,10 @@ final class PlaybackCoordinator: ObservableObject {
     }
 
     func nextTrack() {
-        let tracks = Track.previewTracks
-        guard let index = tracks.firstIndex(where: { $0.id == currentTrack.id }) else {
-            currentTrack = tracks.first ?? .placeholder
-            elapsedTime = 0
-            return
-        }
-        currentTrack = tracks[(index + 1) % tracks.count]
         elapsedTime = 0
     }
 
     func previousTrack() {
-        let tracks = Track.previewTracks
-        guard let index = tracks.firstIndex(where: { $0.id == currentTrack.id }) else {
-            currentTrack = tracks.last ?? .placeholder
-            elapsedTime = 0
-            return
-        }
-        currentTrack = tracks[(index - 1 + tracks.count) % tracks.count]
         elapsedTime = 0
     }
 

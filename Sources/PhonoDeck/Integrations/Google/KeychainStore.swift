@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-struct KeychainStore {
+struct KeychainStore: Sendable {
     let service: String
 
     func save(_ data: Data, account: String) throws {

@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "./scripts/hooks/check-ui-map.sh",
+        "timeout": 15
+      }
+    ]
+  }
+}

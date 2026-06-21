@@ -46,6 +46,19 @@ Not needed:
 
 PhonoDeck uses Google's installed-app flow: system browser + PKCE + loopback callback. Google documents `client_secret` as optional for some installed-app token exchanges, but the OAuth clients created in this project returned `client_secret is missing` without it. Keep the secret local and ignored by Git.
 
+### Finding The Client Secret
+
+Google's newer Auth Platform pages may show the Desktop client details without showing the secret inline. Use these routes, in order:
+
+1. Open **Google Auth Platform > Clients**.
+2. Open the Desktop client named `PhonoDeck macOS`.
+3. Expand **Additional information** or **Client secrets** and look for a copy/show action.
+4. If the new page does not reveal it, open **APIs & Services > Credentials** in the same project.
+5. Under **OAuth 2.0 Client IDs**, open or edit `PhonoDeck macOS`.
+6. Look for **Client secret**, **Show secret**, **Reset secret**, or **Download JSON**.
+
+If you download JSON, do not paste it into chat or commit it. Copy only the `client_secret` value into `Config/Secrets.xcconfig`, then delete the downloaded JSON.
+
 ## Local Config
 
 Copy the template:
@@ -86,7 +99,7 @@ If that returns the signed-in user's YouTube channel metadata, account wiring is
 
 ## Implementation Sequence
 
-1. Local config ingestion for `GOOGLE_OAUTH_CLIENT_ID` exists.
+1. Local config ingestion for `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` exists.
 2. PKCE generation exists.
 3. Loopback callback server exists.
 4. Google OAuth opens in the system browser.
@@ -94,4 +107,6 @@ If that returns the signed-in user's YouTube channel metadata, account wiring is
 6. Refresh/access tokens are stored in Keychain.
 7. `channels.list?part=snippet&mine=true` is called after sign-in.
 8. Signed-in account state is displayed in the YouTube Music screen.
-9. Token revocation still needs a follow-up implementation; local disconnect deletes stored tokens.
+9. Token revocation and refresh still need follow-up implementations; local disconnect deletes stored tokens.
+
+The TV / Limited Input device-code flow was removed from the app. It is not the supported PhonoDeck path because Google documents `client_secret` as required during device token polling and recommends installed-app OAuth for browser-capable desktop apps.

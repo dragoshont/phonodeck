@@ -33,6 +33,15 @@ final class NowPlayingController: NSObject {
         commandCenter.previousTrackCommand.addTarget(self, action: #selector(handlePreviousCommand(_:)))
     }
 
+    func setCommandsEnabled(_ isEnabled: Bool) {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        commandCenter.playCommand.isEnabled = isEnabled
+        commandCenter.pauseCommand.isEnabled = isEnabled
+        commandCenter.togglePlayPauseCommand.isEnabled = isEnabled
+        commandCenter.nextTrackCommand.isEnabled = isEnabled
+        commandCenter.previousTrackCommand.isEnabled = isEnabled
+    }
+
     func publish(track: Track, state: PlaybackState, elapsedTime: TimeInterval) {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [
             MPMediaItemPropertyTitle: track.title,

@@ -1,8 +1,11 @@
+import AppKit
+import OSLog
 import SwiftUI
 
 @main
 struct PhonoDeckApp: App {
-    @StateObject private var appState = AppState()
+    @NSApplicationDelegateAdaptor(PhonoDeckAppDelegate.self) private var appDelegate
+    @StateObject private var appState = AppState.shared
 
     var body: some Scene {
         WindowGroup {
@@ -10,7 +13,106 @@ struct PhonoDeckApp: App {
                 .environmentObject(appState)
         }
         .commands {
+            NavigationCommands(appState: appState)
             PlaybackCommands(appState: appState)
+        }
+    }
+}
+
+@MainActor
+final class PhonoDeckAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        AppLog.app.info("Application did finish launching")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            Self.openWindowIfNeeded()
+        }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        AppLog.app.info("Application reopen requested; has visible windows=\(flag.description, privacy: .public)")
+        if !flag {
+            Self.openWindowIfNeeded()
+        }
+        return true
+    }
+
+    private static func openWindowIfNeeded() {
+        PhonoDeckWindowManager.shared.openWindowIfNeeded()
+    }
+}
+
+@MainActor
+final class PhonoDeckWindowManager {
+    static let shared = PhonoDeckWindowManager()
+
+    private var fallbackWindow: NSWindow?
+
+    func openWindowIfNeeded() {
+        let hasVisibleContentWindow = NSApp.windows.contains { window in
+            window.isVisible && !window.isMiniaturized && window.canBecomeMain
+        }
+        guard !hasVisibleContentWindow else {
+            AppLog.app.info("Window restore check found visible content window; no fallback needed")
+            return
+        }
+
+        AppLog.app.info("No visible content window found; opening fallback window")
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1400, height: 900),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.title = "Music"
+        window.isReleasedWhenClosed = false
+        window.contentView = NSHostingView(rootView: RootView().environmentObject(AppState.shared))
+        fallbackWindow = window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+    }
+}
+
+struct NavigationCommands: Commands {
+    let appState: AppState
+
+    var body: some Commands {
+        CommandMenu("Navigate") {
+            Button("Library") {
+                appState.open(.library)
+            }
+            .keyboardShortcut("1", modifiers: [.command])
+
+            Button("Playlists") {
+                appState.open(.playlists)
+            }
+            .keyboardShortcut("2", modifiers: [.command])
+
+            Button("Albums") {
+                appState.open(.albums)
+            }
+            .keyboardShortcut("3", modifiers: [.command])
+
+            Button("Artists") {
+                appState.open(.artists)
+            }
+            .keyboardShortcut("4", modifiers: [.command])
+
+            Button("Queue") {
+                appState.open(.queue)
+            }
+            .keyboardShortcut("5", modifiers: [.command])
+
+            Button("Search") {
+                appState.open(.search)
+            }
+            .keyboardShortcut("f", modifiers: [.command])
+
+            Button("Settings") {
+                appState.open(.settings)
+            }
+            .keyboardShortcut(",", modifiers: [.command])
         }
     }
 }
@@ -21,17 +123,29 @@ struct PlaybackCommands: Commands {
     var body: some Commands {
         CommandMenu("Playback") {
             Button("Play/Pause") {
-                appState.playback.togglePlayPause()
+                if appState.activeSource.isYouTubePlayerBacked {
+                    appState.youtubePlayback.playPause()
+                } else {
+                    appState.playback.togglePlayPause()
+                }
             }
             .keyboardShortcut(.space, modifiers: [])
 
             Button("Next Track") {
-                appState.playback.nextTrack()
+                if appState.activeSource.isYouTubePlayerBacked {
+                    appState.youtubePlayback.next()
+                } else {
+                    appState.playback.nextTrack()
+                }
             }
             .keyboardShortcut(.rightArrow, modifiers: [.command])
 
             Button("Previous Track") {
-                appState.playback.previousTrack()
+                if appState.activeSource.isYouTubePlayerBacked {
+                    appState.youtubePlayback.previous()
+                } else {
+                    appState.playback.previousTrack()
+                }
             }
             .keyboardShortcut(.leftArrow, modifiers: [.command])
         }

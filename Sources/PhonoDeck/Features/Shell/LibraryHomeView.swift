@@ -10,7 +10,7 @@ struct LibraryHomeView: View {
             VStack(alignment: .leading, spacing: DesignTokens.comfortableSpacing) {
                 header
                 sourceStrip
-                recentlyPlayed
+                sourceStatusPanel
                 libraryGrid
             }
             .padding(DesignTokens.comfortableSpacing)
@@ -23,8 +23,9 @@ struct LibraryHomeView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(section.title)
                 .font(.largeTitle.weight(.semibold))
-            Text("Plex-first native playback with service-aware library surfaces.")
+            Text("Source-aware library surfaces appear here as each provider is connected. YouTube Music remains the active P0 music route.")
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -36,16 +37,30 @@ struct LibraryHomeView: View {
         }
     }
 
-    private var recentlyPlayed: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            Text("Recently Played")
-                .font(.title2.weight(.semibold))
-            HStack(spacing: DesignTokens.standardSpacing) {
-                ForEach(Track.previewTracks) { track in
-                    TrackCard(track: track)
-                }
+    private var sourceStatusPanel: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: activeSource.descriptor.symbolName)
+                .font(.title3)
+                .frame(width: 34, height: 34)
+                .background(activeSource.tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .foregroundStyle(activeSource.tint)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(activeSource.descriptor.displayName)
+                    .font(.headline)
+                Text(activeSource.descriptor.nativeRole)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(activeSource.isYouTubePlayerBacked ? "Active" : "Planned source")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(activeSource.isYouTubePlayerBacked ? .green : .secondary)
             }
+            Spacer(minLength: 0)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var libraryGrid: some View {
@@ -60,6 +75,7 @@ struct LibraryHomeView: View {
                         Text(source.nativeRole)
                             .font(.callout)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,31 +97,5 @@ private struct SourcePill: View {
             .padding(.vertical, 7)
             .background(isActive ? Color.accentColor.opacity(0.16) : Color.secondary.opacity(0.10), in: Capsule())
             .foregroundStyle(isActive ? Color.accentColor : Color.primary)
-    }
-}
-
-private struct TrackCard: View {
-    let track: Track
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            RoundedRectangle(cornerRadius: DesignTokens.artworkCornerRadius, style: .continuous)
-                .fill(track.source.tint.gradient)
-                .aspectRatio(1, contentMode: .fit)
-                .overlay(alignment: .bottomLeading) {
-                    Image(systemName: track.source.descriptor.symbolName)
-                        .font(.title)
-                        .foregroundStyle(.white)
-                        .padding(10)
-                }
-            Text(track.title)
-                .font(.headline)
-                .lineLimit(1)
-            Text(track.artist)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
-        .frame(width: 160, alignment: .leading)
     }
 }

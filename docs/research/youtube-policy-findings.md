@@ -34,7 +34,7 @@ Source: YouTube API Services Required Minimum Functionality.
 Allowed direction:
 
 - Native PhonoDeck search, playlists, queue planning, library views, account settings, and source-aware actions.
-- Visible official YouTube embedded player or official external YouTube Music surface for playback.
+- Visible official YouTube embedded player as the primary playback surface, with the external YouTube Music site only as a fallback.
 - Native controls only where the visible official player/API explicitly permits control.
 
 Rejected direction:

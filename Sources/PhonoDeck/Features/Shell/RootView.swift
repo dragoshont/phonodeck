@@ -3,16 +3,32 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var isSidebarVisible = true
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(selection: $appState.selectedSection)
-                .navigationSplitViewColumnWidth(min: DesignTokens.sidebarMinWidth, ideal: 250)
-        } detail: {
-            detailView
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            NowPlayingBar(playback: appState.playback)
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 0) {
+                if isSidebarVisible {
+                    SidebarView(selection: $appState.selectedSection)
+                        .frame(width: 250)
+                    Divider()
+                }
+
+                detailView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+
+            if shouldShowNowPlayingBar {
+                NowPlayingBar(
+                    activeSource: appState.activeSource,
+                    playback: appState.playback,
+                    youtubeNowPlaying: appState.youtubeNowPlaying,
+                    youtubePlayback: appState.youtubePlayback,
+                    openQueue: { appState.open(.queue) }
+                )
+                .padding(.horizontal, DesignTokens.comfortableSpacing)
+                .padding(.bottom, 14)
+            }
         }
         .frame(minWidth: DesignTokens.sidebarMinWidth + DesignTokens.contentMinWidth, minHeight: 640)
         .toolbar {
@@ -21,41 +37,70 @@ struct RootView: View {
                     Image(systemName: "sidebar.leading")
                 }
                 .help("Show or hide sidebar")
-                Picker("Source", selection: $appState.activeSource) {
-                    ForEach(appState.sources) { source in
-                        Label(source.displayName, systemImage: source.symbolName)
-                            .tag(source.id)
-                    }
-                }
-                .pickerStyle(.menu)
+                youtubeSourceBadge
             }
             ToolbarItemGroup {
-                Button(action: {}) {
-                    Image(systemName: "square.and.arrow.up")
+                if let youtubeNowPlaying = appState.youtubeNowPlaying {
+                    ShareLink(item: youtubeNowPlaying.watchURL) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .help("Share current YouTube song")
+                } else {
+                    Button(action: {}) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .disabled(true)
+                    .help("Select a YouTube song to share")
                 }
-                .help("Share")
-                Button(action: {}) {
+                Button(action: openLibrary) {
+                    Image(systemName: "music.note.list")
+                }
+                .help("Open Library")
+                Button(action: openSearch) {
                     Image(systemName: "magnifyingglass")
                 }
-                .help("Search")
+                .help("Open Search")
             }
         }
     }
 
     @ViewBuilder
     private var detailView: some View {
-        if appState.activeSource == .youtubeMusic {
+        if appState.activeSource.isYouTubePlayerBacked {
             YouTubeMusicNativeConceptView()
         } else {
             LibraryHomeView(
-                section: appState.selectedSection ?? .listenNow,
+                section: appState.selectedSection ?? .library,
                 sources: appState.sources,
                 activeSource: appState.activeSource
             )
         }
     }
 
+    private var shouldShowNowPlayingBar: Bool {
+        if appState.activeSource.isYouTubePlayerBacked {
+            return appState.youtubeNowPlaying != nil
+        }
+        return appState.playback.currentTrack != .placeholder || appState.playback.state == .playing
+    }
+
     private func toggleSidebar() {
-        NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
+        isSidebarVisible.toggle()
+    }
+
+    private func openSearch() {
+        appState.open(.search)
+    }
+
+    private func openLibrary() {
+        appState.open(.library)
+    }
+
+    private var youtubeSourceBadge: some View {
+        Label("YouTube Music", systemImage: MediaSourceKind.youtubeMusic.descriptor.symbolName)
+            .labelStyle(.titleAndIcon)
+            .font(.callout.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .help("YouTube Music is the active P0 source")
     }
 }

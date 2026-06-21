@@ -19,7 +19,7 @@
 - AirPlay route control for native playback.
 - Cast feasibility prototype using official sender/receiver constraints.
 - iTunes XML/M3U import and library matching.
-- Playlist editing for Plex/local sources, Spotify playlist management where policy allows, and YouTube playlist management only through documented API scopes.
+- Playlist editing for Plex/local sources, Spotify playlist management where policy allows, and YouTube Music playlist management only through documented YouTube API scopes.
 
 ## P2: Companion Apps
 

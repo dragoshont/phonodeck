@@ -45,7 +45,7 @@ Native controls are acceptable only when they control:
 | P0 unauthenticated | Public search/discovery | Use YouTube Data API without user auth where possible, or API key if needed |
 | P0 account connect | Account identity and user's YouTube channel context | Minimal identity plus read-only YouTube scope if required |
 | P0 library surfaces | User playlists/subscriptions/liked-video references where officially exposed | `https://www.googleapis.com/auth/youtube.readonly` requested in context |
-| P1 playlist actions | Create/update YouTube playlists from explicit user action | Escalate to write scopes only when the feature exists |
+| P1 playlist actions | Create/update YouTube Music playlists through official YouTube account playlist APIs from explicit user action | Escalate to write scopes only when the feature exists |
 
 Do not request write scopes during initial sign-in.
 
@@ -53,11 +53,11 @@ Do not request write scopes during initial sign-in.
 
 ### Allowed P0 Strategy
 
-- Use visible, official YouTube playback surfaces for YouTube content.
+- Use a visible, official YouTube playback surface inside PhonoDeck for YouTube content.
 - Prefer an embedded YouTube player for playable video IDs where the IFrame Player API supports the use case.
 - Keep YouTube attribution visible.
 - Keep Autoplay off unless the user clearly initiates playback.
-- For YouTube Music-specific pages that are not supported by the IFrame API, open or host the official YouTube Music web experience without interfering with its UI.
+- For YouTube Music-specific pages that are not supported by the IFrame API, host the official YouTube Music web experience visibly without interfering with its UI.
 
 ### Not P0
 
