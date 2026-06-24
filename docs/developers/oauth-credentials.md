@@ -58,6 +58,8 @@ make release-preflight
 make package-local
 ```
 
+`make release-preflight` may warn that a local Google OAuth secret is present. That is expected for local development. `make package-local` is the release-artifact check; it forces the packaged secret empty and fails if the built app contains a non-empty OAuth client secret.
+
 ## GitHub Secrets
 
 Use GitHub Secrets only when a GitHub Actions workflow actually needs credentials.

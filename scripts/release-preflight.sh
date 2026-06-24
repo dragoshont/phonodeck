@@ -90,7 +90,7 @@ if [[ -f Config/Secrets.xcconfig ]]; then
   if [[ -z "$google_secret" || "$google_secret" == "YOUR_DESKTOP_APP_CLIENT_SECRET" ]]; then
     ok "local Google OAuth secret is empty/placeholder"
   else
-    fail_msg "local Google OAuth secret is non-empty; remove it before release packaging"
+    warn_msg "local Google OAuth secret present in ignored config; package-local must strip it from artifacts"
   fi
 else
   ok "local secrets file absent"
