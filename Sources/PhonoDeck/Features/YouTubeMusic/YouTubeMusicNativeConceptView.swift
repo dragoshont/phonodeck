@@ -995,6 +995,13 @@ struct YouTubeMusicNativeConceptView: View {
         searchViewModel.resetAuthorizedLocalState()
         playerController.stopAndReset()
         isVideoVisible = false
+        lastVideoID = ""
+        lastVideoTitle = ""
+        lastVideoChannel = ""
+        lastVideoThumbnailURL = ""
+        recentSearchesRaw = ""
+        localPlayedSeconds = 0
+        pendingLocalPlayedSeconds = 0
         appState.youtubeNowPlaying = nil
         appState.youtubePlayback.reset()
         rebuildPageCaches()
@@ -1737,7 +1744,7 @@ struct YouTubeMusicNativeConceptView: View {
             Divider()
             if accountViewModel.state.canDisconnect {
                 Button("Log Out of Google", role: .destructive) {
-                    accountViewModel.disconnect()
+                    disconnectYouTubeAccount()
                 }
             } else {
                 Button("Connect") {

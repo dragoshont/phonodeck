@@ -158,6 +158,10 @@ final class YouTubeSearchService: YouTubeSearchServicing {
     }
 
     func clearSearchCache() {
+        inFlightSearchTasks.values.forEach { $0.cancel() }
+        inFlightSearchTasks.removeAll()
+        activeSearchKey = nil
+        lastSearchSubmittedAtByKey.removeAll()
         searchCache.removeAll()
         UserDefaults.standard.removeObject(forKey: searchCacheKey)
     }

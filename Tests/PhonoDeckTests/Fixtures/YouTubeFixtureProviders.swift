@@ -12,8 +12,12 @@ func clearYouTubeLocalState() {
     ].forEach { UserDefaults.standard.removeObject(forKey: $0) }
 }
 
-struct FixtureAccountStore: YouTubeAccountTokenProviding {
-    let tokens: GoogleOAuthTokenSet?
+final class FixtureAccountStore: YouTubeAccountTokenProviding, @unchecked Sendable {
+    var tokens: GoogleOAuthTokenSet?
+
+    init(tokens: GoogleOAuthTokenSet?) {
+        self.tokens = tokens
+    }
 
     func loadFreshTokens() async throws -> GoogleOAuthTokenSet? { tokens }
 
@@ -43,13 +47,14 @@ final class FixtureYouTubeMusicMetadataProvider: YouTubeMusicMetadataProviding, 
     }
 }
 
-final class FixtureYouTubeOfficialProvider: YouTubeOfficialProviding, @unchecked Sendable {
+class FixtureYouTubeOfficialProvider: YouTubeOfficialProviding, @unchecked Sendable {
     var searchPage: YouTubeVideoPage
     var playlistPage: YouTubeVideoPage
     var playlistsValue: [YouTubePlaylist]
     var createdPlaylist: YouTubePlaylist?
     var activityVideos: [YouTubeVideoSearchResult]
     var subscriptionsValue: [YouTubeSubscription]
+    var details: YouTubeVideoDetails?
     var error: Error?
     var addedPairs: [String] = []
     var deletedPlaylistItemIDs: [String] = []
@@ -61,6 +66,7 @@ final class FixtureYouTubeOfficialProvider: YouTubeOfficialProviding, @unchecked
         playlistPage: YouTubeVideoPage = .init(items: [], nextPageToken: nil),
         activityVideos: [YouTubeVideoSearchResult] = [],
         subscriptions: [YouTubeSubscription] = [],
+        details: YouTubeVideoDetails? = nil,
         error: Error? = nil
     ) {
         self.searchPage = searchPage
@@ -69,6 +75,7 @@ final class FixtureYouTubeOfficialProvider: YouTubeOfficialProviding, @unchecked
         self.createdPlaylist = createdPlaylist
         self.activityVideos = activityVideos
         subscriptionsValue = subscriptions
+        self.details = details
         self.error = error
     }
 
@@ -119,7 +126,10 @@ final class FixtureYouTubeOfficialProvider: YouTubeOfficialProviding, @unchecked
         return subscriptionsValue
     }
 
-    func videoDetails(videoID: String, accessToken: String) async throws -> YouTubeVideoDetails? { nil }
+    func videoDetails(videoID: String, accessToken: String) async throws -> YouTubeVideoDetails? {
+        if let error { throw error }
+        return details
+    }
 }
 
 extension GoogleOAuthTokenSet {
@@ -139,5 +149,150 @@ enum YouTubeFixtureFactory {
 
     static func playlist(id: String = "playlist-id", title: String = "Favorites") -> YouTubePlaylist {
         YouTubePlaylist(id: id, snippet: .init(title: title, channelTitle: nil, thumbnails: nil), contentDetails: .init(itemCount: 1), status: .init(privacyStatus: "private"))
+    }
+
+    static func details(id: String = "video-id") -> YouTubeVideoDetails {
+        let data = Data("""
+        {
+          "id": "\(id)",
+          "snippet": { "title": "Song", "channelTitle": "Artist", "description": "Description", "publishedAt": "2026-06-01T00:00:00Z", "tags": [], "categoryId": "10" },
+          "contentDetails": { "duration": "PT3M", "caption": "false", "definition": "hd", "licensedContent": true },
+          "recordingDetails": { "recordingDate": "2026-06-01" },
+          "status": { "embeddable": true, "madeForKids": false, "privacyStatus": "public" },
+          "statistics": { "viewCount": "1", "likeCount": "1", "commentCount": "0" }
+        }
+        """.utf8)
+        return try! JSONDecoder().decode(YouTubeVideoDetails.self, from: data)
+    }
+}
+
+@MainActor
+final class DelayedOfficialProvider: FixtureYouTubeOfficialProvider {
+    private var detailsContinuation: CheckedContinuation<Void, Never>?
+    private var searchContinuations: [CheckedContinuation<Void, Never>] = []
+    private(set) var searchCallCount = 0
+    var hasPendingDetails: Bool { detailsContinuation != nil }
+
+    override func searchVideoPage(query: String, accessToken: String, maxResults: Int, preference: YouTubePlaybackPreference, pageToken: String?) async throws -> YouTubeVideoPage {
+        searchCallCount += 1
+        await withCheckedContinuation { continuation in
+            searchContinuations.append(continuation)
+        }
+        return try await super.searchVideoPage(query: query, accessToken: accessToken, maxResults: maxResults, preference: preference, pageToken: pageToken)
+    }
+
+    override func videoDetails(videoID: String, accessToken: String) async throws -> YouTubeVideoDetails? {
+        await withCheckedContinuation { continuation in
+            detailsContinuation = continuation
+        }
+        return try await super.videoDetails(videoID: videoID, accessToken: accessToken)
+    }
+
+    func resumeSearch() {
+        guard !searchContinuations.isEmpty else { return }
+        searchContinuations.removeFirst().resume()
+    }
+
+    func resumeAllSearches() {
+        let continuations = searchContinuations
+        searchContinuations.removeAll()
+        continuations.forEach { $0.resume() }
+    }
+
+    func resumeDetails() {
+        detailsContinuation?.resume()
+        detailsContinuation = nil
+    }
+}
+
+@MainActor
+final class DelayedSearchService: YouTubeSearchServicing {
+    var providerRequestCounts: [String: Int] = [:]
+    private let result: YouTubeSearchServiceResult
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(result: YouTubeSearchServiceResult) {
+        self.result = result
+    }
+
+    func cachedPage(for request: YouTubeSearchRequest) -> YouTubeSearchServiceResult? { nil }
+
+    func search(_ request: YouTubeSearchRequest) async -> YouTubeSearchServiceResult {
+        await wait()
+        return result
+    }
+
+    func loadMore(_ continuation: YouTubeSearchContinuation) async -> YouTubeSearchServiceResult {
+        await wait()
+        return result
+    }
+
+    func compareProviders(query: String, preference: YouTubePlaybackPreference) async -> [YouTubeProviderComparisonResult] { [] }
+    func clearSearchCache() {}
+
+    func resume() {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    private func wait() async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+    }
+}
+
+@MainActor
+final class DelayedPlaylistService: YouTubePlaylistServicing {
+    private let snapshot: YouTubeLibrarySnapshot
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(snapshot: YouTubeLibrarySnapshot) {
+        self.snapshot = snapshot
+    }
+
+    func loadLibrary() async -> YouTubeLibrarySnapshot {
+        await wait()
+        return snapshot
+    }
+
+    func selectPlaylist(_ playlist: YouTubePlaylist) async -> YouTubeLibrarySnapshot {
+        await wait()
+        return snapshot
+    }
+
+    func loadMorePlaylistItems(playlist: YouTubePlaylist, pageToken: String) async -> YouTubeLibrarySnapshot {
+        await wait()
+        return snapshot
+    }
+
+    func createDefaultPlaylist(adding video: YouTubeVideoSearchResult?) async -> YouTubePlaylistWriteResult {
+        await wait()
+        return .init(kind: .createDefault(adding: video), status: .ready, statusMessage: "Created.", playlists: snapshot.playlists, selectedPlaylist: snapshot.selectedPlaylist, playlistVideos: snapshot.playlistVideos, nextPlaylistPageToken: snapshot.nextPlaylistPageToken, requestCountDeltas: [:])
+    }
+
+    func add(_ video: YouTubeVideoSearchResult, to playlist: YouTubePlaylist) async -> YouTubePlaylistWriteResult {
+        await wait()
+        return .init(kind: .add(video: video, playlist: playlist), status: .ready, statusMessage: "Added.", playlists: snapshot.playlists, selectedPlaylist: snapshot.selectedPlaylist, playlistVideos: snapshot.playlistVideos, nextPlaylistPageToken: snapshot.nextPlaylistPageToken, requestCountDeltas: [:])
+    }
+
+    func remove(_ video: YouTubeVideoSearchResult, from playlist: YouTubePlaylist) async -> YouTubePlaylistWriteResult {
+        await wait()
+        return .init(kind: .remove(video: video, playlist: playlist), status: .ready, statusMessage: "Removed.", playlists: snapshot.playlists, selectedPlaylist: snapshot.selectedPlaylist, playlistVideos: snapshot.playlistVideos, nextPlaylistPageToken: snapshot.nextPlaylistPageToken, requestCountDeltas: [:])
+    }
+
+    func isAdding(_ video: YouTubeVideoSearchResult, to playlist: YouTubePlaylist) -> Bool { false }
+    func isRemoving(_ video: YouTubeVideoSearchResult) -> Bool { false }
+    func clearPlaylistCache() {}
+
+    func resume() {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    private func wait() async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
     }
 }

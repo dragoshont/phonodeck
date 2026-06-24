@@ -171,6 +171,159 @@ final class YouTubeFixtureProviderTests: XCTestCase {
         XCTAssertEqual(viewModel.status, "Signed out. Local YouTube Music library cache cleared.")
     }
 
+    func testInFlightSearchCannotRepopulateAfterReset() async {
+        let result = YouTubeVideoSearchResult(id: "late", title: "Late Result", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let service = DelayedSearchService(result: .init(
+            request: .init(query: "Late", preference: .songFirst, engine: .official),
+            page: .init(items: [result], nextPageToken: nil),
+            resolvedEngine: .official,
+            status: .ready,
+            cacheState: .none,
+            nextPageToken: nil,
+            requestCountDeltas: [:]
+        ))
+        let viewModel = YouTubeSearchViewModel(
+            accountStore: FixtureAccountStore(tokens: .fixture),
+            dataClient: FixtureYouTubeOfficialProvider(),
+            metadataProvider: FixtureYouTubeMusicMetadataProvider(),
+            injectedSearchService: service
+        )
+
+        let searchTask = Task { await viewModel.search("Late", preference: .songFirst, engine: .official) }
+        await Task.yield()
+        viewModel.resetAuthorizedLocalState()
+        service.resume()
+        await searchTask.value
+
+        XCTAssertTrue(viewModel.results.isEmpty)
+        XCTAssertNil(viewModel.selectedVideo)
+        XCTAssertTrue(viewModel.queue.isEmpty)
+        XCTAssertEqual(viewModel.status, "Signed out. Local YouTube Music library cache cleared.")
+    }
+
+    func testSearchCacheClearDropsInFlightTaskForSameKey() async {
+        let result = YouTubeVideoSearchResult(id: "late", title: "Late Result", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let provider = DelayedOfficialProvider(searchPage: .init(items: [result], nextPageToken: nil))
+        let service = YouTubeSearchService(
+            accountStore: FixtureAccountStore(tokens: .fixture),
+            dataClient: provider,
+            metadataProvider: FixtureYouTubeMusicMetadataProvider(),
+            searchCacheKey: "testSearchCacheClearDropsInFlightTaskForSameKey",
+            searchCacheLimit: 10,
+            searchDebounceInterval: 0
+        )
+        let request = YouTubeSearchRequest(query: "Late", preference: .songFirst, engine: .official)
+
+        let firstTask = Task { await service.search(request) }
+        while provider.searchCallCount < 1 {
+            await Task.yield()
+        }
+        service.clearSearchCache()
+        let secondTask = Task { await service.search(request) }
+        while provider.searchCallCount < 2 {
+            await Task.yield()
+        }
+        provider.resumeAllSearches()
+        let firstResult = await firstTask.value
+        let secondResult = await secondTask.value
+
+        XCTAssertEqual(firstResult.page.items, [result])
+        XCTAssertEqual(secondResult.page.items, [result])
+        XCTAssertEqual(provider.searchCallCount, 2)
+        UserDefaults.standard.removeObject(forKey: "testSearchCacheClearDropsInFlightTaskForSameKey")
+    }
+
+    func testInFlightLibraryLoadCannotRepopulateAfterReset() async {
+        let video = YouTubeVideoSearchResult(id: "activity", title: "Activity", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let playlist = YouTubePlaylist(id: "playlist-id", snippet: .init(title: "Library", channelTitle: nil, thumbnails: nil), contentDetails: nil, status: nil)
+        let service = DelayedPlaylistService(snapshot: .init(
+            activityVideos: [video],
+            playlists: [playlist],
+            subscriptions: [],
+            selectedPlaylist: playlist,
+            playlistVideos: [video],
+            nextPlaylistPageToken: nil,
+            warnings: [],
+            status: .ready,
+            requestCountDeltas: [:]
+        ))
+        let viewModel = YouTubeSearchViewModel(
+            accountStore: FixtureAccountStore(tokens: .fixture),
+            dataClient: FixtureYouTubeOfficialProvider(),
+            metadataProvider: FixtureYouTubeMusicMetadataProvider(),
+            injectedPlaylistService: service
+        )
+
+        let loadTask = Task { await viewModel.loadLibraryData() }
+        await Task.yield()
+        viewModel.resetAuthorizedLocalState()
+        service.resume()
+        await loadTask.value
+
+        XCTAssertTrue(viewModel.activityVideos.isEmpty)
+        XCTAssertTrue(viewModel.playlists.isEmpty)
+        XCTAssertNil(viewModel.selectedPlaylist)
+        XCTAssertTrue(viewModel.playlistVideos.isEmpty)
+        XCTAssertTrue(viewModel.queue.isEmpty)
+        XCTAssertEqual(viewModel.status, "Signed out. Local YouTube Music library cache cleared.")
+    }
+
+    func testPlaylistCacheClearDropsServiceOwnedLibraryState() async {
+        let video = YouTubeVideoSearchResult(id: "activity", title: "Activity", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let playlist = YouTubePlaylist(id: "playlist-id", snippet: .init(title: "Library", channelTitle: nil, thumbnails: nil), contentDetails: nil, status: nil)
+        let accountStore = FixtureAccountStore(tokens: .fixture)
+        let service = YouTubePlaylistService(
+            accountStore: accountStore,
+            dataClient: FixtureYouTubeOfficialProvider(playlists: [playlist], playlistPage: .init(items: [video], nextPageToken: nil), activityVideos: [video]),
+            selectedPlaylistDefaultsKey: "testPlaylistCacheClearDropsServiceOwnedLibraryState.selected",
+            playlistItemCacheDefaultsKey: "testPlaylistCacheClearDropsServiceOwnedLibraryState.cache",
+            playlistItemCacheLimit: 10
+        )
+
+        let loaded = await service.loadLibrary()
+        XCTAssertFalse(loaded.playlists.isEmpty)
+        service.clearPlaylistCache()
+        accountStore.tokens = nil
+        let signedOut = await service.loadLibrary()
+
+        XCTAssertTrue(signedOut.playlists.isEmpty)
+        XCTAssertTrue(signedOut.playlistVideos.isEmpty)
+        XCTAssertNil(signedOut.selectedPlaylist)
+        UserDefaults.standard.removeObject(forKey: "testPlaylistCacheClearDropsServiceOwnedLibraryState.selected")
+        UserDefaults.standard.removeObject(forKey: "testPlaylistCacheClearDropsServiceOwnedLibraryState.cache")
+    }
+
+    func testInFlightVideoDetailsCannotRepopulateAfterReset() async {
+        let video = YouTubeVideoSearchResult(id: "details", title: "Details", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let provider = DelayedOfficialProvider(details: YouTubeFixtureFactory.details(id: video.id))
+        let viewModel = YouTubeSearchViewModel(
+            accountStore: FixtureAccountStore(tokens: .fixture),
+            dataClient: provider,
+            metadataProvider: FixtureYouTubeMusicMetadataProvider()
+        )
+
+        viewModel.select(video)
+        await Task.yield()
+        viewModel.resetAuthorizedLocalState()
+        while !provider.hasPendingDetails {
+            await Task.yield()
+        }
+        provider.resumeDetails()
+
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        XCTAssertNil(viewModel.selectedVideo)
+        XCTAssertNil(viewModel.selectedVideoDetails)
+        XCTAssertEqual(viewModel.status, "Signed out. Local YouTube Music library cache cleared.")
+    }
+
+    func testAllYouTubeLogoutButtonsUseSharedDisconnectResetHelper() throws {
+        let source = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertEqual(source.components(separatedBy: "accountViewModel.disconnect()").count - 1, 1)
+        XCTAssertTrue(source.contains("disconnectYouTube: { disconnectYouTubeAccount() }"))
+        XCTAssertTrue(source.contains("Button(\"Log Out of Google\", role: .destructive) {\n                    disconnectYouTubeAccount()"))
+    }
+
     func testSelectingSongFromListAdoptsQueueForNextSong() {
         let first = YouTubeVideoSearchResult(id: "first", title: "First", channelTitle: "Artist", thumbnailURL: nil)
         let second = YouTubeVideoSearchResult(id: "second", title: "Second", channelTitle: "Artist", thumbnailURL: nil)
@@ -185,6 +338,13 @@ final class YouTubeFixtureProviderTests: XCTestCase {
         XCTAssertEqual(viewModel.queue, [first, second])
         XCTAssertTrue(viewModel.canPlayNext)
         XCTAssertEqual(viewModel.queuePositionText, "1 of 2")
+    }
+
+    private func repoRoot() -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
     }
 
     func testProviderRequestCountsTrackOfficialOnlySearchCalls() async {

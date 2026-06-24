@@ -205,7 +205,15 @@ final class YouTubePlaylistService: YouTubePlaylistServicing {
 
     func clearPlaylistCache() {
         playlistItemCache.removeAll()
+        playlists.removeAll()
+        selectedPlaylist = nil
+        selectedPlaylistID = nil
+        playlistVideos.removeAll()
+        nextPlaylistPageToken = nil
+        activePlaylistWriteIDs.removeAll()
+        activePlaylistDeleteIDs.removeAll()
         UserDefaults.standard.removeObject(forKey: playlistItemCacheDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: selectedPlaylistDefaultsKey)
     }
 
     private func fetchRecentActivity(accessToken: String) async -> Result<[YouTubeVideoSearchResult], Error> {

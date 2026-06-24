@@ -58,6 +58,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     private var lastSearchSubmittedAtByKey: [String: Date] = [:]
     private var lastMusicDiscoveryRefreshDate: Date?
     private var selectedPlaylistID: String?
+    private var resetGeneration = 0
 
     init(
         accountStore: any YouTubeAccountTokenProviding = GoogleAccountStore(),
@@ -123,6 +124,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func search(_ query: String, preference: YouTubePlaybackPreference = .songFirst, engine: YouTubeMusicEngine = .automatic) async {
+        let generation = resetGeneration
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else { return }
         guard trimmedQuery.count <= 100 else {
@@ -158,17 +160,23 @@ final class YouTubeSearchViewModel: ObservableObject {
         status = ""
         AppLog.search.info("Search started; query=\(trimmedQuery, privacy: .private), engine=\(engine.rawValue, privacy: .public), preference=\(preference.rawValue, privacy: .public), hadCache=\((cachedResult != nil).description, privacy: .public)")
         defer {
-            isSearching = false
-            if activeSearchKey == cacheKey {
-                activeSearchKey = nil
-            }
-            if activeSearchRequestID == requestID {
-                activeSearchRequestID = nil
+            if isCurrentGeneration(generation) {
+                isSearching = false
+                if activeSearchKey == cacheKey {
+                    activeSearchKey = nil
+                }
+                if activeSearchRequestID == requestID {
+                    activeSearchRequestID = nil
+                }
             }
             AppLog.search.info("Search finished; query=\(trimmedQuery, privacy: .private), result count=\(self.results.count, privacy: .public), status=\(self.status, privacy: .public)")
         }
 
         let result = await searchService.search(request)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("search")
+            return
+        }
         guard activeSearchRequestID == requestID else {
             AppLog.search.debug("Ignoring stale search response; query=\(trimmedQuery, privacy: .private)")
             return
@@ -183,6 +191,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func loadMoreSearchResults() async {
+        let generation = resetGeneration
         guard let nextSearchPageToken else { return }
         let continuation = YouTubeSearchContinuation(
             query: lastSearchQuery,
@@ -191,6 +200,10 @@ final class YouTubeSearchViewModel: ObservableObject {
             pageToken: nextSearchPageToken
         )
         let result = await searchService.loadMore(continuation)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("search pagination")
+            return
+        }
         self.nextSearchPageToken = result.nextPageToken
         results.append(contentsOf: result.page.items.filter { pageItem in !results.contains { $0.id == pageItem.id } })
         results = results.deduplicatedByVideoID()
@@ -201,6 +214,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func refreshMusicDiscovery(engine: YouTubeMusicEngine, force: Bool = false) async {
+        let generation = resetGeneration
         AppLog.search.info("Music discovery refresh requested; engine=\(engine.rawValue, privacy: .public), force=\(force.description, privacy: .public), existing=\(self.musicDiscoveryVideos.count, privacy: .public)")
         let cachedSnapshot = discoveryService.cachedDiscovery(engine: engine, seedQueries: Self.musicDiscoverySeedQueries, currentItems: playbackHistory + results)
         if !cachedSnapshot.items.isEmpty { musicDiscoveryVideos = cachedSnapshot.items }
@@ -213,13 +227,19 @@ final class YouTubeSearchViewModel: ObservableObject {
         isRefreshingMusicDiscovery = true
         let previousStatus = status
         defer {
-            isRefreshingMusicDiscovery = false
-            if status.contains("fallback") || status.contains("unavailable") {
-                status = previousStatus
+            if isCurrentGeneration(generation) {
+                isRefreshingMusicDiscovery = false
+                if status.contains("fallback") || status.contains("unavailable") {
+                    status = previousStatus
+                }
             }
         }
 
         let snapshot = await discoveryService.refreshDiscovery(.init(engine: engine, force: force, seedQueries: Self.musicDiscoverySeedQueries), currentItems: playbackHistory + results)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("music discovery")
+            return
+        }
         musicDiscoveryVideos = snapshot.items
         applyRequestCountDeltas(snapshot.requestCountDeltas)
         AppLog.search.info("Music discovery refreshed; published=\(self.musicDiscoveryVideos.count, privacy: .public)")
@@ -254,6 +274,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func resetAuthorizedLocalState() {
+        resetGeneration += 1
         let previousCounts = (results.count, activityVideos.count, playlists.count, playlistVideos.count, playbackHistory.count, musicDiscoveryVideos.count, queue.count)
         searchService.clearSearchCache()
         discoveryService.clearDiscoveryCache()
@@ -279,12 +300,21 @@ final class YouTubeSearchViewModel: ObservableObject {
         skippedVideoIDs.removeAll()
         queue.removeAll()
         lastSearchQuery = ""
+        activeSearchKey = nil
+        activeSearchRequestID = nil
+        lastSearchSubmittedAtByKey.removeAll()
+        isSearching = false
+        isLoadingLibrary = false
+        isRefreshingMusicDiscovery = false
+        isCreatingPlaylist = false
+        isComparingProviders = false
         status = "Signed out. Local YouTube Music library cache cleared."
         LocalPrivacyDataStore.clearYouTubeAuthorizedData()
         AppLog.cache.info("Authorized YouTube local state reset; previous results=\(previousCounts.0, privacy: .public), activity=\(previousCounts.1, privacy: .public), playlists=\(previousCounts.2, privacy: .public), playlistVideos=\(previousCounts.3, privacy: .public), history=\(previousCounts.4, privacy: .public), discovery=\(previousCounts.5, privacy: .public), queue=\(previousCounts.6, privacy: .public)")
     }
 
     func compareProviders(query: String, preference: YouTubePlaybackPreference) async {
+        let generation = resetGeneration
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else {
             providerComparisons = []
@@ -296,9 +326,17 @@ final class YouTubeSearchViewModel: ObservableObject {
         let startedAt = Date()
         let requestCountsBefore = searchService.providerRequestCounts
         isComparingProviders = true
-        defer { isComparingProviders = false }
+        defer {
+            if isCurrentGeneration(generation) {
+                isComparingProviders = false
+            }
+        }
 
         let comparisons = await searchService.compareProviders(query: trimmedQuery, preference: preference)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("provider comparison")
+            return
+        }
         providerComparisons = comparisons
         providerRequestCounts = searchService.providerRequestCounts
         providerComparisonRun = Self.makeComparisonRun(
@@ -355,22 +393,37 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func loadLibraryData() async {
+        let generation = resetGeneration
         guard !isLoadingLibrary else {
             AppLog.playlist.debug("Library load ignored because another load is active")
             return
         }
         isLoadingLibrary = true
         AppLog.playlist.info("Library load started")
-        defer { isLoadingLibrary = false }
+        defer {
+            if isCurrentGeneration(generation) {
+                isLoadingLibrary = false
+            }
+        }
 
         let snapshot = await playlistService.loadLibrary()
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("library load")
+            return
+        }
         applyLibrarySnapshot(snapshot)
         AppLog.playlist.info("Library load finished; activity=\(self.activityVideos.count, privacy: .public), playlists=\(self.playlists.count, privacy: .public), subscriptions=\(self.subscriptions.count, privacy: .public), warnings=\(snapshot.warnings.map(\.rawValue).joined(separator: ","), privacy: .public)")
     }
 
     func selectPlaylist(_ playlist: YouTubePlaylist) async {
+        let generation = resetGeneration
         AppLog.playlist.info("Playlist selected; id=\(playlist.id, privacy: .public), title=\(playlist.snippet.title, privacy: .private)")
-        applyLibrarySnapshot(await playlistService.selectPlaylist(playlist))
+        let snapshot = await playlistService.selectPlaylist(playlist)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("playlist selection")
+            return
+        }
+        applyLibrarySnapshot(snapshot)
     }
 
     var canLoadMorePlaylistVideos: Bool {
@@ -378,20 +431,26 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func loadMorePlaylistVideos() async {
+        let generation = resetGeneration
         guard let selectedPlaylist, let nextPlaylistPageToken else { return }
         AppLog.playlist.info("Playlist pagination started; id=\(selectedPlaylist.id, privacy: .public)")
         let snapshot = await playlistService.loadMorePlaylistItems(playlist: selectedPlaylist, pageToken: nextPlaylistPageToken)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("playlist pagination")
+            return
+        }
         applyLibrarySnapshot(snapshot)
         AppLog.playlist.info("Playlist pagination finished; id=\(selectedPlaylist.id, privacy: .public), total=\(self.playlistVideos.count, privacy: .public), hasNext=\((self.nextPlaylistPageToken != nil).description, privacy: .public)")
     }
 
     func select(_ video: YouTubeVideoSearchResult) {
+        let generation = resetGeneration
         let source = video.sourceLabel ?? (video.isSongLike ? "Music" : "YouTube")
         AppLog.playback.info("Selected video changed; id=\(video.id, privacy: .public), title=\(video.title, privacy: .private), source=\(source, privacy: .public)")
         selectedVideo = video
         selectedVideoDetails = nil
         status = ""
-        Task { await loadVideoDetails(video) }
+        Task { await loadVideoDetails(video, generation: generation) }
     }
 
     func select(_ video: YouTubeVideoSearchResult, queue: [YouTubeVideoSearchResult]) {
@@ -408,6 +467,7 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     func createDefaultPlaylist(adding video: YouTubeVideoSearchResult? = nil) async {
+        let generation = resetGeneration
         guard !isCreatingPlaylist else {
             status = "Playlist creation is already in progress."
             AppLog.playlist.debug("Playlist creation ignored because one is already active")
@@ -415,21 +475,36 @@ final class YouTubeSearchViewModel: ObservableObject {
         }
         isCreatingPlaylist = true
         AppLog.playlist.info("Playlist creation started; adding video=\((video != nil).description, privacy: .public)")
-        defer { isCreatingPlaylist = false }
+        defer {
+            if isCurrentGeneration(generation) {
+                isCreatingPlaylist = false
+            }
+        }
 
         let result = await playlistService.createDefaultPlaylist(adding: video)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("playlist creation")
+            return
+        }
         applyPlaylistWriteResult(result)
         AppLog.playlist.info("Playlist creation finished; selected=\(self.selectedPlaylist?.id ?? "none", privacy: .public), total playlists=\(self.playlists.count, privacy: .public)")
     }
 
     func add(_ video: YouTubeVideoSearchResult, to playlist: YouTubePlaylist) async {
+        let generation = resetGeneration
         AppLog.playlist.info("Playlist add started; video=\(video.id, privacy: .public), playlist=\(playlist.id, privacy: .public), title=\(playlist.snippet.title, privacy: .private)")
 
-        applyPlaylistWriteResult(await playlistService.add(video, to: playlist))
+        let result = await playlistService.add(video, to: playlist)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("playlist add")
+            return
+        }
+        applyPlaylistWriteResult(result)
         AppLog.playlist.info("Playlist add finished; video=\(video.id, privacy: .public), playlist=\(playlist.id, privacy: .public)")
     }
 
     func remove(_ video: YouTubeVideoSearchResult, from playlist: YouTubePlaylist) async {
+        let generation = resetGeneration
         guard let playlistItemID = video.playlistItemID else {
             status = "This playlist item cannot be removed because the official item ID was not loaded yet."
             AppLog.playlist.warning("Playlist remove blocked because item id is missing; video=\(video.id, privacy: .public), playlist=\(playlist.id, privacy: .public)")
@@ -437,7 +512,12 @@ final class YouTubeSearchViewModel: ObservableObject {
         }
         AppLog.playlist.info("Playlist remove started; item=\(playlistItemID, privacy: .public), video=\(video.id, privacy: .public), playlist=\(playlist.id, privacy: .public), title=\(playlist.snippet.title, privacy: .private)")
 
-        applyPlaylistWriteResult(await playlistService.remove(video, from: playlist))
+        let result = await playlistService.remove(video, from: playlist)
+        guard isCurrentGeneration(generation) else {
+            discardStaleAuthorizedResult("playlist remove")
+            return
+        }
+        applyPlaylistWriteResult(result)
         AppLog.playlist.info("Playlist remove finished; item=\(playlistItemID, privacy: .public), playlist=\(playlist.id, privacy: .public), remaining=\(self.playlistVideos.count, privacy: .public)")
     }
 
@@ -562,12 +642,19 @@ final class YouTubeSearchViewModel: ObservableObject {
         }
     }
 
-    private func loadVideoDetails(_ video: YouTubeVideoSearchResult) async {
+    private func loadVideoDetails(_ video: YouTubeVideoSearchResult, generation: Int) async {
         do {
             guard let tokens = try await accountStore.loadFreshTokens() else { return }
-            selectedVideoDetails = try await dataClient.videoDetails(videoID: video.id, accessToken: tokens.accessToken)
+            let details = try await dataClient.videoDetails(videoID: video.id, accessToken: tokens.accessToken)
+            guard isCurrentGeneration(generation), selectedVideo?.id == video.id else {
+                discardStaleAuthorizedResult("video details")
+                return
+            }
+            selectedVideoDetails = details
         } catch {
-            selectedVideoDetails = nil
+            if isCurrentGeneration(generation), selectedVideo?.id == video.id {
+                selectedVideoDetails = nil
+            }
         }
     }
 
@@ -642,6 +729,18 @@ final class YouTubeSearchViewModel: ObservableObject {
         applyRequestCountDeltas(result.requestCountDeltas)
     }
 
+
+    private func isCurrentGeneration(_ generation: Int) -> Bool {
+        generation == resetGeneration
+    }
+
+    private func discardStaleAuthorizedResult(_ operation: String) {
+        searchService.clearSearchCache()
+        discoveryService.clearDiscoveryCache()
+        playlistService.clearPlaylistCache()
+        LocalPrivacyDataStore.clearYouTubeAuthorizedData()
+        AppLog.cache.info("Discarded stale YouTube operation after reset; operation=\(operation, privacy: .public)")
+    }
     private func applyRequestCountDeltas(_ deltas: [String: Int]) {
         for (key, value) in deltas {
             providerRequestCounts[key, default: 0] += value
