@@ -41,7 +41,9 @@ final class SourcesOverviewModel: ObservableObject {
 
     func refreshReadiness() {
         Task {
-            for kind in registry.ordered.map(\.kind) {
+            for adapter in registry.ordered {
+                await adapter.restore()
+                let kind = adapter.kind
                 await refreshReadiness(for: kind)
             }
             tick += 1
@@ -53,7 +55,38 @@ final class SourcesOverviewModel: ObservableObject {
         let feature: SourceFeature = switch kind {
         case .youtube, .youtubeMusic, .spotify, .plex, .ownFiles: .playback
         }
-        readinessByKind[kind] = await adapter.readiness(for: feature)
+        readinessByKind[kind] = localReadiness(for: adapter, feature: feature)
+    }
+
+    func localReadiness(for adapter: MusicSourceAdapter, feature: SourceFeature) -> SourceProviderReadiness {
+        let status: SourceProviderStatus
+        switch adapter.kind {
+        case .ownFiles:
+            status = .ready
+        case .spotify, .plex:
+            switch adapter.connectionState {
+            case .connected:
+                status = .partial
+            case .connecting:
+                status = .partial
+            case .failed(let reason):
+                status = .failed(reason)
+            case .notConnected:
+                status = .notConnected
+            }
+        case .youtube, .youtubeMusic:
+            switch adapter.connectionState {
+            case .connected:
+                status = .partial
+            case .connecting:
+                status = .partial
+            case .failed(let reason):
+                status = .failed(reason)
+            case .notConnected:
+                status = .notConnected
+            }
+        }
+        return SourceProviderReadiness(source: adapter.kind, feature: feature, status: status, account: adapter.connectionState.account)
     }
 
     func readinessStatus(for kind: MediaSourceKind) -> SourceProviderStatus? {

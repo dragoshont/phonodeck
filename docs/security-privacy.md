@@ -7,7 +7,7 @@
 - Never commit client secrets or user tokens.
 - `Config/Secrets.xcconfig` is ignored and is for local developer configuration only. Do not store secret values in docs, run artifacts, logs, or chat. If a secret is exposed in logs/chat, rotate it in the provider console.
 - Request the narrowest OAuth scopes needed for currently implemented features. Google currently uses `https://www.googleapis.com/auth/youtube` because PhonoDeck implements playlist create/add/remove; a read-only scope would not cover those user-facing write flows.
-- Provide disconnect/revoke actions for each account.
+- Provide local disconnect actions for each account. Provider-side revocation is verified separately with live test-account evidence before release GO.
 - Delete cached authorized data when an account is disconnected, within the stricter service requirement when applicable. Google disconnect clears local YouTube authorized cache/default keys as well as the Keychain token.
 
 ## YouTube Requirements
@@ -39,6 +39,8 @@
 - Metadata and artwork cache clearing is separate from credential disconnect.
 - Clearing local metadata/artwork does not delete account credentials, provider libraries, playlists, or user-owned files.
 - Google account disconnect deletes the Google Keychain token and local YouTube authorized metadata keys.
+- Spotify and Plex disconnect delete local Keychain credentials and return the source adapter to a not-connected state. No provider-specific authorized local cache is stored for Spotify or Plex yet.
+- Local restore is deterministic: stored Spotify/Plex credentials can restore Settings readiness without opening a browser or proving live provider identity. Live provider profile refresh/revocation evidence remains a separate validation step.
 - Additional live provider revocation tests are deferred until a live-account validation phase.
 
 ## Logging And Redaction

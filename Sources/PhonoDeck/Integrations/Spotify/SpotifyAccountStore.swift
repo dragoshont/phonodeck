@@ -2,7 +2,14 @@ import Foundation
 
 /// Stores Spotify OAuth tokens in the Keychain and refreshes them on demand.
 /// Mirrors `GoogleAccountStore`.
-struct SpotifyAccountStore: Sendable {
+protocol SpotifyCredentialStoring: Sendable {
+    func loadTokens() throws -> SpotifyOAuthTokenSet?
+    func loadFreshTokens() async throws -> SpotifyOAuthTokenSet?
+    func save(tokens: SpotifyOAuthTokenSet) throws
+    func disconnect() throws
+}
+
+struct SpotifyAccountStore: SpotifyCredentialStoring {
     private let keychain = KeychainStore(service: "ro.hont.phonodeck.spotify")
     private let tokenAccount = "spotify-oauth-tokens"
 

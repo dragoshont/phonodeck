@@ -667,6 +667,8 @@ Status: not-started
 
 Goal: convert roadmap surfaces into real release surfaces.
 
+Update 2026-06-24: the source-first implementation slice is scoped to **Local Provider Account Lifecycle Completion**. It proves deterministic local restore/disconnect/settings semantics for Google/YouTube, Spotify, Plex, and Own Files without launching live OAuth/PIN flows. The live smoke items below remain release/operator evidence.
+
 Tasks:
 
 - Plex auth/server/library/native playback live smoke.

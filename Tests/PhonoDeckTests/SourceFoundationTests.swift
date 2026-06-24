@@ -7,6 +7,7 @@ final class SourceFoundationTests: XCTestCase {
     struct FixturePlexCredentialStore: PlexCredentialStoring {
         var credentials: PlexCredentials?
         var error: Error?
+        var disconnectHandler: (@Sendable () throws -> Void)?
 
         func load() throws -> PlexCredentials? {
             if let error { throw error }
@@ -14,7 +15,28 @@ final class SourceFoundationTests: XCTestCase {
         }
 
         func save(_ credentials: PlexCredentials) throws {}
-        func disconnect() throws {}
+        func disconnect() throws { try disconnectHandler?() }
+    }
+
+    struct FixtureSpotifyCredentialStore: SpotifyCredentialStoring {
+        var tokens: SpotifyOAuthTokenSet?
+        var error: Error?
+        var freshError: Error?
+        var disconnectHandler: (@Sendable () throws -> Void)?
+
+        func loadTokens() throws -> SpotifyOAuthTokenSet? {
+            if let error { throw error }
+            return tokens
+        }
+
+        func loadFreshTokens() async throws -> SpotifyOAuthTokenSet? {
+            if let freshError { throw freshError }
+            if let error { throw error }
+            return tokens
+        }
+
+        func save(tokens: SpotifyOAuthTokenSet) throws {}
+        func disconnect() throws { try disconnectHandler?() }
     }
 
     // MARK: Helpers
@@ -279,6 +301,96 @@ final class SourceFoundationTests: XCTestCase {
         let readiness = await PlexAdapter(accountStore: FixturePlexCredentialStore(credentials: credentials)).readiness(for: .playback)
         XCTAssertEqual(readiness.status, .ready)
         XCTAssertEqual(readiness.account?.tier, .premium)
+    }
+
+    func testPlexRestoreUsesLocalCredentialsWithoutLiveProviderCall() async {
+        let credentials = PlexCredentials(token: "token", serverName: "Home", serverBaseURL: "https://home.plex.direct:32400", hasPlexPass: true)
+        let adapter = PlexAdapter(accountStore: FixturePlexCredentialStore(credentials: credentials))
+
+        await adapter.restore()
+
+        XCTAssertTrue(adapter.connectionState.isConnected)
+        XCTAssertEqual(adapter.connectionState.account?.displayName, "Home")
+        XCTAssertEqual(adapter.connectionState.account?.tier, .premium)
+    }
+
+    func testPlexDisconnectClearsLocalStateAndIsIdempotent() async throws {
+        let adapter = PlexAdapter(accountStore: FixturePlexCredentialStore(
+            credentials: PlexCredentials(token: "token", serverName: "Home", serverBaseURL: "https://home.plex.direct:32400", hasPlexPass: true)
+        ))
+        await adapter.restore()
+
+        try await adapter.disconnect()
+        try await adapter.disconnect()
+
+        XCTAssertEqual(adapter.connectionState, .notConnected)
+    }
+
+    func testSpotifyRestoreUsesStoredCredentialsWithoutProfileFetch() async {
+        let tokens = SpotifyOAuthTokenSet(accessToken: "access", tokenType: "Bearer", scope: "user-read-private playlist-read-private", expiresIn: 3600, refreshToken: "refresh", obtainedAt: Date())
+        let adapter = SpotifyAdapter(accountStore: FixtureSpotifyCredentialStore(tokens: tokens))
+
+        await adapter.restore()
+
+        XCTAssertTrue(adapter.connectionState.isConnected)
+        XCTAssertEqual(adapter.connectionState.account?.displayName, "Spotify account")
+        XCTAssertEqual(adapter.connectionState.account?.tier, .unknown)
+        XCTAssertTrue(adapter.connectionState.account?.detail?.contains("Stored credentials") == true)
+    }
+
+    func testSpotifyRestoreDoesNotRefreshStaleToken() async {
+        let staleTokens = SpotifyOAuthTokenSet(accessToken: "access", tokenType: "Bearer", scope: nil, expiresIn: 1, refreshToken: "refresh", obtainedAt: Date.distantPast)
+        let adapter = SpotifyAdapter(accountStore: FixtureSpotifyCredentialStore(tokens: staleTokens, freshError: MediaSourceError.notConfigured))
+
+        await adapter.restore()
+
+        XCTAssertTrue(adapter.connectionState.isConnected)
+        XCTAssertEqual(adapter.connectionState.account?.displayName, "Spotify account")
+    }
+
+    func testSettingsLocalReadinessDoesNotRefreshStaleSpotifyToken() async {
+        let staleTokens = SpotifyOAuthTokenSet(accessToken: "access", tokenType: "Bearer", scope: nil, expiresIn: 1, refreshToken: "refresh", obtainedAt: Date.distantPast)
+        let spotify = SpotifyAdapter(accountStore: FixtureSpotifyCredentialStore(tokens: staleTokens, freshError: MediaSourceError.notConfigured))
+        let model = SourcesOverviewModel(registry: SourceRegistry(adapters: [spotify]))
+
+        await spotify.restore()
+        await model.refreshReadiness(for: .spotify)
+
+        XCTAssertTrue(spotify.connectionState.isConnected)
+        XCTAssertEqual(model.readinessStatus(for: .spotify), .partial)
+    }
+
+    func testSpotifyDisconnectClearsLocalStateAndIsIdempotent() async throws {
+        let tokens = SpotifyOAuthTokenSet(accessToken: "access", tokenType: "Bearer", scope: nil, expiresIn: 3600, refreshToken: "refresh", obtainedAt: Date())
+        let adapter = SpotifyAdapter(accountStore: FixtureSpotifyCredentialStore(tokens: tokens))
+        await adapter.restore()
+
+        try await adapter.disconnect()
+        try await adapter.disconnect()
+
+        XCTAssertEqual(adapter.connectionState, .notConnected)
+    }
+
+    func testSpotifyRestoreFailureDoesNotLeaveConnectedState() async {
+        let adapter = SpotifyAdapter(accountStore: FixtureSpotifyCredentialStore(tokens: nil, error: MediaSourceError.notConfigured))
+
+        await adapter.restore()
+
+        guard case .failed = adapter.connectionState else {
+            return XCTFail("Expected failed restore state")
+        }
+    }
+
+    func testOwnFilesHasNoAccountLifecycleClaim() async throws {
+        let adapter = OwnFilesAdapter()
+        let readiness = await adapter.readiness(for: .playback)
+
+        XCTAssertEqual(adapter.connectionState, .notConnected)
+        XCTAssertEqual(adapter.tier, .none)
+        XCTAssertEqual(readiness.status, .ready)
+        XCTAssertNil(readiness.account)
+        try await adapter.disconnect()
+        XCTAssertEqual(adapter.connectionState, .notConnected)
     }
 
     func testPlexResolvePlaybackRejectsInsecureURL() async {

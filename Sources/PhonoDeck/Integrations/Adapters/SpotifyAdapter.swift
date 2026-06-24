@@ -7,10 +7,13 @@ import OSLog
 /// player). Spotify Connect remote control of other devices is a Premium-only
 /// enhancement layered on later.
 final class SpotifyAdapter: BaseSourceAdapter {
-    private let accountStore = SpotifyAccountStore()
+    private let accountStore: any SpotifyCredentialStoring
     private let api = SpotifyWebAPIClient()
 
-    init() { super.init(kind: .spotify) }
+    init(accountStore: any SpotifyCredentialStoring = SpotifyAccountStore()) {
+        self.accountStore = accountStore
+        super.init(kind: .spotify)
+    }
 
     // MARK: Account
 
@@ -38,13 +41,22 @@ final class SpotifyAdapter: BaseSourceAdapter {
 
     override func restore() async {
         do {
-            guard let tokens = try await accountStore.loadFreshTokens() else { return }
-            let summary = try await loadAccountSummary(accessToken: tokens.accessToken)
+            guard let tokens = try accountStore.loadTokens() else {
+                updateConnectionState(.notConnected)
+                return
+            }
+            let summary = Self.storedAccountSummary(from: tokens)
             updateConnectionState(.connected(summary))
             AppLog.auth.info("Spotify account restored; tier=\(summary.tier.rawValue, privacy: .public)")
         } catch {
+            updateConnectionState(.failed(reason: error.localizedDescription))
             AppLog.auth.error("Spotify restore failed: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private static func storedAccountSummary(from tokens: SpotifyOAuthTokenSet) -> SourceAccountSummary {
+        let scopeDetail = tokens.scope?.isEmpty == false ? "Stored credentials · \(tokens.scope ?? "")" : "Stored credentials"
+        return SourceAccountSummary(displayName: "Spotify account", tier: .unknown, detail: scopeDetail)
     }
 
     private func loadAccountSummary(accessToken: String) async throws -> SourceAccountSummary {
