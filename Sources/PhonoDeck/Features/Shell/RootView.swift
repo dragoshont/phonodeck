@@ -9,7 +9,7 @@ struct RootView: View {
             HStack(spacing: 0) {
                 if appState.isSidebarVisible {
                     SidebarView(selection: $appState.selectedSection)
-                        .frame(width: 250)
+                        .frame(width: DesignTokens.sidebarMinWidth)
                     Divider()
                 }
 
@@ -36,7 +36,6 @@ struct RootView: View {
                     Image(systemName: "sidebar.leading")
                 }
                 .help("Show or hide sidebar")
-                youtubeSourceBadge
             }
             ToolbarItemGroup {
                 if let youtubeNowPlaying = appState.youtubeNowPlaying {
@@ -49,7 +48,7 @@ struct RootView: View {
                         Image(systemName: "square.and.arrow.up")
                     }
                     .disabled(true)
-                    .help("Select a YouTube song to share")
+                    .help("Select a song to share")
                 }
                 Button(action: openLibrary) {
                     Image(systemName: "music.note.list")
@@ -95,11 +94,4 @@ struct RootView: View {
         appState.open(.library)
     }
 
-    private var youtubeSourceBadge: some View {
-        Label("YouTube Music", systemImage: MediaSourceKind.youtubeMusic.descriptor.symbolName)
-            .labelStyle(.titleAndIcon)
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .help("YouTube Music is the active P0 source")
-    }
 }

@@ -10,13 +10,43 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(sidebarSource.contains("Text(\"PhonoDeck\")"))
     }
 
+    func testSidebarUsesCompactTokenWidthAndNoTitlebarSourceBadge() throws {
+        let rootViewSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/RootView.swift"), encoding: .utf8)
+        XCTAssertTrue(rootViewSource.contains(".frame(width: DesignTokens.sidebarMinWidth)"))
+        XCTAssertFalse(rootViewSource.contains("youtubeSourceBadge"))
+        XCTAssertFalse(rootViewSource.contains("Label(\"YouTube Music\""))
+        XCTAssertTrue(rootViewSource.contains("Select a song to share"))
+    }
+
     func testDesignMapKeepsProviderLabOutOfSidebar() throws {
         let data = try Data(contentsOf: repoRoot().appendingPathComponent("docs/design/phonodeck-ui-map.json"))
         let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let designTokens = try XCTUnwrap(object["designTokens"] as? [String: Any])
+        XCTAssertEqual(designTokens["sidebarRenderedWidth"] as? Int, 220)
         let navigation = try XCTUnwrap(object["navigation"] as? [String: Any])
+        let sidebar = try XCTUnwrap(navigation["sidebar"] as? [String: Any])
+        XCTAssertEqual(sidebar["renderedWidth"] as? Int, 220)
         let sections = try XCTUnwrap(navigation["sections"] as? [[String: Any]])
         let providerLab = try XCTUnwrap(sections.first { $0["case"] as? String == "providerLab" })
         XCTAssertEqual(providerLab["inSidebar"] as? Bool, false)
+    }
+
+    func testSignedOutCopyDoesNotPresentYouTubeAsLoadedLibrary() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("Connect a music source to start building your library."))
+        XCTAssertTrue(surfaceSource.contains("Connect Google to Load Playlists"))
+        XCTAssertTrue(surfaceSource.contains("Connect Google to search official music and video results."))
+        XCTAssertTrue(surfaceSource.contains("Connect your music services to build a single library across supported sources."))
+        XCTAssertFalse(surfaceSource.contains("YouTube Music songs, playlists, cached metadata, and connected source status in one place."))
+        XCTAssertFalse(surfaceSource.contains("Your YouTube Music playlist surface"))
+    }
+
+    func testLibraryPlaylistCardLoadsBeforeNavigatingToPlaylistScreen() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("openLibraryPlaylist(playlist)"))
+        XCTAssertTrue(surfaceSource.contains("await searchViewModel.selectPlaylist(playlist)"))
+        XCTAssertTrue(surfaceSource.contains("appState.open(.playlists)"))
+        XCTAssertFalse(surfaceSource.contains("appState.open(.playlists)\n                            Task"))
     }
 
     func testNowPlayingInspectorTabsMatchDesignContract() {

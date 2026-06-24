@@ -39,7 +39,7 @@
     "compactSpacing": 8,
     "standardSpacing": 12,
     "comfortableSpacing": 20,
-    "sidebarRenderedWidth": 250,
+    "sidebarRenderedWidth": 220,
     "nowPlayingPanelWidth": 420,
     "materials": [".bar", ".quaternary", ".regularMaterial", ".ultraThinMaterial"],
     "windowMinSize": { "width": 940, "height": 640 }
@@ -163,7 +163,7 @@
     "detailRouting": "Single adaptive Home + sections. LibraryHomeView fallback deferred until native sources land.",
     "sidebar": {
       "component": "SidebarView (brand header + SidebarSection -> SidebarButton)",
-      "renderedWidth": 250,
+      "renderedWidth": 220,
       "brandHeader": "App icon mark + 'PhonoDeck' wordmark (.headline) at the top of the sidebar — the canonical brand placement (NOT the window title).",
       "groups": [
         { "title": "PhonoDeck", "items": ["library", "search"] },

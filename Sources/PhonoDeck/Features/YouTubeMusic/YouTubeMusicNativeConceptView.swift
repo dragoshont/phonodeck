@@ -344,10 +344,14 @@ struct YouTubeMusicNativeConceptView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button {
-                appState.open(.search)
-                searchFromUI(searchText)
+                if accountViewModel.state.canDisconnect {
+                    appState.open(.search)
+                    searchFromUI(searchText)
+                } else {
+                    Task { await accountViewModel.connect() }
+                }
             } label: {
-                Label("Search Songs", systemImage: "magnifyingglass")
+                Label(accountViewModel.state.canDisconnect ? "Search Songs" : "Connect Google", systemImage: accountViewModel.state.canDisconnect ? "magnifyingglass" : "person.crop.circle")
             }
             .buttonStyle(.borderedProminent)
         }
@@ -376,21 +380,21 @@ struct YouTubeMusicNativeConceptView: View {
                 )
             }
         case .library:
-            if !isLibraryEmpty {
+            if accountViewModel.state.canDisconnect, !isLibraryEmpty {
                 compactStatusCallout(
                     source: .plex,
                     status: .notConfigured("Plex and Spotify are not ready yet, so the Library is not claiming a complete cross-source catalog."),
                     title: "Showing available sources",
-                    detail: "YouTube Music and PhonoDeck history are ready. Connect Plex, Spotify, or Own Files to expand the unified library."
+                    detail: "Connected account data and PhonoDeck history are ready. Connect Plex, Spotify, or Own Files to expand the unified library."
                 )
             }
         case .playlists:
-            if searchViewModel.isLoadingLibrary {
+            if accountViewModel.state.canDisconnect, searchViewModel.isLoadingLibrary {
                 compactStatusCallout(
                     source: .youtubeMusic,
                     status: .partial,
                     title: "Loading playlists",
-                    detail: "Playlist rows stay source-marked while PhonoDeck loads the official YouTube account playlist API."
+                    detail: "Playlist rows stay source-marked while PhonoDeck loads the official account playlist API."
                 )
             }
         default:
@@ -690,11 +694,7 @@ struct YouTubeMusicNativeConceptView: View {
                             songCount: playlist.contentDetails?.itemCount ?? 0,
                             artworkURL: playlist.snippet.thumbnails?.medium?.url ?? playlist.snippet.thumbnails?.default?.url
                         ) {
-                            appState.open(.playlists)
-                            Task {
-                                await searchViewModel.selectPlaylist(playlist)
-                                rebuildPageCaches()
-                            }
+                            openLibraryPlaylist(playlist)
                         }
                     }
                 }
@@ -714,7 +714,7 @@ struct YouTubeMusicNativeConceptView: View {
                 .font(.title.weight(.semibold))
                 .multilineTextAlignment(.center)
 
-            Text("Connect your music services to build a single library across YouTube Music, Spotify, and Plex.")
+            Text("Connect your music services to build a single library across supported sources.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -1005,6 +1005,14 @@ struct YouTubeMusicNativeConceptView: View {
         appState.youtubeNowPlaying = nil
         appState.youtubePlayback.reset()
         rebuildPageCaches()
+    }
+
+    private func openLibraryPlaylist(_ playlist: YouTubePlaylist) {
+        Task {
+            await searchViewModel.selectPlaylist(playlist)
+            rebuildPageCaches()
+            appState.open(.playlists)
+        }
     }
 
     private var providerLabPanel: some View {
@@ -1895,7 +1903,7 @@ struct YouTubeMusicNativeConceptView: View {
         case .artists:
             "Artists"
         case .playlists:
-            searchViewModel.selectedPlaylist?.snippet.title ?? "YouTube Music Playlists"
+            searchViewModel.selectedPlaylist?.snippet.title ?? "Playlists"
         case .queue:
             "Queue"
         case .search:
@@ -1966,17 +1974,17 @@ struct YouTubeMusicNativeConceptView: View {
     private var sectionSubtitle: String {
         switch currentSection {
         case .listenNow:
-            "YouTube Music songs from cached metadata, PhonoDeck history, and account activity when connected."
+            accountViewModel.state.canDisconnect ? "Songs from account activity, playlists, and PhonoDeck history." : "Connect Google to load account activity and playlists."
         case .library:
-            "YouTube Music songs, playlists, cached metadata, and connected source status in one place."
+            accountViewModel.state.canDisconnect ? "Songs, playlists, cached metadata, and connected source status in one place." : "Connect a music source to start building your library."
         case .albums, .artists:
             "Browse albums and artists derived from the current PhonoDeck music library with source attribution."
         case .playlists:
-            "Your YouTube Music playlist surface, backed by the official YouTube account playlist API."
+            accountViewModel.state.canDisconnect ? "Your account playlists, loaded through the official playlist API." : "Connect Google to load account playlists."
         case .queue:
             "The local PhonoDeck queue used by Next, Previous, failed-embed skipping, and Watch remote control later."
         case .search:
-            "Find YouTube Music songs first; switch to Video for clips and music videos."
+            accountViewModel.state.canDisconnect ? "Find songs first; switch to Video for clips and music videos." : "Connect Google to search official music and video results."
         case .downloads:
             "Downloads are reserved for sources that explicitly allow offline storage."
         case .devices:
@@ -1984,7 +1992,7 @@ struct YouTubeMusicNativeConceptView: View {
         case .providerLab:
             "Temporary engine diagnostics for official YouTube API readiness and disabled metadata policy."
         case .settings:
-            "Source configuration and playback policy live here without changing the active YouTube source."
+            "Source configuration and playback policy live here."
         }
     }
 
@@ -2279,9 +2287,10 @@ struct YouTubeMusicNativeConceptView: View {
     private var emptyStateTitle: String {
         switch currentSection {
         case .listenNow:
-            searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "Loading Songs" : "No YouTube Music Songs Yet"
+            if !accountViewModel.state.canDisconnect { "Connect Google to Load Music" }
+            else { searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "Loading Songs" : "No Songs Yet" }
         case .playlists:
-            "No YouTube Music Playlist Songs Loaded"
+            accountViewModel.state.canDisconnect ? "No Playlist Songs Loaded" : "Connect Google to Load Playlists"
         default:
             "No Songs Loaded"
         }
@@ -2290,11 +2299,12 @@ struct YouTubeMusicNativeConceptView: View {
     private var emptyStateDetail: String {
         switch currentSection {
         case .listenNow:
-            searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "PhonoDeck is loading song-first YouTube Music results." : "Search for a song to start playback, or open Search for more focused results."
+            if !accountViewModel.state.canDisconnect { "Account activity and playlists appear here after you connect Google." }
+            else { searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "PhonoDeck is loading song-first results." : "Search for a song to start playback, or open Search for more focused results." }
         case .playlists:
-            "Choose a YouTube Music playlist above, or search for songs while playlist loading catches up."
+            accountViewModel.state.canDisconnect ? "Choose a playlist above, or search for songs while playlist loading catches up." : "Playlist rows appear here after you connect Google."
         default:
-            "Search YouTube Music for songs, or switch to Video for clips."
+            accountViewModel.state.canDisconnect ? "Search for songs, or switch to Video for clips." : "Connect Google to search official music and video results."
         }
     }
 
