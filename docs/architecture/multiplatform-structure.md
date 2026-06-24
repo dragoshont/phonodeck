@@ -25,6 +25,8 @@ phonodeck/
 
 The current macOS app still builds from `Sources/PhonoDeck` and `Tests/PhonoDeckTests`. Do not move those files in a broad sweep until the Swift core is split under test. The first refactor step is additive structure and contracts; physical source moves come later in small, gated phases.
 
+`PhonoDeckCore` now provides that first compile-backed boundary for source-neutral models, provider policy, playback plans, route decisions, and queue/session state. The macOS app still compiles the same source files directly while the migration proceeds; full app consumption of the core module is a later gated phase.
+
 ## Shared Truth
 
 Share these across platforms:

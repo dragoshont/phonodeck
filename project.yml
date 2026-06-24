@@ -13,6 +13,22 @@ settings:
     GOOGLE_OAUTH_CLIENT_ID: ""
     GOOGLE_OAUTH_CLIENT_SECRET: ""
 targets:
+  PhonoDeckCore:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/PhonoDeck/Integrations/MediaSource.swift
+      - path: Sources/PhonoDeck/Library/MusicLibraryModels.swift
+      - path: Sources/PhonoDeck/Integrations/Core/MusicCatalog.swift
+      - path: Sources/PhonoDeck/Integrations/Core/SourceAccount.swift
+      - path: Sources/PhonoDeck/Integrations/Core/SourceFeature.swift
+      - path: Sources/PhonoDeck/Integrations/Core/SourceProviderReadiness.swift
+      - path: Sources/PhonoDeck/Integrations/Core/MusicSourceAdapter.swift
+      - path: Sources/PhonoDeck/Playback/PlaybackRouter.swift
+      - path: Sources/PhonoDeck/Playback/PlaybackSession.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck.core
   PhonoDeck:
     type: application
     platform: macOS
@@ -56,3 +72,34 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck.tests
+  PhonoDeckCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/PhonoDeckCoreTests
+    dependencies:
+      - target: PhonoDeckCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck.core.tests
+schemes:
+  PhonoDeck:
+    build:
+      targets:
+        PhonoDeck: all
+        PhonoDeckCore: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - PhonoDeckTests
+        - PhonoDeckCoreTests
+  PhonoDeckCore:
+    build:
+      targets:
+        PhonoDeckCore: all
+    test:
+      config: Debug
+      targets:
+        - PhonoDeckCoreTests

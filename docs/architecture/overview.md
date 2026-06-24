@@ -38,6 +38,7 @@ Plex and local files are the first native playback targets:
 
 The durable playback boundary is documented in `docs/architecture/playback-session-contract.md`. In short:
 
+- `PhonoDeckCore` compiles the source-neutral models, provider policy, playback plans, route decisions, and queue/session state without AppKit, SwiftUI, WebKit, MediaPlayer, AVFoundation, OAuth, Keychain, or concrete provider clients.
 - UI and app commands play source-neutral `MusicTrack` values.
 - Source adapters expose `SourceProviderReadiness` for each feature and resolve each track to a `SourcePlaybackResolution` wrapping the `PlaybackPlan` plus provider status, visible-player requirement, and shareability.
 - `PlaybackRouter` turns the plan into a route decision: engine kind, visible-player requirement, and system integration policy.
