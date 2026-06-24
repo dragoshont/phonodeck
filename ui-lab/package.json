@@ -1,0 +1,22 @@
+{
+  "name": "phonodeck-ui-lab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "PhonoDeck UI Lab — Storybook design-validation workbench. This is NOT the app. The real PhonoDeck macOS app is native SwiftUI (Sources/PhonoDeck). These stories are throwaway visual mocks used to validate UI/UX against docs/design/design-system-research.md BEFORE implementing natively.",
+  "scripts": {
+    "storybook": "storybook dev -p 6007 --no-open",
+    "build-storybook": "storybook build -o storybook-static"
+  },
+  "dependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^10.4.2",
+    "@storybook/react-vite": "^10.4.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "storybook": "^10.4.2",
+    "vite": "^8.0.12"
+  }
+}

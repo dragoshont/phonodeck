@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": {
+    "youtubeMusic": {
+      "metadata": "official-youtube-data-api-only",
+      "playback": "visible-official-youtube-player",
+      "downloads": "unavailable-without-google-approval",
+      "nativeSystemNowPlaying": false
+    },
+    "youtube": {
+      "metadata": "official-youtube-data-api-only",
+      "playback": "visible-official-youtube-player",
+      "downloads": "unavailable-without-google-approval",
+      "nativeSystemNowPlaying": false
+    },
+    "plex": {
+      "metadata": "server-api",
+      "playback": "native-owned-media-stream",
+      "downloads": "allowed-for-user-owned-media-when-server-permits",
+      "nativeSystemNowPlaying": true
+    },
+    "spotify": {
+      "metadata": "official-spotify-web-api",
+      "playback": "visible-official-player-or-connect-control",
+      "downloads": "unavailable-for-third-party-storage",
+      "nativeSystemNowPlaying": false
+    },
+    "ownFiles": {
+      "metadata": "local-user-selected-files",
+      "playback": "native-local-file",
+      "downloads": "already-user-owned-local-media",
+      "nativeSystemNowPlaying": true
+    }
+  }
+}

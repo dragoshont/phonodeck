@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PhonoDeck Playback Session",
+  "type": "object",
+  "required": ["source", "route", "state", "queue"],
+  "properties": {
+    "source": { "type": "string" },
+    "route": {
+      "type": "string",
+      "enum": ["native", "visibleWebPlayer", "connectRemote", "blocked"]
+    },
+    "state": {
+      "type": "string",
+      "enum": ["idle", "loading", "playing", "paused", "failed", "blocked"]
+    },
+    "queue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "source"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "source": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

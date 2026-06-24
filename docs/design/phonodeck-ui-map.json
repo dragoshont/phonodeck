@@ -1,0 +1,422 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "meta": {
+    "name": "PhonoDeck UI Map",
+    "purpose": "Single source of truth for PhonoDeck flows, screens, components, sources, playback, and state. Keep this in sync with Sources/PhonoDeck and docs/design/phonodeck-ui-mockup.html. When a feature/component is added or renamed, update this file FIRST, then the mockup, then the SwiftUI code.",
+    "app": "PhonoDeck — a unified music app. Apple platforms (macOS/iOS/watchOS/tvOS) are NATIVE SwiftUI; Windows desktop + Web are .NET/TS (see platforms).",
+    "platforms": {
+      "_decision": "OPEN — recommend per agent research. Shared capability/source model across all targets; per-platform native UI.",
+      "apple": "macOS (P0), iOS, watchOS, tvOS — native SwiftUI; watch/tv build on the Mac playback/session model (don't duplicate service logic).",
+      "windows": ".NET (Core). 'Fastest/most responsive on Windows' → candidates: WinUI 3 / Windows App SDK (native Fluent) or Avalonia UI (cross-platform .NET; can also target Web via WASM). To decide.",
+      "web": "Web player — candidates: React/TS (matches this Storybook + tessera/sideport stack) or Avalonia WASM / Blazor. To decide.",
+      "designSystem": "Lead with Apple design (HIG); borrow FEATURES (not chrome) from Apple Music + Spotify. On Windows/Web, translate to the platform's idioms while keeping IA/flows/capability-honesty identical."
+    },
+    "accounts": {
+      "youtube": "YouTube Premium (active) + Google OAuth desktop flow — P0 source.",
+      "spotify": "Free account (can upgrade to Premium) — planned source; Connect/Web API scopes TBD.",
+      "appleMusic": "1-month trial active. Used for DESIGN INSPIRATION only via Playwright/integrated browser (music.apple.com); user signs in. Not a PhonoDeck playback source (Apple Music API is separate)."
+    },
+    "updated": "2026-06-20",
+    "reflects": "CONSOLIDATED TARGET design (from Apple Music + Spotify research via UX Architect / UI Visual / Integration I/O agents). Validate in ui-lab Storybook, then build in SwiftUI. The prior implemented code is the baseline this consolidates.",
+    "relatedDocs": [
+      "docs/design/design-system-research.md (cited HIG rule base)",
+      "docs/design/design-process.md (workflow + agents)",
+      "docs/design/phonodeck-ui-mockup.html (clickable validation mockup)"
+    ],
+    "agents": {
+      "uxArchitect": ".github/agents/ux-architect.agent.md — how it works (IA/flows/states/interaction)",
+      "uiVisual": ".github/agents/ui-visual.agent.md — how it looks (type/color/material/SF Symbols)",
+      "nativeDesign": ".github/agents/native-design.agent.md — broad native HIG"
+    }
+  },
+
+  "designTokens": {
+    "file": "Sources/PhonoDeck/Design/DesignTokens.swift",
+    "sidebarMinWidth": 220,
+    "contentMinWidth": 720,
+    "playerHeight": 86,
+    "artworkCornerRadius": 6,
+    "compactSpacing": 8,
+    "standardSpacing": 12,
+    "comfortableSpacing": 20,
+    "sidebarRenderedWidth": 250,
+    "nowPlayingPanelWidth": 420,
+    "materials": [".bar", ".quaternary", ".regularMaterial", ".ultraThinMaterial"],
+    "windowMinSize": { "width": 940, "height": 640 }
+  },
+
+  "sources": {
+    "_model": "Sources/PhonoDeck/Integrations/MediaSource.swift — MediaSourceKind + MediaSourceDescriptor + MusicSourceCapability",
+    "_capabilityStatuses": ["active", "planned", "limited", "unavailable"],
+    "_playbackPolicies": ["nativeStream", "embeddedPlayer", "externalRemoteControl", "localFile", "unavailable"],
+    "list": [
+      {
+        "kind": "youtubeMusic",
+        "rawValue": "youtubeMusic",
+        "displayName": "YouTube Music",
+        "sfSymbol": "music.note.tv",
+        "tint": "pink",
+        "nativeRole": "Song-first discovery, playlists, and policy-compliant embedded playback",
+        "isYouTubePlayerBacked": true,
+        "priority": "P0",
+        "auth": {
+          "model": "Google OAuth — Desktop installed-app flow (system browser + PKCE + loopback redirect)",
+          "clientType": "Desktop client ID + secret",
+          "tokenStorage": "Keychain service ro.hont.phonodeck.google / account youtube-oauth-tokens",
+          "scopes": ["https://www.googleapis.com/auth/youtube (playlist create/add/remove requires write scope)"],
+          "api": "YouTube Data API v3 only for metadata/account/write operations; undocumented YouTube Music web metadata is disabled by policy"
+        },
+        "playbackPolicy": "embeddedPlayer",
+        "playbackDetail": "Visible official youtube.com/embed IFrame in WKWebView (YouTubeMusicWebPlayerController); no hidden/background audio; cannot own AVAudioSession/system Now Playing.",
+        "capabilities": [
+          { "name": "Search", "status": "active", "detail": "Official YouTube Data API search only; no undocumented YouTube Music metadata fallback." },
+          { "name": "Discovery", "status": "active", "detail": "Cached music searches, local PhonoDeck history, account surfaces when connected." },
+          { "name": "Playlists", "status": "active", "detail": "Read/create/add/share via official YouTube account playlist API." },
+          { "name": "Playback", "status": "limited", "detail": "Visible official YouTube player; no hidden audio/background player." },
+          { "name": "Downloads", "status": "unavailable", "detail": "YouTube audiovisual downloads not allowed without approval." }
+        ]
+      },
+      {
+        "kind": "youtube",
+        "rawValue": "youtube",
+        "displayName": "YouTube",
+        "sfSymbol": "play.tv",
+        "tint": "red",
+        "nativeRole": "Videos, clips, and the visible official YouTube player",
+        "isYouTubePlayerBacked": true,
+        "priority": "P0 (secondary video surface)",
+        "auth": { "model": "Shares Google OAuth with YouTube Music" },
+        "playbackPolicy": "embeddedPlayer",
+        "capabilities": [
+          { "name": "Search", "status": "active", "detail": "Official YouTube video search for clips and music videos." },
+          { "name": "Discovery", "status": "active", "detail": "YouTube-wide videos, activity, channels, subscriptions, playlists where scopes allow." },
+          { "name": "Playlists", "status": "active", "detail": "Read/create/add/share YouTube playlists via official account APIs." },
+          { "name": "Playback", "status": "limited", "detail": "Visible official YouTube player; no hidden audio/background player." },
+          { "name": "Downloads", "status": "unavailable", "detail": "Not allowed without approval." }
+        ]
+      },
+      {
+        "kind": "plex",
+        "rawValue": "plex",
+        "displayName": "Plex",
+        "sfSymbol": "rectangle.stack.badge.play",
+        "tint": "orange",
+        "nativeRole": "Primary native playback, library, and download source",
+        "isYouTubePlayerBacked": false,
+        "priority": "Planned (primary native playback target)",
+        "auth": { "model": "Planned — Plex token-based server auth" },
+        "playbackPolicy": "nativeStream (planned)",
+        "capabilities": [
+          { "name": "Search", "status": "planned", "detail": "Search music libraries from a configured Plex Media Server." },
+          { "name": "Discovery", "status": "planned", "detail": "Albums, artists, playlists, ratings, recent server activity." },
+          { "name": "Playlists", "status": "planned", "detail": "Plex playlist read/write after token-based server auth." },
+          { "name": "Playback", "status": "planned", "detail": "Native playback for user-owned media served by Plex." },
+          { "name": "Downloads", "status": "planned", "detail": "Offline copies for user-owned Plex media when server permits." }
+        ]
+      },
+      {
+        "kind": "spotify",
+        "rawValue": "spotify",
+        "displayName": "Spotify",
+        "sfSymbol": "dot.radiowaves.left.and.right",
+        "tint": "green",
+        "nativeRole": "Metadata, library surfaces, and Spotify Connect control",
+        "isYouTubePlayerBacked": false,
+        "priority": "Planned",
+        "auth": { "model": "Planned — Spotify OAuth (Web API scopes)" },
+        "playbackPolicy": "externalRemoteControl (Spotify Connect) — native streaming requires approved SDK",
+        "capabilities": [
+          { "name": "Search", "status": "planned", "detail": "Spotify Web API metadata search." },
+          { "name": "Discovery", "status": "planned", "detail": "Recently played, top tracks/artists, saved library, recommendations where scopes allow." },
+          { "name": "Playlists", "status": "planned", "detail": "Create/modify Spotify playlists with playlist scopes." },
+          { "name": "Playback", "status": "limited", "detail": "Spotify Connect control; native streaming needs Spotify-approved SDK." },
+          { "name": "Downloads", "status": "unavailable", "detail": "Spotify offline downloads not exposed for third-party storage." }
+        ]
+      },
+      {
+        "kind": "ownFiles",
+        "rawValue": "localFiles",
+        "displayName": "Own Files",
+        "sfSymbol": "externaldrive",
+        "tint": "blue",
+        "nativeRole": "User-owned files, imports, and iTunes XML compatibility",
+        "isYouTubePlayerBacked": false,
+        "priority": "Planned",
+        "auth": { "model": "None — local file access (user-selected, sandbox entitlement)" },
+        "playbackPolicy": "localFile (planned, AVFoundation)",
+        "capabilities": [
+          { "name": "Search", "status": "planned", "detail": "Index imported files and iTunes XML libraries." },
+          { "name": "Discovery", "status": "planned", "detail": "Albums, artists, genres, recently played, smart lists." },
+          { "name": "Playlists", "status": "planned", "detail": "Local and imported playlist management." },
+          { "name": "Playback", "status": "planned", "detail": "Native AVFoundation playback." },
+          { "name": "Downloads", "status": "active", "detail": "Files are already user-owned local media." }
+        ]
+      }
+    ]
+  },
+
+  "navigation": {
+    "_model": "Sources/PhonoDeck/App/AppState.swift — LibrarySection enum; AppState.selectedSection (persisted in UserDefaults key 'selectedSection'); default = library.",
+    "defaultSection": "home",
+    "windowTitle": "DYNAMIC = current section name (Home, Search, a playlist's name, 'Now Playing' in full screen). NEVER 'PhonoDeck' or a static 'Music' (HIG: don't title the window with the app name; <15 chars). Brand identity lives in the SIDEBAR HEADER (icon + 'PhonoDeck' wordmark), the App menu, the About box, and the Welcome sheet.",
+    "activeSourceDefault": "youtubeMusic",
+    "detailRouting": "Single adaptive Home + sections. LibraryHomeView fallback deferred until native sources land.",
+    "sidebar": {
+      "component": "SidebarView (brand header + SidebarSection -> SidebarButton)",
+      "renderedWidth": 250,
+      "brandHeader": "App icon mark + 'PhonoDeck' wordmark (.headline) at the top of the sidebar — the canonical brand placement (NOT the window title).",
+      "groups": [
+        { "title": "PhonoDeck", "items": ["home", "search"] },
+        { "title": "Library", "items": ["playlists", "albums", "artists", "songs", "queue", "downloads"] },
+        { "title": "System", "items": ["devices", "settings"] }
+      ],
+      "removedFromShippingSidebar": ["listenNow (folded into Home)", "providerLab (debug flag only)"]
+    },
+    "sections": [
+      { "case": "listenNow", "title": "Listen Now", "sfSymbol": "play.circle", "status": "deprecated/redirected-to-library", "inSidebar": false },
+      { "case": "library", "title": "Library", "sfSymbol": "music.note.list", "shortcut": "Cmd+1", "inSidebar": true },
+      { "case": "albums", "title": "Albums", "sfSymbol": "square.stack", "shortcut": "Cmd+3", "inSidebar": true },
+      { "case": "artists", "title": "Artists", "sfSymbol": "music.mic", "shortcut": "Cmd+4", "inSidebar": true },
+      { "case": "playlists", "title": "Playlists", "sfSymbol": "text.badge.plus", "shortcut": "Cmd+2", "inSidebar": true },
+      { "case": "queue", "title": "Queue", "sfSymbol": "list.bullet", "shortcut": "Cmd+5", "inSidebar": true },
+      { "case": "search", "title": "Search", "sfSymbol": "magnifyingglass", "shortcut": "Cmd+F", "inSidebar": true },
+      { "case": "downloads", "title": "Downloads", "sfSymbol": "arrow.down.circle", "inSidebar": true },
+      { "case": "devices", "title": "Devices", "sfSymbol": "airplayaudio", "inSidebar": true },
+      { "case": "providerLab", "title": "Provider Lab", "sfSymbol": "testtube.2", "status": "developer-tool", "inSidebar": true },
+      { "case": "settings", "title": "Settings", "sfSymbol": "gearshape", "shortcut": "Cmd+comma", "inSidebar": true }
+    ],
+    "menuBar": {
+      "Navigate": ["Library Cmd+1", "Playlists Cmd+2", "Albums Cmd+3", "Artists Cmd+4", "Queue Cmd+5", "Search Cmd+F", "Settings Cmd+comma"],
+      "Playback": ["Play/Pause Space", "Next Track Cmd+Right", "Previous Track Cmd+Left"]
+    }
+  },
+
+  "screens": [
+    { "id": "library-empty", "name": "Library — Empty / First-run", "swift": "libraryEmptyState", "host": "YouTubeMusicNativeConceptView", "states": ["signedOut/empty"], "contains": ["large music glyph", "mission copy", "Connect YouTube / Add Spotify / Add Plex buttons", "Welcome button"], "shows": "when librarySongs + playlists + activity + subscriptions all empty" },
+    { "id": "welcome", "name": "Welcome Sheet (first run)", "swift": "PhonoDeckWelcomeSheet", "host": "sheet over YouTubeMusicNativeConceptView", "trigger": "AppStorage hasSeenPhonoDeckWelcome == false", "contains": ["app glyph", "Welcome to PhonoDeck", "mission line", "Continue"], "states": ["first-run-only"] },
+    { "id": "library-home", "name": "Library — Home (populated)", "swift": "libraryContentPanel", "host": "YouTubeMusicNativeConceptView", "states": ["populated"], "shelves": ["Recently Played (SongCarouselShelf)", "Made for You (SongCarouselShelf, musicDiscovery)", "Your Playlists (PlaylistArtworkCard)", "From Your Activity (SongCarouselShelf)", "Your Subscriptions (SubscriptionAvatarCard)"] },
+    { "id": "search", "name": "Search Results", "swift": "songsPanel + sectionVideos(searchViewModel.results)", "host": "YouTubeMusicNativeConceptView", "states": ["empty", "loading", "results", "error(quota/auth/no-results)"], "contains": ["quick-search chips", "SongResultRow list", "Load More", "Songs/Video/Balanced result-mode picker"] },
+    { "id": "playlists", "name": "Playlists", "swift": "playlistPicker + displayedPlaylistVideos", "host": "YouTubeMusicNativeConceptView", "states": ["empty(no write scope)", "list", "selected"], "contains": ["playlist picker (horizontal)", "New Playlist", "Share Playlist", "MusicCollectionToolbar (Find-in-playlist search + sort menu)", "TrackTable (# · Title · Artist · Album · Time, sortable)", "SongContextMenu (per row)"] },
+    { "id": "albums", "name": "Albums", "swift": "albumsPanel", "host": "YouTubeMusicNativeConceptView", "states": ["limited-empty(no catalog source ready)", "limited-derived(YouTube results only)", "real-provider-grid", "selected-detail"], "contains": ["ReadinessCallout", "MusicCollectionToolbar (search + sort menu)", "AlbumCard grid", "MusicCollectionDetailPanel (TrackTable + SongContextMenu)"], "phase5Rule": "Do not present YouTube video groupings as canonical albums. If only YouTube data is available, label the surface limited/derived or show the limited empty state until Plex, Spotify, or Own Files catalog metadata is ready." },
+    { "id": "artists", "name": "Artists", "swift": "artistsPanel", "host": "YouTubeMusicNativeConceptView", "states": ["limited-empty(no catalog source ready)", "limited-derived(YouTube channels/results only)", "real-provider-grid", "selected-detail"], "contains": ["ReadinessCallout", "MusicCollectionToolbar", "ArtistCard grid", "MusicCollectionDetailPanel", "Related panel"], "phase5Rule": "Do not present YouTube channel/result groupings as canonical artists. Cinematic ArtistPageView requires real provider artist imagery, bio, and facts." },
+    { "id": "queue", "name": "Queue", "swift": "queuePanel", "host": "YouTubeMusicNativeConceptView", "states": ["empty", "populated"], "contains": ["LibraryMetricTile (Queued/Position)", "Clear", "QueueItemRow list"] },
+    { "id": "downloads", "name": "Storage Center", "swift": "downloadRoadmapPanel", "host": "YouTubeMusicNativeConceptView", "states": ["empty-cache", "populated-metadata-artwork", "clear-confirmation", "clear-receipt", "policy-blocked", "partial-error"], "contains": ["StorageBoundaryPanel", "cache metric tiles with measuredAt/source", "StorageCacheActionsPanel", "StorageAssetsPanel", "StorageSourcePolicyRow", "StorageSafetyPanel", "StorageCacheClearReceipt"], "phase6Rule": "This surface manages metadata/artwork cache and supported-source storage truth. YouTube/Spotify media downloads are policy-blocked and never primary enabled actions." },
+    { "id": "devices", "name": "Devices", "swift": "deviceRoadmapPanel", "host": "YouTubeMusicNativeConceptView", "states": ["youtube-web-route", "native-route-ready", "no-fake-inventory", "external-action-unavailable"], "contains": ["AirPlayRoutePickerButton", "DeviceFactRow list with source/checkedAt/supportState", "Sound/Home buttons"], "phase6Rule": "Devices is route capability/readiness, not device inventory. Do not fabricate HomePod/Cast/device/tier/history data beyond public APIs and system UI." },
+    { "id": "provider-lab", "name": "Provider Lab Diagnostics", "swift": "providerLabPanel", "host": "YouTubeMusicNativeConceptView", "states": ["no-query", "comparing", "official-success-disabled-policy", "official-auth-required", "official-quota-cached", "both-failed", "warm-cache-offline", "invalid-response", "narrow-long-title"], "contains": ["ProviderComparisonRun header", "ProviderComparisonCard grid", "run evidence rows", "request count/cache state/error status", "disabled undocumented metadata policy row"], "status": "production diagnostics surface if exposed; hide from shipping sidebar only if product chooses not to ship diagnostics" },
+    { "id": "settings", "name": "Settings", "swift": "settingsPanel", "host": "YouTubeMusicNativeConceptView", "states": ["always"], "layout": "native grouped Form (.formStyle(.grouped)); self-scrolling, rendered OUTSIDE the roadmap ScrollView to avoid nested scroll", "contains": ["Section 'Music Services' = MusicServicesSection (one ServiceAccountRow per source: YouTube & YouTube Music, Spotify, Plex, Own Files)", "Section 'Playback' = YouTube Music Engine menu picker + Result Mode menu picker", "Section 'Storage' = CacheSettingsPanel", "Section 'YouTube Access' (only when signed in) = ScopeDisclosurePanel"] },
+    { "id": "now-playing-panel", "name": "Now Playing (right panel)", "swift": "nowPlayingPanel", "host": "YouTubeMusicNativeConceptView rootContent (right column, width 420)", "states": ["no-selection", "selected", "video-visible", "video-hidden"], "contains": ["videoSurface (visible YouTube embed OR hidden state)", "playerTransportControls", "selected video info", "alwaysVisibleMediaInfo", "Info/Lyrics/Share/Add/Open", "inspectorPanel", "relatedMusicPanel", "upNextPanel"], "note": "Currently a fixed right column shown when shouldShowNowPlayingPanel (selectedVideo != nil || isVideoVisible || currentVideoID != nil). NOT a burger-triggered slide-in. See glossary + consolidationNotes." }
+  ],
+
+  "rightPanel": {
+    "_decision": "ONE trailing inspector (420pt) with a segmented tab strip; replaces the crammed fixed nowPlayingPanel + ad-hoc inspector/related/upNext panels. Bottom NowPlayingBar = transport only.",
+    "component": "NowPlayingPanel",
+    "width": 420,
+    "tabs": [
+      { "id": "now", "title": "Now Playing", "sfSymbol": "play.rectangle", "barToggle": true, "menu": "View > Now Playing (Cmd+0)", "content": "REGULAR PLAYER for all sources: title/artist/album·year·duration, Like, Add, Share, transport (shuffle/prev/play/next/repeat) + scrubber. AUDIO-FIRST Song/Video toggle (default SONG = artwork-forward; VIDEO = clip). Media slot = a DISCRETE contained 16:9 visible official youtube.com/embed iframe for YT (>=200px, IFrame-API driven) or large artwork for native. Honest one-line note for YT (system routing/AirPlay unavailable)." },
+      { "id": "next", "title": "Up Next", "sfSymbol": "list.bullet", "barToggle": true, "menu": "View > Up Next (Opt+Cmd+U)", "content": "Canonical queue: current pinned (waveform indicator), drag-reorder, remove, Clear, + Autoplay toggle ('PhonoDeck Radio')." },
+      { "id": "lyrics", "title": "Lyrics", "sfSymbol": "quote.bubble", "barToggle": true, "menu": "View > Lyrics (Cmd+L)", "content": "Time-synced highlight when a licensed provider returns timed data; else static; else honest empty state. Attribution required." },
+      { "id": "about", "title": "About", "sfSymbol": "info.circle", "barToggle": false, "menu": "View > Get Info (Cmd+I)", "content": "Artist hero + bio/trivia (Wikipedia CC BY-SA), credits (MusicBrainz), related songs (labeled 'built by PhonoDeck from YouTube search')." }
+    ],
+    "ambientBackground": "Behind the Now Playing media, render an artwork-derived AMBIENT GRADIENT (blurred dominant colors) that adapts to the current track — validated by Apple Music's full-screen player. Honors Reduce Motion (no animated shift) and Increase Contrast (solid fallback).",
+    "fullScreen": "Optional full-screen Now Playing takeover (COMPANION to this inspector, not a replacement): centered 16:9 media (the visible youtube.com/embed for YT; large artwork for native) over the ambient backdrop, big title/artist + Like + overflow, scrubber, transport, volume, Lyrics toggle. View > Full Screen Player; Esc closes back to the inspector. The right inspector stays the default so the required YT player is always visible.",
+    "defaultVisibility": "Hidden first run; auto-opens to Now Playing when a YT track starts (the required visible player); persists last open/tab in AppStorage. Narrow window: collapse inspector first UNLESS a YT video is playing (then collapse the sidebar first so the required player never disappears)."
+  },
+
+  "features": {
+    "_source": "Integration I/O feasibility matrix — honest per source (active/limited/planned/unavailable).",
+    "_appleMusicTeardown": "2026-06-20 authenticated Apple Music walkthrough (Edge-over-CDP, screenshots ~/.phonodeck-cdp/*.png). VALIDATED: 16:9 video region in Now Playing (= our visible YT iframe), graceful lyrics omission when unavailable (= our provider-gated lyrics), single-click play, numbered tracklists. ADOPTED: artwork-derived ambient backdrop, eyebrow provenance labels on Home, cinematic artist page, optional full-screen player. DIVERGENCE: we keep a persistent right inspector (desktop deck) instead of a full-screen-only player; heart=YouTube Like vs Apple's star=Favorite (keep per-source honest verb).",
+    "_youtubeMusicTeardown": "2026-06-20 authenticated YouTube Music walkthrough (Edge-over-CDP, screenshots ~/.phonodeck-cdp/ytm-*.png). KEY: prominent SONG/VIDEO toggle on the player — in SONG mode it shows ARTWORK (audio-first), video is opt-in (validates PhonoDeck audio-first + discrete iframe). Right player tabs UP NEXT / LYRICS / RELATED ~= our Now Playing/Up Next/Lyrics/About. Bottom bar shows year inline (artist · year). RELATED = 'You might also like' + Recommended playlists. Home = mood/genre chips + personalized 'Listen again' (named provenance). Downloads exist in the YT Music UI but are first-party Premium only — NOT replicable via API.",
+    "_spotifyTeardown": "2026-06-20 authenticated Spotify web walkthrough (Edge-over-CDP, ~/.phonodeck-cdp/sp-*.png). Patterns to consider: (1) collapsible 'Your Library' panel with FILTER CHIPS (Playlists/Artists/Podcasts) + in-line search + sort (Recents) — richer than a static sidebar; (2) MINIPLAYER = a small floating always-on-top now-playing/video window ('control your music and watch videos without interruptions') — aligns with our audio-first discrete player; (3) right Now Playing view sections = About the artist (bio + monthly listeners), Credits (performers/writers/producers + Show all), On tour (concerts), Next in queue — validates + extends our rich Info inspector; (4) tinted ARTIST hero (photo + huge name over artwork-derived color) + Verified badge + monthly-listeners + Follow + green Play FAB; Popular list shows PLAY COUNTS per track; (5) 'Made For {user}' personalization + 'Import your music from other apps'. HONEST source note: FREE Spotify cannot stream via the Web Playback SDK (Premium-only); PhonoDeck + Spotify = metadata/library + Spotify Connect REMOTE control of Spotify's own players, NOT in-app audio. ADOPT: library filter chips; artist subscribers/views stat; concerts (PLANNED, Songkick/Bandsintown); optional Miniplayer (audio-first compact player).",
+    "_plexTeardown": "2026-06-20 Plex web home (Edge-over-CDP, ~/.phonodeck-cdp/plex-02-home.png). Dark + AMBER (#e5a00d) theme; top tabs Home/Trending/Activity/Find Friends/My Profile; left rail Home/Discover/Watchlist/Live TV/Movies/TV. KEY IDEA (user): the home AGGREGATES across configured services — 'Continue Watching' (resume), 'Recommended on Your Services' (Discover, cross-service), 'Your Selected Services' (connected providers). ADOPTED for PhonoDeck music: 'New From Your Services' merged discovery shelf + 'Your Services' row, each item source-marked + provenance-labeled (see features.discoveryHome). Plex MUSIC library was still being built (empty) at capture time — revisit Plexamp-style music UI later.",
+    "_spotifyEmbedResearch": "2026-06-20 confirmed via developer.spotify.com/documentation/embeds: the official Spotify iFrame API gives third parties a CONTROLLABLE VISIBLE embed (createController + loadUri/play/pause/resume/togglePlay/seek + playback_update events). = Spotify in-app playback WITHOUT the Web Playback SDK and WITHOUT app registration; 30-second previews for all, full tracks when signed into Premium IN the player. Implemented as PlaybackPlan.embedded(WebEmbed provider:.spotify) + SpotifyEmbed helper, parallel to YouTube. See features.spotifyEmbed.",
+    "homeTopPicks": { "status": "active (app-built, honest)", "path": "Personalized Home hero: TopPicksShelf of BigPickCards. Each card carries an EYEBROW label naming its real provenance (e.g. 'From your YouTube activity', 'Because you played {x}', 'Updated playlist', 'Made by you').", "ui": "Apple Music 'Top Picks for You' pattern but provenance is labeled truthfully — NEVER 'YouTube recommends'. Sits above the existing shelves on Home." },
+    "ambientBackground": { "status": "planned (visual polish)", "path": "Sample dominant colors from current artwork -> blurred multi-stop gradient behind Now Playing (inspector + full screen).", "ui": "Adapts live to the track; honors Reduce Motion (no animation) + Increase Contrast (solid fallback). Validated by Apple Music's full-screen player." },
+    "fullScreenPlayer": { "status": "planned", "path": "Companion full-screen takeover to the right inspector (not a replacement).", "ui": "Centered 16:9 media (visible YT embed for YT / large artwork for native) over the ambient backdrop; title/artist + Like + overflow, scrubber, transport, volume, Lyrics toggle. View > Full Screen Player; Esc returns to the inspector." },
+    "like": { "status": "active (YouTube)", "path": "videos.rate?rating=like (50 units) + getRating to read true state; adds to Liked videos (LL). Scope youtube/force-ssl.", "glyph": "heart (YT/Spotify) / star (Plex/local)", "ui": "Source-truthful verb: 'Like on YouTube'. Read real state so the heart never lies. No fake 'Add to Library' for YT Music (no official save)." },
+    "lyrics": { "status": "provider-gated (off by default)", "path": "No official YT/Spotify lyrics API. Licensed: Musixmatch Pro / LyricFind (paid, attribution, time-synced feasible). Plex/Own Files: embedded/.lrc.", "ui": "Hide/disable Lyrics with 'Lyrics aren't available for this source' when no provider configured. Always show the required attribution." },
+    "about_trivia_credits": { "status": "limited/planned", "path": "Bio: Wikipedia/Wikidata via MusicBrainz url-rels (CC BY-SA attribution). Credits: MusicBrainz (1 req/sec, descriptive User-Agent). YT channel 'about' for channel facts.", "ui": "Label every fact with its origin; honest 'Credits not available' placeholder; never synthesize credits from the uploader." },
+    "related": { "status": "limited", "path": "search.list relatedToVideoId is DEPRECATED. Use search by artist/topic, channel uploads (cheap), activities. Spotify Recommendations/Related Artists deprecated for new apps (Nov 2024).", "ui": "Label by real provenance: 'More from {artist}', 'Because you searched {x}', 'From your activity' — NEVER 'YouTube recommends'." },
+    "iframe": { "status": "active", "path": "youtube.com/embed/VIDEO_ID, IFrame Player API (enablejsapi), origin/Referer, user-initiated. The app's REGULAR PLAYER transport drives it via the API: playVideo/pauseVideo/nextVideo/previousVideo/seekTo + setVolume/mute (embed volume). Player stays VISIBLE & DISCRETE: contained 16:9, >= YouTube's 200x200 minimum (default ~360-400px wide in the inspector), not hidden/obscured, no overlays; autoplay only when >50% visible.", "can": "App transport play/pause/seek/next/previous and EMBED volume via the IFrame API — these are REAL controls, not faked.", "cannot": "Own AVAudioSession; populate MPNowPlayingInfoCenter / be driven by MPRemoteCommandCenter or media keys; control SYSTEM/hardware volume; background/hidden audio; AirPlay as an app stream; audio extraction.", "ui": "Discrete, well-positioned visible iframe + a REGULAR PLAYER (transport + scrubber + embed volume) that drives it. Only SYSTEM routing/AirPlay/media-key ownership stay honestly disabled for YT. Native sources additionally light up MPNowPlayingInfoCenter/MPRemoteCommandCenter/AirPlay/system volume." },
+    "spotifyEmbed": { "status": "active (no app registration needed)", "path": "Official Spotify iFrame API (https://open.spotify.com/embed/iframe-api/v1): createController(el,{uri,width,height},cb) -> EmbedController.loadUri/play/pause/resume/togglePlay/seek/restart/destroy + events ready/playback_started/playback_update(playingURI,isPaused,isBuffering,duration,position). Hosted in a WKWebView and driven by the app's regular transport — the direct parallel of the YouTube IFrame API.", "cannot": "Full tracks unless the listener is signed in to Spotify Premium IN the embed (else 30-second previews); own AVAudioSession / MPNowPlayingInfoCenter / media keys / system volume / AirPlay app-stream / audio extraction.", "ui": "Spotify uses the SAME discrete visible-embed Now Playing treatment as YouTube (regular transport drives it via the iFrame API; system routing/keys honestly off). Preview-vs-full reflects the listener's Spotify login, surfaced honestly. Modeled as PlaybackPlan.embedded(WebEmbed provider:.spotify)." },
+    "regularPlayer": { "status": "active", "path": "ONE unified Now Playing surface (inspector now-tab + bottom NowPlayingBar + optional full-screen): shuffle / prev / play-pause / next / repeat, scrubber, and volume. Native sources control AVPlayer; YouTube drives the visible official iframe via the IFrame Player API.", "ui": "Behaves like a normal music player for ALL sources. For YT the media slot is a DISCRETE contained iframe (not a full-bleed hero) with a one-line honest note that audio is the visible official player and system AirPlay/volume routing isn't available." },
+    "audioFirst": { "decision": "AUDIO-FIRST; the clip is secondary", "path": "Song/Video toggle on Now Playing (default SONG), mirroring YouTube Music. SONG = artwork-forward (the official-audio video renders as static art in the discrete embed); VIDEO = the music-video clip in the discrete embed.", "ui": "Emphasize artwork + transport + metadata over the clip. SYSTEM controls (media keys, headset/remote, Control Center, system Now Playing, AirPlay) are FIRST-CLASS for NATIVE sources (Plex/own files via AVPlayer + MPNowPlayingInfoCenter + MPRemoteCommandCenter). For YouTube these are NOT available (the visible embed can't be driven by media keys or own an AVAudioSession) — be honest and provide on-screen transport instead. This is a key reason native/Plex is the premium listening path." },
+    "nowPlayingInfo": { "status": "active (honest, attributed)", "path": "When the inspector About / Get Info opens, show every AVAILABLE fact labeled by origin. YouTube Data API videos.list -> title, channel, publishedAt (year), contentDetails.duration, statistics.viewCount/likeCount/commentCount, snippet.description. MusicBrainz -> original release year, record label, producers/songwriters/credits (1 req/s, descriptive UA). Wikipedia/Wikidata via MB url-rels -> artist trivia (CC BY-SA).", "fields": ["Released/year", "Duration", "Plays/Views", "Likes", "Comments", "Description", "Record label", "Producers/Songwriters/Credits", "Trivia", "Bitrate/codec (NATIVE sources ONLY — no stream access for YT)"], "ui": "Facts grid + Description + Credits + artist Trivia, each with a small source tag and an honest 'not available' state. Bitrate/codec only for Plex/own files. Dislike COUNT is unavailable (YouTube removed it); like is real via getRating/statistics." },
+    "downloads": { "status": "planned (NATIVE / owned media ONLY)", "path": "Song + Playlist downloads and SMART DOWNLOADS target Plex and own files (media the user owns): an offline store with size/cleanup policy; smart = auto-cache liked/most-played/next-up, auto-evict.", "youtube": "UNAVAILABLE: YouTube Premium offline is FIRST-PARTY ONLY; there is no official third-party offline API and downloading/extracting YT audio/video violates the API Terms (hard P0 boundary). Show an honest 'Not available for YouTube' state — never a fake download.", "ui": "Download (song/playlist) + a Smart Downloads toggle appear ONLY for download-capable sources; YT rows show a disabled, explained state." },
+    "accountTiers": { "decision": "Support BOTH free and paid tiers per source, exposing only what each tier truly allows (honest, never faked). Detect the user's tier where possible and label/disable features accordingly.", "youtube": { "free": "Data API (search/playlists/ratings/info) + VISIBLE embed playback WITH ADS; no background, no offline.", "premium": "Same Data API. Embed is ad-free ONLY when the viewer is signed into YT Premium IN the embed's web context (third-party app webviews usually aren't, so ads may still show). Background/offline are FIRST-PARTY ONLY — not available to PhonoDeck.", "note": "API access does NOT change by tier; Premium perks (ad-free/background/offline) are first-party. Be honest that Premium adds little for a third-party app." }, "spotify": { "free": "Web API metadata/library/playlists/search + the official Spotify iFrame EMBED plays a visible player: 30-second PREVIEWS for everyone.", "premium": "Same Web API; the embed plays FULL tracks when the listener is signed in to Spotify Premium IN the player. Optional extras: Web Playback SDK (in-app) + Spotify Connect remote control of other devices.", "note": "Playback uses the official Spotify iFrame API embed (NO app registration needed); preview-vs-full depends on the player's own Spotify login. Web Playback SDK / Connect on-demand remote = Premium-only enhancements." }, "plex": { "free": "A Plex account + the user's own Plex Media Server: browse + native STREAMING of owned music is free.", "plexPass": "Adds offline downloads/sync, loudness leveling, sonic analysis / sonically-similar, lyrics, premium music (Plexamp) features, hardware transcode. (User HAS Plex Pass.)", "note": "Basic music playback is free; Plex Pass unlocks downloads + premium music features." }, "ownFiles": { "free": "Fully owned local media — all features (play/offline) available.", "note": "No account/tier." } },
+    "unifiedLibrary": { "decision": "MERGE playlists/albums/songs from all connected sources into unified Library views (Songs/Albums/Artists/Playlists), beautifully blended — but EVERY item ALWAYS carries a DISCRETE source marker so provenance is never ambiguous.", "marker": "Source dot/pill (SourcePill / src-dot / card-src) in each source's tint (YouTube red, YT Music pink, Spotify green, Plex amber) + SF Symbol: dense rows = colored dot; cards = small corner badge; detail = full SourcePill. Label/tooltip names the source.", "filtering": "Source filter chips at the top of Library views (All · YouTube · YT Music · Spotify · Plex) + optional group-by-source. DEDUPE the same track across sources into one row carrying multiple markers; play picks the best-available source per policy/tier.", "honesty": "Per-row capabilities follow the item's source+tier (e.g., a Spotify row can't play in-app on a free account — show the honest state). Cross-source playlists are labeled 'PhonoDeck playlist (mixed sources)'." },
+    "discoveryHome": { "status": "active (app-built, honest)", "path": "Plex-style aggregated discovery on Home: a 'New From Your Services' shelf merges new releases/recommendations across configured sources (YouTube, YT Music, Spotify, Plex), each card SOURCE-MARKED and labeled by which service surfaced it ('New on YT Music', 'New on Spotify', 'New in your library'). Plus a 'Your Services' row showing connected sources with their TIER stated honestly ('Premium · 12 new', 'Free · library only', 'Plex Pass · 3 new').", "ui": "Inspired by Plex home ('Recommended on Your Services' + 'Your Selected Services'). Helps discover new songs recommended by EACH configured service while keeping provenance explicit — never a generic 'recommended', always name the source." },
+    "queueDisplay": { "decision": "REDESIGN — user dislikes the current queue treatment. Two acceptable forms: (A) an UNDER-THE-PLAYER strip directly beneath the Now Playing media, or (B) a dedicated SIDE PANEL. NOT the current treatment. Decide in Phase 3 (mock BOTH in Storybook, confirm with user, then build).", "ui": "Queue = current track + Up Next with drag-reorder, remove, Clear, and the autoplay/radio toggle; reachable without leaving Now Playing." },
+    "smartPlay": { "status": "active (app-built)", "path": "App queue; advance on IFrame onStateChange ENDED(0) -> loadVideoById(next); seed from search/playlists. YT internal Mix/Radio (RD) is NOT official.", "ui": "Endless 'PhonoDeck Radio (built from YouTube search)' toggle in Up Next; the visible player still plays each track; upcoming queue is always shown (no invisible auto-advance)." },
+    "clickModel": { "decision": "no unnecessary double-click", "rules": ["Hover/focus a row -> leading #/artwork becomes a focusable Play button", "Single-click the Play button = plays immediately", "Single-click row body = selects", "Double-click row = plays", "Return = play selected", "Space = play/pause current (global)", "Right-click = context menu (Play, Like, Add to Playlist, Add to Queue, Go to Artist/Album, Share, Copy Link, Open)"] },
+    "phase5ReadinessSurfaces": {
+      "decision": "Phase 5 is a conservative readiness-aware surface stabilization pass, not a new catalog-provider build.",
+      "surfaces": ["Home", "Search", "Library", "Playlists", "Albums", "Artists", "Queue", "Settings", "Now Playing"],
+      "statusMapping": {
+        "ready": "[Source] is ready.",
+        "notConnected": "Connect [Source] in Settings to use this surface.",
+        "notConfigured": "Use the provider reason, e.g. 'No Plex music server is configured.'",
+        "missingScope": "Reconnect [Source] to grant the required scope.",
+        "authorizationExpired": "[Source] authorization expired.",
+        "rateLimited": "Showing cached results where available. Try again later.",
+        "providerUnavailable": "[Source] is unavailable. Last checked time/scope should be shown when available.",
+        "partial": "Some [Source] data is unavailable; showing what is ready.",
+        "policyBlocked": "Not available for this source: [reason].",
+        "failed": "Couldn't load [Source]. Retry or manage it in Settings."
+      },
+      "albumsArtistsRule": "Albums and Artists need real catalog metadata from Plex, Spotify, Own Files, or another approved provider. YouTube-derived groupings are limited/derived and must be labeled as such; unknown year, label, credits, bio, and listener fields must remain unavailable, not synthesized.",
+      "storybookRequiredStates": ["Home ready/signed-out/partial", "Search empty/loading/results/no-results/rate-limited/fallback", "Library unified/source-filtered/partial/empty", "Playlists loading/selected/empty/missing-scope", "Queue empty/populated/blocked", "Settings readiness row variants", "Now Playing no-selection/embed/native/blocked/lyrics-unavailable/about-unavailable", "Albums limited-empty/limited-derived/real-provider", "Artists limited-empty/limited-derived/real-provider"]
+    },
+    "phase6OperationalSurfaces": {
+      "decision": "Phase 6 makes Storage, Devices, and Provider Lab evidence-bearing operational surfaces without adding fake downloads, fake devices, or live provider mutations.",
+      "storage": {
+        "objects": ["MusicStorageAsset", "MusicStorageSourcePolicy", "MusicStorageSnapshot", "StorageCacheClearReceipt"],
+        "evidence": ["measuredAt", "evidenceSource", "asset source", "asset kind", "status", "byte count", "blocked count"],
+        "hardPolicy": "YouTube, YouTube Music, and Spotify owned-media assets are blocked. Cache controls affect metadata/artwork only."
+      },
+      "devices": {
+        "objects": ["DeviceRoutingCapability", "DeviceRouteSupportState"],
+        "evidence": ["checkedAt", "source", "supportState", "reason"],
+        "hardPolicy": "Use AVRoutePickerView/system UI; do not fabricate route inventory, HomePod defaults, Cast targets, Premium tier, or cross-device history."
+      },
+      "providerLab": {
+        "objects": ["ProviderComparisonRun", "ProviderComparisonProviderResult"],
+        "evidence": ["runId", "query", "preference", "startedAt", "completedAt", "durationMs", "provider status", "item count", "cache state", "request count deltas", "error", "risk label"],
+        "hardPolicy": "Provider Lab shows official provider behavior plus a disabled-policy row for undocumented metadata; it does not perform live writes, hidden media extraction, or undocumented metadata calls."
+      },
+      "storybookRequiredStates": ["Storage empty/populated/clear-confirmation/clear-receipt/error/policy-blocked", "Devices YouTube-web-route/native-route/no-fake-inventory/external-unavailable", "Provider Lab no-query/comparing/official-success-disabled-policy/auth-required/quota-cached/both-failed/warm-cache/invalid-response/narrow-long-title"]
+    }
+  },
+
+  "components": [
+    { "name": "RootView", "kind": "shell", "purpose": "Top-level window composition: sidebar + detail + bottom NowPlayingBar + toolbar." },
+    { "name": "SidebarView", "kind": "shell", "purpose": "Left navigation; 3 grouped sections of SidebarButton rows." },
+    { "name": "SidebarSection", "kind": "shell", "purpose": "A titled group of sidebar items." },
+    { "name": "SidebarButton", "kind": "shell", "purpose": "One sidebar nav row (SF Symbol + title + selection highlight)." },
+    { "name": "NowPlayingBar", "kind": "shell", "purpose": "Persistent bottom transport bar; honest per-source controls (YouTube vs native)." },
+    { "name": "LibraryHomeView", "kind": "shell", "purpose": "Fallback library home when active source is not YouTube-backed (rarely shown)." },
+    { "name": "PhonoDeckWelcomeSheet", "kind": "onboarding", "purpose": "Lean first-run welcome sheet (mission + Continue)." },
+    { "name": "SongResultRow", "kind": "list-row", "purpose": "One song/search result row: artwork, title, channel, actions (play/info/lyrics/queue/sources). Compact / art-led list row (search results, shelves) — vs the multi-column TrackTable for collection detail." },
+    { "name": "TrackTable", "kind": "table", "purpose": "Multi-column track listing for playlist/album/songs detail (Apple Music parity): columns # · Title · Artist · Album · Time that stretch to fill and are resizable, with click-to-sort headers — SwiftUI Table. Use this (not a SongResultRow list) wherever Apple Music shows a table." },
+    { "name": "SongContextMenu", "kind": "context-menu", "purpose": "Right-click / long-press menu on a track (row or table): Play Next, Add to Library, Add to Playlist, Get Info, Favourite, Suggest Less, Share — mirrors (never hides) the row's primary actions. SwiftUI .contextMenu." },
+    { "name": "QueueItemRow", "kind": "list-row", "purpose": "One queue row: index, artwork, title, channel, remove/play/select." },
+    { "name": "SongCarouselShelf", "kind": "shelf", "purpose": "Horizontal scrolling shelf of song cards (artwork + title)." },
+    { "name": "PlaylistArtworkCard", "kind": "card", "purpose": "Playlist tile: square thumbnail + title + song count." },
+    { "name": "SubscriptionAvatarCard", "kind": "card", "purpose": "Circular channel avatar + title for the subscriptions shelf." },
+    { "name": "AlbumCard", "kind": "card", "purpose": "Album grid tile: artwork + title + artist + source badge." },
+    { "name": "ArtistCard", "kind": "card", "purpose": "Artist grid tile: artwork + name + track/album counts." },
+    { "name": "MusicCollectionDetailPanel", "kind": "panel", "purpose": "Album/artist detail with tabs (songs/reviews/related); the songs tab is a TrackTable + per-row SongContextMenu." },
+    { "name": "MusicCollectionToolbar", "kind": "toolbar", "purpose": "Collection top toolbar (Apple Music parity), in the control layer: Find-in-collection search field + sort/filter menu (Playlist Order · Title · Genre · Year · Artist · Album · Time + Ascending/Descending) + download + overflow (…)." },
+    { "name": "ReadinessCallout", "kind": "component", "purpose": "Compact readiness/status row derived from SourceProviderStatus; one per affected surface, using existing ServiceAccountRow anatomy and non-color-only status text." },
+    { "name": "ContextShelf", "kind": "shelf", "purpose": "Text-only context chips (e.g. subscriptions/history summary)." },
+    { "name": "LibraryMetricTile", "kind": "tile", "purpose": "Value + symbol + title card (cache stats, queue position)." },
+    { "name": "LibraryEmptyShelf", "kind": "empty-state", "purpose": "Empty list state with icon + message + Search button." },
+    { "name": "SourcePill", "kind": "badge", "purpose": "Rounded source badge (name + SF Symbol + tint)." },
+    { "name": "SourceBadge", "kind": "badge", "purpose": "Dense source marker variants for rows/cards/details: dot, corner, and pill. Always paired with accessible source text; never color-only." },
+    { "name": "MusicServicesSection", "kind": "settings-section", "purpose": "Contents of the Settings 'Music Services' Form section: one ServiceAccountRow per source. YouTube+YouTube Music fold into a single Google row (state/actions injected); Spotify/Plex via SourcesOverviewModel; Own Files planned." },
+    { "name": "ServiceAccountRow", "kind": "settings-row", "purpose": "Unified native Form row for ONE music service, matching the Storybook .srow design: subtle brand-tinted SF Symbol tile (rgba(brand,0.16) bg + brand-colored icon, NO solid fill) + name + one-line description (or connected account) + single right action (accent Connect / neutral Disconnect / 'Coming soon'). NO capability grid. Replaces SourceIntegrationRow + AccountSettingsRow + SourceCapabilityCard." },
+    { "name": "SourceIntegrationRow", "kind": "settings-row", "purpose": "SUPERSEDED by ServiceAccountRow; no longer used in Settings." },
+    { "name": "AccountSettingsRow", "kind": "settings-row", "purpose": "SUPERSEDED — Google account state folded into the YouTube & YouTube Music ServiceAccountRow." },
+    { "name": "ScopeDisclosurePanel", "kind": "settings-panel", "purpose": "OAuth scope disclosure + explanation." },
+    { "name": "CacheSettingsPanel", "kind": "settings-panel", "purpose": "Artwork/metadata cache metrics + clear buttons." },
+    { "name": "StorageBoundaryPanel", "kind": "settings-panel", "purpose": "Cache refresh/settings actions." },
+    { "name": "StorageCacheActionsPanel", "kind": "settings-panel", "purpose": "Clear artwork/metadata/all cache." },
+    { "name": "StorageAssetsPanel", "kind": "settings-panel", "purpose": "List of stored assets when present." },
+    { "name": "StorageSourcePolicyRow", "kind": "settings-row", "purpose": "Per-source storage policy row." },
+    { "name": "StorageSafetyPanel", "kind": "settings-panel", "purpose": "Storage safety information." },
+    { "name": "StorageCacheClearReceipt", "kind": "status", "purpose": "Receipt after clearing metadata/artwork cache: target, completedAt, previous bytes, and retained-data statement." },
+    { "name": "DeviceFactRow", "kind": "list-row", "purpose": "Device capability row (symbol, title, status, detail)." },
+    { "name": "DeviceRouteSupportState", "kind": "status", "purpose": "Evidence status for route capability rows: available, limited, notExposed, planned." },
+    { "name": "AirPlayRoutePickerButton", "kind": "control", "purpose": "NSViewRepresentable wrapping AVRoutePickerView (system AirPlay menu)." },
+    { "name": "ProviderComparisonCard", "kind": "card", "purpose": "Engine comparison results card (official provider plus disabled undocumented metadata policy row)." },
+    { "name": "ProviderComparisonRun", "kind": "diagnostics", "purpose": "Provider Lab diagnostic run summary: run id, query, timestamps, elapsed time, provider results, cache/request evidence." },
+    { "name": "MusicFactTile", "kind": "tile", "purpose": "Media fact tile (duration/year/quality/bitrate/label)." },
+    { "name": "MusicInfoLine", "kind": "row", "purpose": "Single info line (title + value)." },
+    { "name": "CollectionInfoPlaceholder", "kind": "placeholder", "purpose": "Honest placeholder for unavailable info (ratings/related)." },
+    { "name": "CachedArtworkImage", "kind": "shared", "purpose": "Disk-cached artwork image with fallback placeholder (Media/ArtworkCache.swift)." },
+    { "name": "YouTubeMusicWebPlayerView", "kind": "player", "purpose": "NSViewRepresentable wrapping WKWebView for the official YouTube IFrame embed." },
+    { "name": "YouTubeMusicWebPlayerController", "kind": "player-controller", "purpose": "ObservableObject managing the embed player state via JS bridge." },
+    { "name": "AmbientBackdrop", "kind": "shared", "purpose": "Artwork-derived blurred ambient gradient behind Now Playing (inspector + full screen). Reduce-Motion / Increase-Contrast aware." },
+    { "name": "TopPicksShelf", "kind": "shelf", "purpose": "Home hero shelf of large rounded BigPickCards with an eyebrow provenance label (Apple Music 'Top Picks for You')." },
+    { "name": "BigPickCard", "kind": "card", "purpose": "Large rounded recommendation card: EYEBROW provenance label (honest, e.g. 'From your YouTube activity') + title + subtitle + artwork." },
+    { "name": "ArtistPageView", "kind": "screen", "purpose": "Cinematic artist page: full-bleed hero (image + name overlay + Play + Like + overflow), Latest Release card beside Top Songs, Essential/Related shelf. Feeds the About inspector." },
+    { "name": "FullScreenPlayerView", "kind": "player", "purpose": "Optional full-screen Now Playing takeover: 16:9 media (YT embed / native artwork) over AmbientBackdrop, transport, scrubber, volume, Lyrics toggle." }
+  ],
+
+  "glossary": {
+    "_note": "Friendly/spoken name -> real Swift name, so we share vocabulary. When you say the friendly name, I will map to the real component.",
+    "burger icon / sidebar toggle / hamburger": { "real": "toolbar sidebar.leading button in RootView.toolbar (toggleSidebar)", "does": "Shows/hides the LEFT SidebarView. Note: it does NOT open the right Now Playing panel." },
+    "left sidebar / nav rail": { "real": "SidebarView", "does": "Primary navigation (PhonoDeck/Library/System groups)." },
+    "now playing slide-in (right) / right panel / Up Next panel": { "real": "nowPlayingPanel (with upNextPanel inside)", "does": "Right column (width 420) showing the visible YouTube player, transport, selected-song info, related, and Up Next. Currently a fixed column, not a slide-in — see consolidationNotes." },
+    "bottom player / mini player / transport bar": { "real": "NowPlayingBar", "does": "Persistent bottom bar; honest controls per active source." },
+    "queue button (bottom bar)": { "real": "NowPlayingBar openQueue (list.bullet)", "does": "Opens the Queue section (LibrarySection.queue)." },
+    "welcome popup": { "real": "PhonoDeckWelcomeSheet", "does": "Lean first-run sheet." },
+    "connect buttons / add source buttons": { "real": "libraryEmptyState buttons (connectYouTubeFromWelcome / showPlannedConnection)", "does": "Start Google OAuth (YouTube) or mark Spotify/Plex as planned." },
+    "song row": { "real": "SongResultRow", "does": "One song line item with actions." },
+    "track table / song table (columns)": { "real": "TrackTable", "does": "Multi-column, sortable, stretching track list (# · Title · Artist · Album · Time) for playlist/album detail." },
+    "sort & filter menu / sort picker": { "real": "MusicCollectionToolbar (sort)", "does": "Toolbar dropdown: Playlist Order · Title · Genre · Year · Artist · Album · Time + Ascending/Descending." },
+    "find in playlist / collection search": { "real": "MusicCollectionToolbar (search)", "does": "Toolbar search field scoped to the open collection." },
+    "row context menu / track context menu": { "real": "SongContextMenu", "does": "Right-click track actions: Play Next, Add to Library, Get Info, Favourite, Share." },
+    "playlist tile": { "real": "PlaylistArtworkCard" },
+    "channel bubble / subscription avatar": { "real": "SubscriptionAvatarCard" },
+    "shelf / carousel": { "real": "SongCarouselShelf" },
+    "source badge / pill": { "real": "SourcePill" },
+    "readiness callout": { "real": "ReadinessCallout" },
+    "account menu / person icon": { "real": "accountMenu (person.crop.circle) in nowPlayingPanel header + RootView toolbar" },
+    "video area / embed": { "real": "videoSurface -> YouTubeMusicWebPlayerView (right-panel Now Playing tab)" },
+    "home": { "real": "Home section (formerly library landing / listenNow) — discovery shelves", "does": "Default screen: recent / recommended / resumable." },
+    "right panel / now playing inspector": { "real": "NowPlayingPanel (tabs: Now Playing / Up Next / Lyrics / About)", "does": "Single 420pt trailing inspector; replaces the old fixed nowPlayingPanel + separate inspector/related/upNext." },
+    "brand header": { "real": "SidebarView brand-header (icon + 'PhonoDeck' wordmark)", "does": "Where the PhonoDeck brand lives (NOT the window title)." },
+    "like / heart": { "real": "LikeButton (heart; star for Plex/local)", "does": "Like on YouTube (videos.rate) / Favorite / Save — source-truthful." },
+    "lyrics tab": { "real": "LyricsView", "does": "Time-synced lyrics (provider-gated) or honest empty state." },
+    "about tab / info": { "real": "AboutInspector", "does": "Artist bio/trivia + credits + related, each attributed to its source." },
+    "autoplay / radio": { "real": "UpNextQueue autoplay toggle", "does": "'PhonoDeck Radio (built from YouTube search)' endless play." },
+    "ambient backdrop / glow": { "real": "AmbientBackdrop", "does": "Artwork-derived blurred gradient behind Now Playing media." },
+    "full screen player": { "real": "FullScreenPlayerView", "does": "Optional full-screen Now Playing takeover (16:9 media + ambient)." },
+    "artist page": { "real": "ArtistPageView", "does": "Cinematic artist page (hero + Latest Release + Top Songs + related)." },
+    "top picks": { "real": "TopPicksShelf / BigPickCard", "does": "Home hero recommendations with honest provenance eyebrow labels." }
+  },
+
+  "playback": {
+    "coordinators": [
+      { "name": "PlaybackCoordinator", "for": "native sources (Plex/local, future)", "owns": "currentTrack, state, elapsedTime; MPNowPlayingInfoCenter + MPRemoteCommandCenter via NowPlayingController", "states": ["playing", "paused", "stopped"] },
+      { "name": "YouTubePlaybackBridge", "for": "bottom bar <-> YouTube embed", "owns": "canPlayPrevious/Next, playerState, volume, isMuted, currentTime, duration; control closures" },
+      { "name": "YouTubeMusicWebPlayerController", "for": "the WKWebView IFrame embed", "owns": "load/play/pause/seek/volume via JS bridge; currentVideoID; player events" }
+    ],
+    "embeddedPlayerStates": ["idle", "ready", "buffering", "playing", "paused", "ended", "failed"],
+    "honestControlsRule": "While a YouTube-backed source is active: AppState disables MPRemoteCommandCenter; NowPlayingBar disables controls the embed can't truthfully perform (e.g. system volume), shows player state + 'native controls limited'. Native sources (Plex/local) get full MPNowPlayingInfoCenter/MPRemoteCommandCenter."
+  },
+
+  "state": {
+    "appState": ["selectedSection (persisted)", "activeSource (default youtubeMusic)", "youtubeNowPlaying", "playback", "youtubePlayback", "sources"],
+    "searchViewModel": ["results", "selectedVideo", "status", "isSearching", "activityVideos", "playlists", "selectedPlaylist", "playlistVideos", "isLoadingLibrary", "queue", "subscriptions", "selectedVideoDetails", "playbackHistory", "providerComparisons", "musicDiscoveryVideos", "isRefreshingMusicDiscovery", "isCreatingPlaylist"],
+    "accountViewModel": ["state (signedOut/connecting/connected/stored/failed)", "pollStatus"],
+    "appStorageKeys": ["youtubePlaybackPreference", "youtubeMusicEngine", "youtubeLastVideoID", "youtubeLastVideoTitle", "youtubeLastVideoChannel", "youtubeLastVideoThumbnailURL", "youtubeRecentSearches", "youtubeLocalPlayedSeconds", "hasSeenPhonoDeckWelcome"],
+    "enums": {
+      "YouTubePlaybackPreference": ["songFirst", "videoFirst", "balanced"],
+      "YouTubeMusicEngine": ["automatic", "official", "experimental"],
+      "YouTubeInspectorMode": ["info", "lyrics"],
+      "StorageCacheClearTarget": ["artwork", "metadata", "all"],
+      "MusicCollectionDetailTab": ["songs", "reviews", "related"]
+    }
+  },
+
+  "flows": [
+    { "id": "first-run", "name": "First launch (signed out)", "steps": ["App opens to Library (default).", "PhonoDeckWelcomeSheet shows (hasSeenPhonoDeckWelcome==false).", "Continue dismisses + marks seen.", "Library shows libraryEmptyState with Connect YouTube / Add Spotify / Add Plex.", "No token-gated API calls while signed out; no Now Playing bar (no real item)."] },
+    { "id": "connect-google", "name": "Connect YouTube (Google OAuth)", "steps": ["Tap Connect YouTube.", "YouTubeAccountViewModel.connect() -> system browser OAuth (PKCE + loopback).", "Tokens saved to Keychain.", "Fetch channel; state=.connected.", "loadLibraryData(): activity, playlists, subscriptions; refresh discovery.", "Library home populates shelves."] },
+    { "id": "search-play", "name": "Search a song and play", "steps": ["Open Search (Cmd+F).", "Type query -> searchViewModel.search (engine + preference).", "SongResultRow list.", "Double-click/Return or Play -> play(result, queue).", "nowPlayingPanel videoSurface loads the visible embed; NowPlayingBar mirrors selection.", "Queue adopted from the surrounding list."] },
+    { "id": "playlist-create-add", "name": "Create/add to playlist", "steps": ["Playlists section.", "New YouTube Music Playlist (needs playlist write scope).", "Add via SongResultRow 'Add' menu -> searchViewModel.add(video, playlist).", "Share via ShareLink (playlist.shareURL)."] },
+    { "id": "queue", "name": "Queue / Up Next", "steps": ["Add to Queue from a row context action.", "Queue section (Cmd+5) shows QueueItemRow list + position.", "upNextPanel inside nowPlayingPanel mirrors Up Next.", "Next/Previous use the local queue (NowPlayingBar + YouTubePlaybackBridge)."] }
+  ],
+
+  "consolidationNotes": {
+    "_intent": "Clean, consolidated baseline before adding features. These are candidates to review — do not remove without approval.",
+    "items": [
+      "listenNow: deprecated and redirected to library; keep enum case but it is not in the sidebar. Consider removing the case + handler once confirmed unused.",
+      "providerLab: developer/diagnostic tool. Recommend hiding from the shipping sidebar (keep behind a debug flag) per design-system-research §2.",
+      "LibraryHomeView: fallback for non-YouTube sources; effectively dead while activeSource defaults to youtubeMusic and only YT is wired. Revisit when Plex/local land.",
+      "Now Playing model: the right nowPlayingPanel (fixed column) and the bottom NowPlayingBar both present transport; Queue exists both as the queue section and the upNextPanel. Decide one canonical Up Next surface (Apple Music shows a right-side Up Next/Queue panel toggled from the bottom bar) and align the rest.",
+      "Two YouTube source kinds (youtube vs youtubeMusic) both player-backed — confirm whether both belong in the shipping source list or whether youtube is an internal detail.",
+      "Huge view file: YouTubeMusicNativeConceptView.swift hosts most panels/components. Consider extracting components into their own files as part of consolidation (no behavior change)."
+    ]
+  }
+}

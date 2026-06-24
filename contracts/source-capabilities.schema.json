@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PhonoDeck Source Capabilities",
+  "type": "object",
+  "required": ["version", "sources"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["metadata", "playback", "downloads", "nativeSystemNowPlaying"],
+        "properties": {
+          "metadata": { "type": "string" },
+          "playback": { "type": "string" },
+          "downloads": { "type": "string" },
+          "nativeSystemNowPlaying": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

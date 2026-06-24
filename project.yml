@@ -1,0 +1,58 @@
+name: PhonoDeck
+options:
+  bundleIdPrefix: ro.hont
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.1.0
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: 14.0
+    GOOGLE_OAUTH_CLIENT_ID: ""
+    GOOGLE_OAUTH_CLIENT_SECRET: ""
+targets:
+  PhonoDeck:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/PhonoDeck
+      - path: Resources
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDisplayName: PhonoDeck
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        GoogleOAuthClientID: $(GOOGLE_OAUTH_CLIENT_ID)
+        GoogleOAuthClientSecret: $(GOOGLE_OAUTH_CLIENT_SECRET)
+        LSApplicationCategoryType: public.app-category.music
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+    entitlements:
+      path: Config/PhonoDeck.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.network.server: true
+        com.apple.security.files.user-selected.read-only: true
+        com.apple.security.files.user-selected.read-write: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck
+        ENABLE_USER_SCRIPT_SANDBOXING: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    configFiles:
+      Debug: Config/BuildSettings.xcconfig
+      Release: Config/BuildSettings.xcconfig
+  PhonoDeckTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/PhonoDeckTests
+    dependencies:
+      - target: PhonoDeck
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.hont.phonodeck.tests

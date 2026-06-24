@@ -1,0 +1,14 @@
+.DS_Store
+.swiftpm/
+DerivedData/
+build/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+*.moved-aside
+*.ipa
+*.dSYM.zip
+*.dSYM
+Config/Secrets.xcconfig
+.architrave/
