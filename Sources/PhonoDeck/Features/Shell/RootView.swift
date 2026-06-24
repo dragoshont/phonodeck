@@ -23,7 +23,7 @@ struct RootView: View {
                     playback: appState.playback,
                     youtubeNowPlaying: appState.youtubeNowPlaying,
                     youtubePlayback: appState.youtubePlayback,
-                    openQueue: { appState.open(.queue) }
+                    openQueue: { appState.openNowPlaying(tab: .upNext) }
                 )
                 .padding(.horizontal, DesignTokens.comfortableSpacing)
                 .padding(.bottom, 14)

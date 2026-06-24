@@ -9,5 +9,4 @@ export const LyricsEmpty = { name: 'Lyrics — unavailable (honest)', render: ()
 export default { title: 'Now Playing/Detail', parameters: { layout: 'centered' } };
 
 export const About = { name: 'About / Info inspector', render: () => frame(<AboutInspector />) };
-export const UpNextOn = { name: 'Up Next — Autoplay on', render: () => frame(<UpNextQueue autoplay />) };
-export const UpNextOff = { name: 'Up Next — Autoplay off', render: () => frame(<UpNextQueue autoplay={false} />) };
+export const UpNext = { name: 'Up Next — Radio planned', render: () => frame(<UpNextQueue />) };

@@ -55,7 +55,7 @@ struct YouTubeMusicNativeConceptView: View {
         rootContent
             .padding(DesignTokens.comfortableSpacing)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .navigationTitle("Music")
+            .navigationTitle(windowTitle)
             .task {
                 await loadInitialPageState()
             }
@@ -139,10 +139,10 @@ struct YouTubeMusicNativeConceptView: View {
     private var header: some View {
         HStack(spacing: DesignTokens.standardSpacing) {
             VStack(alignment: .leading, spacing: 6) {
-                Label("Music", systemImage: "music.note")
+                Label(windowTitle, systemImage: currentSection.symbolName)
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(.primary)
-                Text(searchViewModel.selectedVideo?.title ?? "All music in one place, YouTube Music first")
+                Text(searchViewModel.selectedVideo?.title ?? sectionSubtitle)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -277,11 +277,11 @@ struct YouTubeMusicNativeConceptView: View {
                                 },
                                 infoAction: {
                                     searchViewModel.select(result, queue: sectionVideos)
-                                    inspectorMode = .info
+                                    appState.openNowPlaying(tab: .about)
                                 },
                                 lyricsAction: {
                                     searchViewModel.select(result, queue: sectionVideos)
-                                    inspectorMode = .lyrics
+                                    openLyrics(for: result)
                                 },
                                 queueAction: {
                                     searchViewModel.addToQueue(result)
@@ -822,8 +822,8 @@ struct YouTubeMusicNativeConceptView: View {
                         selectedVideo: searchViewModel.selectedVideo,
                         selectAction: { searchViewModel.select($0) },
                         playAction: { item in play(item, queue: albumVideos(for: album)) },
-                        infoAction: { item in searchViewModel.select(item); inspectorMode = .info },
-                        lyricsAction: { item in searchViewModel.select(item); inspectorMode = .lyrics },
+                        infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
+                        lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
                         queueAction: { searchViewModel.addToQueue($0) },
                         addMenu: { item in AnyView(addToPlaylistMenu(item)) }
                     )
@@ -890,8 +890,8 @@ struct YouTubeMusicNativeConceptView: View {
                         selectedVideo: searchViewModel.selectedVideo,
                         selectAction: { searchViewModel.select($0) },
                         playAction: { item in play(item, queue: artistVideos(for: artist)) },
-                        infoAction: { item in searchViewModel.select(item); inspectorMode = .info },
-                        lyricsAction: { item in searchViewModel.select(item); inspectorMode = .lyrics },
+                        infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
+                        lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
                         queueAction: { searchViewModel.addToQueue($0) },
                         addMenu: { item in AnyView(addToPlaylistMenu(item)) }
                     )
@@ -1249,25 +1249,53 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var nowPlayingPanel: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
             HStack {
-                Text("Now Playing")
+                Text(appState.selectedNowPlayingInspectorTab.title)
                     .font(.headline)
                 Spacer()
                 sourceBadge
                 accountMenu
             }
 
+            Picker("Now Playing Inspector", selection: $appState.selectedNowPlayingInspectorTab) {
+                ForEach(NowPlayingInspectorTab.allCases) { tab in
+                    Label(tab.title, systemImage: tab.symbolName).tag(tab)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+
+            ScrollView {
+                nowPlayingInspectorContent
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 540, alignment: .topLeading)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var nowPlayingInspectorContent: some View {
+        switch appState.selectedNowPlayingInspectorTab {
+        case .now:
+            nowPlayingNowTab
+        case .upNext:
+            upNextPanel
+        case .lyrics:
+            lyricsPanel
+        case .about:
+            aboutPanel
+        }
+    }
+
+    private var nowPlayingNowTab: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
             videoSurface
 
-            if let selectedVideo = searchViewModel.selectedVideo, let blocked = playbackBlockedState(for: selectedVideo) {
-                compactStatusCallout(
-                    source: selectedVideo.mediaSourceKind,
-                    status: .policyBlocked(blocked.reason),
-                    title: "Playback route unavailable",
-                    detail: blocked.reason
-                )
+            if let selectedVideo = searchViewModel.selectedVideo {
+                visibleWebPlaybackNote(for: selectedVideo)
             }
 
             playerTransportControls
@@ -1292,7 +1320,7 @@ struct YouTubeMusicNativeConceptView: View {
 
                 HStack(spacing: 8) {
                     Button {
-                        inspectorMode = inspectorMode == .info ? nil : .info
+                        appState.openNowPlaying(tab: .about)
                     } label: {
                         Label("Info", systemImage: "info.circle")
                     }
@@ -1300,6 +1328,11 @@ struct YouTubeMusicNativeConceptView: View {
                         openLyrics(for: selectedVideo)
                     } label: {
                         Label("Lyrics", systemImage: "text.quote")
+                    }
+                    Button {
+                        appState.openNowPlaying(tab: .upNext)
+                    } label: {
+                        Label("Up Next", systemImage: "list.bullet")
                     }
                     ShareLink(item: selectedVideo.watchURL) {
                         Label("Share", systemImage: "square.and.arrow.up")
@@ -1313,32 +1346,68 @@ struct YouTubeMusicNativeConceptView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-
-                inspectorPanel(selectedVideo)
-                relatedMusicPanel(for: selectedVideo, title: "Related Music")
-                upNextPanel
             } else {
-                HStack(spacing: 10) {
-                    Image(systemName: "music.note.list")
-                        .frame(width: 28, height: 28)
-                        .background(Color.accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        .foregroundStyle(Color.accentColor)
-                    Text("Select a song to show info, lyrics, sharing, playlist, and open actions.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                }
-                .padding(10)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                nowPlayingEmptyState
             }
-
-            Spacer(minLength: 0)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 540, alignment: .topLeading)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private var nowPlayingEmptyState: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "music.note.list")
+                .frame(width: 28, height: 28)
+                .background(Color.accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .foregroundStyle(Color.accentColor)
+            Text("Select a song to show info, lyrics, sharing, playlist, and open actions.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    @ViewBuilder
+    private var lyricsPanel: some View {
+        if let selectedVideo = searchViewModel.selectedVideo {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Lyrics")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                if selectedVideo.songBadge == "Lyrics" {
+                    Text("This result appears to be a lyric video. Use the visible YouTube player for synced lyrics.")
+                } else {
+                    Text("PhonoDeck searches official YouTube results for lyric videos. It does not scrape lyrics.")
+                    if !lyricsStatus.isEmpty {
+                        Text(lyricsStatus)
+                            .foregroundStyle(.secondary)
+                    }
+                    Button {
+                        openLyrics(for: selectedVideo)
+                    } label: {
+                        Label("Find Lyric Video", systemImage: "magnifyingglass")
+                    }
+                }
+            }
+            .font(.caption)
+            .padding(10)
+            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        } else {
+            nowPlayingEmptyState
+        }
+    }
+
+    @ViewBuilder
+    private var aboutPanel: some View {
+        if let selectedVideo = searchViewModel.selectedVideo {
+            VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+                musicInfoPanel(selectedVideo)
+                relatedMusicPanel(for: selectedVideo, title: "Related Music")
+            }
+        } else {
+            nowPlayingEmptyState
+        }
     }
 
     @ViewBuilder
@@ -1440,6 +1509,34 @@ struct YouTubeMusicNativeConceptView: View {
                 .disabled(searchViewModel.queue.isEmpty)
             }
 
+            if let currentItem = searchViewModel.selectedVideo {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Current")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    QueueItemRow(
+                        index: 0,
+                        item: currentItem,
+                        isSelected: true,
+                        playAction: { play(currentItem, queue: searchViewModel.queue.isEmpty ? [currentItem] : searchViewModel.queue) },
+                        selectAction: { searchViewModel.select(currentItem, queue: searchViewModel.queue) },
+                        removeAction: { searchViewModel.removeFromQueue(currentItem) }
+                    )
+                }
+            }
+
+            Toggle(isOn: .constant(false)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("PhonoDeck Radio")
+                        .font(.callout.weight(.semibold))
+                    Text("Autoplay will use official YouTube searches; it will stay visible and source-marked.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .disabled(true)
+
             if upNextItems.isEmpty {
                 Text(searchViewModel.queue.isEmpty ? "There is no music in the queue." : "No more songs after this one.")
                     .font(.callout)
@@ -1461,11 +1558,9 @@ struct YouTubeMusicNativeConceptView: View {
                         }
                     }
                 }
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }
         .padding(12)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var upNextItems: [YouTubeVideoSearchResult] {
@@ -1536,8 +1631,16 @@ struct YouTubeMusicNativeConceptView: View {
 
     private var canControlPanelPlayer: Bool {
         guard searchViewModel.selectedVideo != nil else { return false }
-        if let selectedVideo = searchViewModel.selectedVideo, playbackBlockedState(for: selectedVideo) != nil { return false }
         return !isVideoVisible || playerController.playerState.acceptsCommands
+    }
+
+    private func visibleWebPlaybackNote(for video: YouTubeVideoSearchResult) -> some View {
+        compactStatusCallout(
+            source: video.mediaSourceKind,
+            status: .partial,
+            title: "Visible official player",
+            detail: "Play/Pause, next/previous, and embed volume control the visible YouTube player. Seeking remains planned. System Now Playing, media keys, AirPlay routing, and hidden audio stay unavailable for this source."
+        )
     }
 
     private func playbackBlockedState(for video: YouTubeVideoSearchResult) -> PlaybackBlockedState? {
@@ -1788,6 +1891,15 @@ struct YouTubeMusicNativeConceptView: View {
             "Provider Lab"
         case .settings:
             "Settings"
+        }
+    }
+
+    private var windowTitle: String {
+        switch currentSection {
+        case .playlists:
+            searchViewModel.selectedPlaylist?.snippet.title ?? currentSection.title
+        default:
+            currentSection.title
         }
     }
 
@@ -2545,6 +2657,7 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func openLyrics(for video: YouTubeVideoSearchResult) {
         inspectorMode = .lyrics
+        appState.openNowPlaying(tab: .lyrics)
         lyricsStatus = ""
         guard video.songBadge != "Lyrics" else {
             play(video, queue: sectionVideos)

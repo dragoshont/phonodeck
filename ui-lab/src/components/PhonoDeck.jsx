@@ -823,7 +823,7 @@ export function FullScreenPlayer({ source = 'ytm' }) {
 }
 
 /* ====== Up Next / Queue (panel, canonical) + Autoplay radio ====== */
-export function UpNextQueue({ autoplay = true }) {
+export function UpNextQueue({ autoplay = false }) {
   const cur = sampleSongs[0]; const next = sampleSongs.slice(1, 5);
   return (
     <div>
@@ -835,8 +835,8 @@ export function UpNextQueue({ autoplay = true }) {
       ))}
       <div className="autoplay">
         <Icon name="radio" size={18} />
-        <span style={{ minWidth: 0 }}><div className="ti">PhonoDeck Radio</div><div className="de">Built from YouTube search · keeps playing similar songs</div></span>
-        <span className={'switch' + (autoplay ? '' : ' off')} role="switch" aria-checked={autoplay} aria-label="Autoplay"><i /></span>
+        <span style={{ minWidth: 0 }}><div className="ti">PhonoDeck Radio</div><div className="de">Autoplay will use official YouTube searches; it will stay visible and source-marked</div></span>
+        <span className="switch off disabled" role="switch" aria-checked="false" aria-disabled="true" aria-label="Autoplay unavailable"><i /></span>
       </div>
     </div>
   );
@@ -875,13 +875,13 @@ export function NowPlayingBar({ mode = 'youtube', standalone = false }) {
   );
 }
 
-/* ====== Sidebar — brand header (no marketing tag) + consolidated groups (no count badges, no Queue row) ====== */
+/* ====== Sidebar — brand header (no marketing tag) + consolidated groups ====== */
 const SIDEBAR = [
-  { title: 'PhonoDeck', items: [['home', 'Home', 'house'], ['search', 'Search', 'search']] },
-  { title: 'Library', items: [['playlists', 'Playlists', 'list'], ['albums', 'Albums', 'stack'], ['artists', 'Artists', 'mic'], ['songs', 'Songs', 'note'], ['downloads', 'Downloads', 'down']] },
+  { title: 'PhonoDeck', items: [['library', 'Library', 'music'], ['search', 'Search', 'search']] },
+  { title: 'Library', items: [['playlists', 'Playlists', 'list'], ['albums', 'Albums', 'stack'], ['artists', 'Artists', 'mic'], ['queue', 'Queue', 'list'], ['downloads', 'Downloads', 'down']] },
   { title: 'System', items: [['devices', 'Devices', 'airplay'], ['settings', 'Settings', 'gear']] },
 ];
-export function SidebarView({ active = 'home' }) {
+export function SidebarView({ active = 'library' }) {
   return (
     <nav className="sidebar" aria-label="Sidebar">
       <div className="brand-header"><div className="brand-mark" aria-hidden="true"><Icon name="note" size={16} /></div><span className="brand-word">PhonoDeck</span></div>
@@ -965,7 +965,7 @@ function ScreenBody({ screen }) {
 }
 
 export function Shell({ screen = 'home', showPanel = true, panelTab = 'now' }) {
-  const active = screen === 'firstrun' ? 'home' : (screen === 'library' ? 'songs' : screen);
+  const active = screen === 'firstrun' || screen === 'home' ? 'library' : screen;
   const panel = showPanel && screen !== 'firstrun';
   return (
     <div className="window">

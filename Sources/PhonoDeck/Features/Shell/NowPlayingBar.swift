@@ -213,7 +213,7 @@ struct NowPlayingBar: View {
             Button(action: openQueue) {
                 Image(systemName: "list.bullet")
             }
-            .help("Open queue")
+            .help("Show Up Next")
 
             if isYouTubeMode {
                 VStack(alignment: .trailing, spacing: 4) {

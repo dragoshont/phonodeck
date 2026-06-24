@@ -14,6 +14,7 @@
 		1301AC5EF0FED900710FEC80 /* SourceRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853CD2E27C06E7B40F03D52F /* SourceRegistry.swift */; };
 		1316DD39E0AC628A0C18C0B8 /* SourcesOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36DEE995D50D987831C4D82D /* SourcesOverviewView.swift */; };
 		1C0E410774D3F4E384A0C579 /* YouTubeAccountViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342225896C183C6D768BDD5F /* YouTubeAccountViewModel.swift */; };
+		1CD3ACA0CFD654E74A61895C /* NativeShellContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7DC38437BC3B18F77DA223 /* NativeShellContractTests.swift */; };
 		1DE00CBAB1A2B5B99A0FC886 /* PhonoDeckCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2E146A04D0D4795F7A3B2724 /* PhonoDeckCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1EE71A91DAB7913E40EDB110 /* PhonoDeckCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E146A04D0D4795F7A3B2724 /* PhonoDeckCore.framework */; };
 		1F817E674E60311C22833C60 /* PlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846A7DAB762A7BB78F7944ED /* PlaybackSession.swift */; };
@@ -188,6 +189,7 @@
 		7744C223C3C9CD7A5B007B23 /* YouTubeServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeServiceTests.swift; sourceTree = "<group>"; };
 		7AD6DC3EE511D2CBC9886BBC /* GoogleOAuthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleOAuthTests.swift; sourceTree = "<group>"; };
 		7BD04B09AA72243E0686E028 /* SpotifySource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySource.swift; sourceTree = "<group>"; };
+		7C7DC38437BC3B18F77DA223 /* NativeShellContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeShellContractTests.swift; sourceTree = "<group>"; };
 		7E7E129EC3F4C0464666FCAA /* PhonoDeckWelcomeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhonoDeckWelcomeSheet.swift; sourceTree = "<group>"; };
 		7EFC74203F0F66967D204B73 /* NowPlayingController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingController.swift; sourceTree = "<group>"; };
 		840C5306CF4AC96169D8280A /* PlexSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlexSource.swift; sourceTree = "<group>"; };
@@ -296,6 +298,7 @@
 				7AD6DC3EE511D2CBC9886BBC /* GoogleOAuthTests.swift */,
 				E1CE94AF8A02E16B4DFEF214 /* MediaSourceDescriptorTests.swift */,
 				FFF209CC626F09ACBCC73A23 /* MusicLibraryModelsTests.swift */,
+				7C7DC38437BC3B18F77DA223 /* NativeShellContractTests.swift */,
 				129195F284A3355FC945BB71 /* PlaybackSessionTests.swift */,
 				10D1258EC3FF178D6F13C42C /* PlexIntegrationTests.swift */,
 				4FD415D147EDD73A62F7BF34 /* ReleaseEngineeringTests.swift */,
@@ -725,6 +728,7 @@
 				C35B8CFC26E6B55976407CCB /* GoogleOAuthTests.swift in Sources */,
 				47D948FFBB01EC42FC1A3834 /* MediaSourceDescriptorTests.swift in Sources */,
 				EECAB85DA9AAD5B51D7AA141 /* MusicLibraryModelsTests.swift in Sources */,
+				1CD3ACA0CFD654E74A61895C /* NativeShellContractTests.swift in Sources */,
 				4C74AA30ED7F73F567A362E7 /* PlaybackSessionTests.swift in Sources */,
 				CE0FA726B2D82810682352DF /* PlexIntegrationTests.swift in Sources */,
 				2BC79B0FCD1EC73207FFEC51 /* ReleaseEngineeringTests.swift in Sources */,

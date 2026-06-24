@@ -6,14 +6,28 @@ struct SidebarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                brandHeader
                 SidebarSection(title: "PhonoDeck", sections: [.library, .search], selection: $selection)
                 SidebarSection(title: "Library", sections: [.playlists, .albums, .artists, .queue, .downloads], selection: $selection)
-                SidebarSection(title: "System", sections: [.devices, .providerLab, .settings], selection: $selection)
+                SidebarSection(title: "System", sections: [.devices, .settings], selection: $selection)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 14)
         }
         .background(.bar)
+    }
+
+    private var brandHeader: some View {
+        Label {
+            Text("PhonoDeck")
+                .font(.headline.weight(.semibold))
+        } icon: {
+            Image(systemName: "music.note.house")
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 8)
+        .padding(.bottom, 4)
+        .accessibilityLabel("PhonoDeck")
     }
 }
 

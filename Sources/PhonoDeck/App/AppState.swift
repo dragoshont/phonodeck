@@ -25,6 +25,7 @@ final class AppState: ObservableObject {
         }
     }
     @Published var isSidebarVisible = true
+    @Published var selectedNowPlayingInspectorTab: NowPlayingInspectorTab = .now
 
     let playback = PlaybackCoordinator()
     let youtubePlayback = YouTubePlaybackBridge()
@@ -50,6 +51,11 @@ final class AppState: ObservableObject {
     func toggleSidebar() {
         isSidebarVisible.toggle()
         AppLog.app.info("Sidebar visibility changed; visible=\(self.isSidebarVisible.description, privacy: .public)")
+    }
+
+    func openNowPlaying(tab: NowPlayingInspectorTab) {
+        selectedNowPlayingInspectorTab = tab
+        AppLog.playback.info("Opening Now Playing inspector tab \(tab.rawValue, privacy: .public)")
     }
 
     private static func loadSelectedSection() -> LibrarySection {
@@ -111,6 +117,33 @@ enum LibrarySection: String, CaseIterable, Identifiable, Hashable {
         case .devices: "airplayaudio"
         case .providerLab: "testtube.2"
         case .settings: "gearshape"
+        }
+    }
+}
+
+enum NowPlayingInspectorTab: String, CaseIterable, Identifiable, Hashable {
+    case now
+    case upNext
+    case lyrics
+    case about
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .now: "Now Playing"
+        case .upNext: "Up Next"
+        case .lyrics: "Lyrics"
+        case .about: "About"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .now: "play.rectangle"
+        case .upNext: "list.bullet"
+        case .lyrics: "quote.bubble"
+        case .about: "info.circle"
         }
     }
 }

@@ -5,9 +5,9 @@ export default {
   title: 'Shell/SidebarView',
   component: SidebarView,
   argTypes: {
-    active: { control: 'select', options: ['home', 'search', 'playlists', 'albums', 'artists', 'songs', 'queue', 'downloads', 'devices', 'settings'] },
+    active: { control: 'select', options: ['library', 'search', 'playlists', 'albums', 'artists', 'queue', 'downloads', 'devices', 'settings'] },
   },
 };
 
-export const Default = { args: { active: 'home' } };
+export const Default = { args: { active: 'library' } };
 export const QueueSelected = { args: { active: 'queue' } };

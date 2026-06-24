@@ -179,8 +179,8 @@ struct PhonoDeckViewCommands: Commands {
 
             Divider()
 
-            Button("Show Queue") {
-                appState.open(.queue)
+            Button("Show Up Next") {
+                appState.openNowPlaying(tab: .upNext)
             }
             .keyboardShortcut("u", modifiers: [.command, .option])
 
