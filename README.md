@@ -53,6 +53,7 @@ open PhonoDeck.xcodeproj
 
 - [LICENSE](LICENSE)
 - [docs/open-source.md](docs/open-source.md)
+- [docs/developers/oauth-credentials.md](docs/developers/oauth-credentials.md)
 - [docs/architecture/multiplatform-structure.md](docs/architecture/multiplatform-structure.md)
 - [docs/research/platform-analysis.md](docs/research/platform-analysis.md)
 - [docs/design/native-macos-guidelines.md](docs/design/native-macos-guidelines.md)
