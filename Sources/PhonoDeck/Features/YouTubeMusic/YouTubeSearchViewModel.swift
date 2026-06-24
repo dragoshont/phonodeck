@@ -253,6 +253,37 @@ final class YouTubeSearchViewModel: ObservableObject {
         AppLog.cache.info("Metadata caches cleared; previous bytes=\(previousBytes, privacy: .public), search entries=\(previousSearchCount, privacy: .public), discovery entries=\(previousDiscoveryCount, privacy: .public)")
     }
 
+    func resetAuthorizedLocalState() {
+        let previousCounts = (results.count, activityVideos.count, playlists.count, playlistVideos.count, playbackHistory.count, musicDiscoveryVideos.count, queue.count)
+        searchService.clearSearchCache()
+        discoveryService.clearDiscoveryCache()
+        playlistService.clearPlaylistCache()
+        searchCache.removeAll()
+        playlistItemCache.removeAll()
+        results.removeAll()
+        selectedVideo = nil
+        activityVideos.removeAll()
+        playlists.removeAll()
+        selectedPlaylist = nil
+        playlistVideos.removeAll()
+        subscriptions.removeAll()
+        selectedVideoDetails = nil
+        playbackHistory.removeAll()
+        providerComparisons.removeAll()
+        providerComparisonRun = nil
+        musicDiscoveryVideos.removeAll()
+        providerRequestCounts.removeAll()
+        nextSearchPageToken = nil
+        nextPlaylistPageToken = nil
+        selectedPlaylistID = nil
+        skippedVideoIDs.removeAll()
+        queue.removeAll()
+        lastSearchQuery = ""
+        status = "Signed out. Local YouTube Music library cache cleared."
+        LocalPrivacyDataStore.clearYouTubeAuthorizedData()
+        AppLog.cache.info("Authorized YouTube local state reset; previous results=\(previousCounts.0, privacy: .public), activity=\(previousCounts.1, privacy: .public), playlists=\(previousCounts.2, privacy: .public), playlistVideos=\(previousCounts.3, privacy: .public), history=\(previousCounts.4, privacy: .public), discovery=\(previousCounts.5, privacy: .public), queue=\(previousCounts.6, privacy: .public)")
+    }
+
     func compareProviders(query: String, preference: YouTubePlaybackPreference) async {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else {

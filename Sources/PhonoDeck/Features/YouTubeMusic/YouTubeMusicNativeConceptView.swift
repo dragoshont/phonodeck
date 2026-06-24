@@ -925,7 +925,7 @@ struct YouTubeMusicNativeConceptView: View {
                     registry: appState.sourceRegistry,
                     youTubeState: Self.youTubeConnectionState(accountViewModel.state),
                     connectYouTube: { Task { await accountViewModel.connect() } },
-                    disconnectYouTube: { accountViewModel.disconnect() }
+                    disconnectYouTube: { disconnectYouTubeAccount() }
                 )
             } header: {
                 Text("Music Services")
@@ -988,6 +988,16 @@ struct YouTubeMusicNativeConceptView: View {
         case let .failed(message):
             return .failed(reason: message)
         }
+    }
+
+    private func disconnectYouTubeAccount() {
+        accountViewModel.disconnect()
+        searchViewModel.resetAuthorizedLocalState()
+        playerController.stopAndReset()
+        isVideoVisible = false
+        appState.youtubeNowPlaying = nil
+        appState.youtubePlayback.reset()
+        rebuildPageCaches()
     }
 
     private var providerLabPanel: some View {

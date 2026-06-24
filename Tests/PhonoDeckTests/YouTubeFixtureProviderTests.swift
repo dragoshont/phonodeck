@@ -138,6 +138,39 @@ final class YouTubeFixtureProviderTests: XCTestCase {
         XCTAssertEqual(viewModel.status, "Queue cleared.")
     }
 
+    func testResetAuthorizedLocalStateClearsVisibleLibraryAndPlaybackState() async {
+        let result = YouTubeVideoSearchResult(id: "song-id", title: "Song", channelTitle: "Artist", thumbnailURL: nil, sourceLabel: "Music")
+        let playlist = YouTubePlaylist(id: "playlist-id", snippet: .init(title: "Library", channelTitle: nil, thumbnails: nil), contentDetails: nil, status: nil)
+        let viewModel = YouTubeSearchViewModel(
+            accountStore: FixtureAccountStore(tokens: .fixture),
+            dataClient: FixtureYouTubeOfficialProvider(searchPage: .init(items: [result], nextPageToken: nil), playlists: [playlist]),
+            metadataProvider: FixtureYouTubeMusicMetadataProvider()
+        )
+
+        await viewModel.search("Song", preference: .songFirst, engine: .experimental)
+        await viewModel.loadLibraryData()
+        viewModel.addToQueue(result)
+
+        XCTAssertFalse(viewModel.results.isEmpty)
+        XCTAssertFalse(viewModel.playlists.isEmpty)
+        XCTAssertFalse(viewModel.queue.isEmpty)
+
+        viewModel.resetAuthorizedLocalState()
+
+        XCTAssertTrue(viewModel.results.isEmpty)
+        XCTAssertNil(viewModel.selectedVideo)
+        XCTAssertTrue(viewModel.activityVideos.isEmpty)
+        XCTAssertTrue(viewModel.playlists.isEmpty)
+        XCTAssertNil(viewModel.selectedPlaylist)
+        XCTAssertTrue(viewModel.playlistVideos.isEmpty)
+        XCTAssertTrue(viewModel.subscriptions.isEmpty)
+        XCTAssertNil(viewModel.selectedVideoDetails)
+        XCTAssertTrue(viewModel.playbackHistory.isEmpty)
+        XCTAssertTrue(viewModel.musicDiscoveryVideos.isEmpty)
+        XCTAssertTrue(viewModel.queue.isEmpty)
+        XCTAssertEqual(viewModel.status, "Signed out. Local YouTube Music library cache cleared.")
+    }
+
     func testSelectingSongFromListAdoptsQueueForNextSong() {
         let first = YouTubeVideoSearchResult(id: "first", title: "First", channelTitle: "Artist", thumbnailURL: nil)
         let second = YouTubeVideoSearchResult(id: "second", title: "Second", channelTitle: "Artist", thumbnailURL: nil)

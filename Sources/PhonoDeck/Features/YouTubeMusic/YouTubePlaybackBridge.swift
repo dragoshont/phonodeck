@@ -40,6 +40,16 @@ final class YouTubePlaybackBridge: ObservableObject {
         self.duration = duration
     }
 
+    func reset() {
+        canPlayPrevious = false
+        canPlayNext = false
+        playerState = .idle
+        volume = 100
+        isMuted = false
+        currentTime = 0
+        duration = 0
+    }
+
     func playPause() {
         guard playerState.acceptsCommands else { return }
         playPauseHandler?()

@@ -48,4 +48,19 @@ final class YouTubePlaybackBridgeTests: XCTestCase {
         XCTAssertEqual(muteCount, 1)
         XCTAssertEqual(volumeValues, [50])
     }
+
+    func testResetClearsPlaybackStateForFreshSignOut() {
+        let bridge = YouTubePlaybackBridge()
+        bridge.update(canPlayPrevious: true, canPlayNext: true, playerState: .playing, volume: 42, isMuted: true, currentTime: 12, duration: 120)
+
+        bridge.reset()
+
+        XCTAssertFalse(bridge.canPlayPrevious)
+        XCTAssertFalse(bridge.canPlayNext)
+        XCTAssertEqual(bridge.playerState, .idle)
+        XCTAssertEqual(bridge.volume, 100)
+        XCTAssertFalse(bridge.isMuted)
+        XCTAssertEqual(bridge.currentTime, 0)
+        XCTAssertEqual(bridge.duration, 0)
+    }
 }
