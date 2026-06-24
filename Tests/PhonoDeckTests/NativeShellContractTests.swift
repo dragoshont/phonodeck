@@ -41,6 +41,12 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertFalse(surfaceSource.contains("Your YouTube Music playlist surface"))
     }
 
+    func testContentHeaderDoesNotRepeatWindowTitle() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("Label(windowTitle, systemImage: currentSection.symbolName)"))
+        XCTAssertFalse(surfaceSource.contains("Text(sectionTitle)"))
+    }
+
     func testLibraryPlaylistCardLoadsBeforeNavigatingToPlaylistScreen() throws {
         let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
         XCTAssertTrue(surfaceSource.contains("openLibraryPlaylist(playlist)"))

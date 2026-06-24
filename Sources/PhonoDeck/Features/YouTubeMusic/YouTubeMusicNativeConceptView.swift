@@ -187,8 +187,6 @@ struct YouTubeMusicNativeConceptView: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     breadcrumbTrail
-                    Text(sectionTitle)
-                        .font(.title.weight(.semibold))
                     Text(sectionSubtitle)
                         .font(.callout)
                         .foregroundStyle(.secondary)
