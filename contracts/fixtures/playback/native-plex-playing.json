@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "session": {
+    "state": {
+      "kind": "playing",
+      "currentItemID": "queue-plex-1",
+      "elapsedSeconds": 12,
+      "durationSeconds": 181
+    },
+    "queue": {
+      "items": [
+        {
+          "id": "queue-plex-1",
+          "track": {
+            "id": "plex:track-1",
+            "title": "Owned Track",
+            "artist": "Plex Artist",
+            "album": "Plex Album",
+            "source": "plex",
+            "durationSeconds": 181
+          },
+          "routeDecision": {
+            "route": "native",
+            "engine": "nativeAV",
+            "plan": {
+              "kind": "nativeStream",
+              "policy": "nativeStream",
+              "provider": null,
+              "url": "https://plex.example/library/parts/1/file.flac",
+              "contentID": null,
+              "reason": null
+            },
+            "systemIntegration": {
+              "kind": "eligibleNative",
+              "canOwnSystemNowPlaying": true,
+              "reason": null
+            },
+            "requiresVisiblePlayer": false,
+            "canOwnSystemNowPlaying": true,
+            "blockedState": null
+          }
+        }
+      ],
+      "currentIndex": 0,
+      "repeatMode": "off",
+      "shuffleEnabled": false
+    },
+    "activeRouteDecision": {
+      "route": "native",
+      "engine": "nativeAV",
+      "plan": {
+        "kind": "nativeStream",
+        "policy": "nativeStream",
+        "provider": null,
+        "url": "https://plex.example/library/parts/1/file.flac",
+        "contentID": null,
+        "reason": null
+      },
+      "systemIntegration": {
+        "kind": "eligibleNative",
+        "canOwnSystemNowPlaying": true,
+        "reason": null
+      },
+      "requiresVisiblePlayer": false,
+      "canOwnSystemNowPlaying": true,
+      "blockedState": null
+    }
+  }
+}

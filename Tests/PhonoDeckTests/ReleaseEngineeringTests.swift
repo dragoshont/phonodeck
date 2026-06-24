@@ -5,6 +5,7 @@ final class ReleaseEngineeringTests: XCTestCase {
         try run("bash", ["-n", "scripts/release-preflight.sh"])
         try run("bash", ["-n", "scripts/package-local.sh"])
         try run("python3", ["-m", "py_compile", "scripts/qa-evidence-status.py"])
+        try run("python3", ["-m", "py_compile", "scripts/contract-check.py"])
     }
 
     func testMakefileExposesReleaseTargets() throws {
@@ -13,6 +14,7 @@ final class ReleaseEngineeringTests: XCTestCase {
         XCTAssertTrue(makefile.contains("release-preflight:"))
         XCTAssertTrue(makefile.contains("package-local:"))
         XCTAssertTrue(makefile.contains("qa-evidence:"))
+        XCTAssertTrue(makefile.contains("contract-check:"))
         XCTAssertTrue(makefile.contains("CODE_SIGNING_ALLOWED=NO build"))
         XCTAssertTrue(makefile.contains("CODE_SIGNING_ALLOWED=NO test"))
     }

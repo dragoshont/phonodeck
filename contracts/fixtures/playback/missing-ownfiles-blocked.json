@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "session": {
+    "state": {
+      "kind": "blocked",
+      "currentItemID": "queue-ownfiles-1",
+      "elapsedSeconds": null,
+      "durationSeconds": null,
+      "reason": "Missing media URL for Own Files."
+    },
+    "queue": {
+      "items": [
+        {
+          "id": "queue-ownfiles-1",
+          "track": {
+            "id": "ownFiles:missing-file",
+            "title": "Missing Local Track",
+            "artist": "Local Artist",
+            "album": null,
+            "source": "ownFiles",
+            "durationSeconds": null
+          },
+          "routeDecision": {
+            "route": "blocked",
+            "engine": "none",
+            "plan": {
+              "kind": "unavailable",
+              "policy": "unavailable",
+              "provider": null,
+              "url": null,
+              "contentID": null,
+              "reason": "Missing media URL for Own Files."
+            },
+            "systemIntegration": {
+              "kind": "unavailable",
+              "canOwnSystemNowPlaying": false,
+              "reason": "Missing media URL for Own Files."
+            },
+            "requiresVisiblePlayer": false,
+            "canOwnSystemNowPlaying": false,
+            "blockedState": {
+              "kind": "missingMediaURL",
+              "reason": "Missing media URL for Own Files.",
+              "source": "ownFiles",
+              "trackID": "ownFiles:missing-file",
+              "engine": "none"
+            }
+          }
+        }
+      ],
+      "currentIndex": 0,
+      "repeatMode": "off",
+      "shuffleEnabled": false
+    },
+    "activeRouteDecision": {
+      "route": "blocked",
+      "engine": "none",
+      "plan": {
+        "kind": "unavailable",
+        "policy": "unavailable",
+        "provider": null,
+        "url": null,
+        "contentID": null,
+        "reason": "Missing media URL for Own Files."
+      },
+      "systemIntegration": {
+        "kind": "unavailable",
+        "canOwnSystemNowPlaying": false,
+        "reason": "Missing media URL for Own Files."
+      },
+      "requiresVisiblePlayer": false,
+      "canOwnSystemNowPlaying": false,
+      "blockedState": {
+        "kind": "missingMediaURL",
+        "reason": "Missing media URL for Own Files.",
+        "source": "ownFiles",
+        "trackID": "ownFiles:missing-file",
+        "engine": "none"
+      }
+    }
+  }
+}

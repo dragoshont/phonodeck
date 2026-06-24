@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "session": {
+    "state": {
+      "kind": "blocked",
+      "currentItemID": "queue-youtube-1",
+      "elapsedSeconds": null,
+      "durationSeconds": null,
+      "reason": "YouTube plays through the visible official embed only."
+    },
+    "queue": {
+      "items": [
+        {
+          "id": "queue-youtube-1",
+          "track": {
+            "id": "youtubeMusic:dQw4w9WgXcQ",
+            "title": "Official Video",
+            "artist": "YouTube Artist",
+            "album": null,
+            "source": "youtubeMusic",
+            "durationSeconds": 213
+          },
+          "routeDecision": {
+            "route": "visibleWebPlayer",
+            "engine": "webEmbed",
+            "plan": {
+              "kind": "embedded",
+              "policy": "embeddedPlayer",
+              "provider": "youtube",
+              "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+              "contentID": "dQw4w9WgXcQ",
+              "reason": null
+            },
+            "systemIntegration": {
+              "kind": "forbidden",
+              "canOwnSystemNowPlaying": false,
+              "reason": "YouTube plays through the visible official embed only."
+            },
+            "requiresVisiblePlayer": true,
+            "canOwnSystemNowPlaying": false,
+            "blockedState": {
+              "kind": "unsupportedEngine",
+              "reason": "YouTube plays through the visible official embed only.",
+              "source": "youtubeMusic",
+              "trackID": "youtubeMusic:dQw4w9WgXcQ",
+              "engine": "webEmbed"
+            }
+          }
+        }
+      ],
+      "currentIndex": 0,
+      "repeatMode": "off",
+      "shuffleEnabled": false
+    },
+    "activeRouteDecision": {
+      "route": "visibleWebPlayer",
+      "engine": "webEmbed",
+      "plan": {
+        "kind": "embedded",
+        "policy": "embeddedPlayer",
+        "provider": "youtube",
+        "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        "contentID": "dQw4w9WgXcQ",
+        "reason": null
+      },
+      "systemIntegration": {
+        "kind": "forbidden",
+        "canOwnSystemNowPlaying": false,
+        "reason": "YouTube plays through the visible official embed only."
+      },
+      "requiresVisiblePlayer": true,
+      "canOwnSystemNowPlaying": false,
+      "blockedState": {
+        "kind": "unsupportedEngine",
+        "reason": "YouTube plays through the visible official embed only.",
+        "source": "youtubeMusic",
+        "trackID": "youtubeMusic:dQw4w9WgXcQ",
+        "engine": "webEmbed"
+      }
+    }
+  }
+}

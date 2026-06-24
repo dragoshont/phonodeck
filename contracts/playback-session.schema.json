@@ -2,30 +2,148 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "PhonoDeck Playback Session",
   "type": "object",
-  "required": ["source", "route", "state", "queue"],
+  "required": ["version", "session"],
   "properties": {
-    "source": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "session": { "$ref": "#/$defs/session" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "source": {
+      "type": "string",
+      "enum": ["youtubeMusic", "youtube", "plex", "spotify", "ownFiles"]
+    },
     "route": {
       "type": "string",
       "enum": ["native", "visibleWebPlayer", "connectRemote", "blocked"]
     },
-    "state": {
+    "engine": {
       "type": "string",
-      "enum": ["idle", "loading", "playing", "paused", "failed", "blocked"]
+      "enum": ["webEmbed", "nativeAV", "connectRemote", "none"]
+    },
+    "sessionStateKind": {
+      "type": "string",
+      "enum": ["idle", "loading", "playing", "paused", "ended", "blocked", "failed"]
+    },
+    "playbackPlanKind": {
+      "type": "string",
+      "enum": ["embedded", "nativeStream", "localFile", "connectRemote", "unavailable"]
+    },
+    "systemIntegrationKind": {
+      "type": "string",
+      "enum": ["eligibleNative", "forbidden", "unavailable"]
+    },
+    "blockedKind": {
+      "type": "string",
+      "enum": ["unavailable", "unsupportedEngine", "missingMediaURL", "sourceUnavailable", "notConnected"]
+    },
+    "track": {
+      "type": "object",
+      "required": ["id", "title", "artist", "source"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "album": { "type": ["string", "null"] },
+        "source": { "$ref": "#/$defs/source" },
+        "durationSeconds": { "type": ["number", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "playbackPlan": {
+      "type": "object",
+      "required": ["kind", "policy"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/playbackPlanKind" },
+        "policy": { "type": "string" },
+        "provider": { "type": ["string", "null"], "enum": ["youtube", "spotify", null] },
+        "url": { "type": ["string", "null"], "format": "uri" },
+        "contentID": { "type": ["string", "null"] },
+        "reason": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "systemIntegration": {
+      "type": "object",
+      "required": ["kind", "canOwnSystemNowPlaying"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/systemIntegrationKind" },
+        "canOwnSystemNowPlaying": { "type": "boolean" },
+        "reason": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "blockedState": {
+      "type": ["object", "null"],
+      "required": ["kind", "reason"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/blockedKind" },
+        "reason": { "type": "string" },
+        "source": { "anyOf": [{ "$ref": "#/$defs/source" }, { "type": "null" }] },
+        "trackID": { "type": ["string", "null"] },
+        "engine": { "anyOf": [{ "$ref": "#/$defs/engine" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
+    },
+    "routeDecision": {
+      "type": "object",
+      "required": ["route", "engine", "plan", "systemIntegration", "requiresVisiblePlayer", "canOwnSystemNowPlaying", "blockedState"],
+      "properties": {
+        "route": { "$ref": "#/$defs/route" },
+        "engine": { "$ref": "#/$defs/engine" },
+        "plan": { "$ref": "#/$defs/playbackPlan" },
+        "systemIntegration": { "$ref": "#/$defs/systemIntegration" },
+        "requiresVisiblePlayer": { "type": "boolean" },
+        "canOwnSystemNowPlaying": { "type": "boolean" },
+        "blockedState": { "$ref": "#/$defs/blockedState" }
+      },
+      "additionalProperties": false
+    },
+    "queueItem": {
+      "type": "object",
+      "required": ["id", "track", "routeDecision"],
+      "properties": {
+        "id": { "type": "string" },
+        "track": { "$ref": "#/$defs/track" },
+        "routeDecision": { "$ref": "#/$defs/routeDecision" }
+      },
+      "additionalProperties": false
     },
     "queue": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "title", "source"],
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "source": { "type": "string" }
+      "type": "object",
+      "required": ["items", "currentIndex", "repeatMode", "shuffleEnabled"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/queueItem" }
         },
-        "additionalProperties": true
-      }
+        "currentIndex": { "type": ["integer", "null"], "minimum": 0 },
+        "repeatMode": { "type": "string", "enum": ["off", "one", "all"] },
+        "shuffleEnabled": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/sessionStateKind" },
+        "currentItemID": { "type": ["string", "null"] },
+        "elapsedSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "durationSeconds": { "type": ["number", "null"], "minimum": 0 },
+        "reason": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "session": {
+      "type": "object",
+      "required": ["state", "queue", "activeRouteDecision"],
+      "properties": {
+        "state": { "$ref": "#/$defs/state" },
+        "queue": { "$ref": "#/$defs/queue" },
+        "activeRouteDecision": { "anyOf": [{ "$ref": "#/$defs/routeDecision" }, { "type": "null" }] }
+      },
+      "additionalProperties": false
     }
-  },
-  "additionalProperties": true
+  }
 }

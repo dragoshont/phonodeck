@@ -1,4 +1,4 @@
-.PHONY: generate build test qa-status qa-evidence release-preflight package-local clean
+.PHONY: generate build test qa-status qa-evidence contract-check release-preflight package-local clean
 
 generate:
 	xcodegen generate
@@ -14,6 +14,9 @@ qa-status:
 
 qa-evidence:
 	python3 scripts/qa-evidence-status.py > docs/qa/production-p0-evidence-closure-report.md
+
+contract-check:
+	python3 scripts/contract-check.py
 
 release-preflight:
 	bash scripts/release-preflight.sh
