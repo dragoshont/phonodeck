@@ -156,6 +156,34 @@ final class YouTubeDataClientTests: XCTestCase {
         XCTAssertEqual(results.first?.title, "Playable Song")
     }
 
+    func testPlaylistItemsKeepSparseRowsWithVideoID() throws {
+        let json = Data(
+            """
+            {
+              "items": [
+                {
+                  "id": "sparse-item-id",
+                  "snippet": {
+                    "resourceId": {
+                      "kind": "youtube#video",
+                      "videoId": "sparse-video"
+                    }
+                  }
+                }
+              ]
+            }
+            """.utf8
+        )
+
+        let response = try JSONDecoder().decode(YouTubePlaylistItemsResponse.self, from: json)
+        let result = try XCTUnwrap(response.items.compactMap(YouTubeVideoSearchResult.init(playlistItem:)).first)
+
+        XCTAssertEqual(result.id, "sparse-video")
+        XCTAssertEqual(result.title, "Unavailable playlist item")
+        XCTAssertEqual(result.channelTitle, "Unknown channel")
+        XCTAssertNil(result.thumbnailURL)
+    }
+
     func testPlaylistItemPageKeepsRowsWhenVideoEnrichmentFails() async throws {
         YouTubeDataClientURLProtocol.handler = { request in
             let path = request.url?.path ?? ""

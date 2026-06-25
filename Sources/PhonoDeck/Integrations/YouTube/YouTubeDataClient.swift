@@ -654,12 +654,39 @@ struct YouTubePlaylistItem: Decodable, Equatable {
     let snippet: Snippet
     let contentDetails: ContentDetails?
 
+    init(id: String?, snippet: Snippet, contentDetails: ContentDetails?) {
+        self.id = id
+        self.snippet = snippet
+        self.contentDetails = contentDetails
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case snippet
+        case contentDetails
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        snippet = try container.decodeIfPresent(Snippet.self, forKey: .snippet) ?? Snippet()
+        contentDetails = try container.decodeIfPresent(ContentDetails.self, forKey: .contentDetails)
+    }
+
     struct Snippet: Decodable, Equatable {
         let title: String
         let channelTitle: String
         let publishedAt: String?
         let thumbnails: YouTubeSearchItem.Thumbnails
         let resourceID: ResourceID?
+
+        init(title: String = "Unavailable playlist item", channelTitle: String = "Unknown channel", publishedAt: String? = nil, thumbnails: YouTubeSearchItem.Thumbnails = .empty, resourceID: ResourceID? = nil) {
+            self.title = title
+            self.channelTitle = channelTitle
+            self.publishedAt = publishedAt
+            self.thumbnails = thumbnails
+            self.resourceID = resourceID
+        }
 
         enum CodingKeys: String, CodingKey {
             case title
@@ -668,10 +695,23 @@ struct YouTubePlaylistItem: Decodable, Equatable {
             case thumbnails
             case resourceID = "resourceId"
         }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            title = try container.decodeIfPresent(String.self, forKey: .title) ?? "Unavailable playlist item"
+            channelTitle = try container.decodeIfPresent(String.self, forKey: .channelTitle) ?? "Unknown channel"
+            publishedAt = try container.decodeIfPresent(String.self, forKey: .publishedAt)
+            thumbnails = try container.decodeIfPresent(YouTubeSearchItem.Thumbnails.self, forKey: .thumbnails) ?? .empty
+            resourceID = try container.decodeIfPresent(ResourceID.self, forKey: .resourceID)
+        }
     }
 
     struct ContentDetails: Decodable, Equatable {
         let videoID: String?
+
+        init(videoID: String?) {
+            self.videoID = videoID
+        }
 
         enum CodingKeys: String, CodingKey {
             case videoID = "videoId"
@@ -935,6 +975,8 @@ struct YouTubeSearchItem: Decodable, Equatable {
     struct Thumbnails: Decodable, Equatable {
         let `default`: Thumbnail?
         let medium: Thumbnail?
+
+        static let empty = Thumbnails(default: nil, medium: nil)
     }
 
     struct Thumbnail: Decodable, Equatable {
