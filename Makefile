@@ -1,4 +1,4 @@
-.PHONY: generate build test qa-status qa-evidence contract-check release-preflight package-local clean
+.PHONY: generate build test native-smoke qa-status qa-evidence contract-check release-preflight package-local clean
 
 generate:
 	xcodegen generate
@@ -8,6 +8,9 @@ build: generate
 
 test: generate
 	xcodebuild -project PhonoDeck.xcodeproj -scheme PhonoDeck -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO test
+
+native-smoke:
+	bash scripts/native-smoke.sh
 
 qa-status:
 	python3 scripts/qa-status.py
