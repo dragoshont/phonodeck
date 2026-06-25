@@ -46,6 +46,15 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("Label(windowTitle, systemImage: currentSection.symbolName)"))
         XCTAssertFalse(surfaceSource.contains("Text(sectionTitle)"))
         XCTAssertFalse(surfaceSource.contains("breadcrumbTrail\n                    Text(sectionSubtitle)"))
+        XCTAssertFalse(surfaceSource.contains("Text(sectionSubtitle)\n                        .font(.callout)"))
+    }
+
+    func testLibraryDoesNotMixSignedOutAndConnectedCopy() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("shouldShowInlineStatus"))
+        XCTAssertTrue(surfaceSource.contains("YouTube Music is signed out"))
+        XCTAssertFalse(surfaceSource.contains("Connected account data and PhonoDeck history are ready"))
+        XCTAssertTrue(surfaceSource.contains("accountViewModel.state.canDisconnect, !searchViewModel.playlists.isEmpty"))
     }
 
     func testLibraryPlaylistCardLoadsBeforeNavigatingToPlaylistScreen() throws {

@@ -197,10 +197,6 @@ struct YouTubeMusicNativeConceptView: View {
         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(sectionSubtitle)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
                     if !sectionCountText.isEmpty {
                         Text(sectionCountText)
                             .font(.caption.weight(.semibold))
@@ -240,7 +236,7 @@ struct YouTubeMusicNativeConceptView: View {
                 listenNowContext
             }
 
-            if !searchViewModel.status.isEmpty {
+            if shouldShowInlineStatus {
                 Text(searchViewModel.status)
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -390,12 +386,12 @@ struct YouTubeMusicNativeConceptView: View {
                 )
             }
         case .library:
-            if accountViewModel.state.canDisconnect, !isLibraryEmpty {
+            if !accountViewModel.state.canDisconnect, !isLibraryEmpty {
                 compactStatusCallout(
-                    source: .plex,
-                    status: .notConfigured("Plex and Spotify are not ready yet, so the Library is not claiming a complete cross-source catalog."),
-                    title: "Showing available sources",
-                    detail: "Connected account data and PhonoDeck history are ready. Connect Plex, Spotify, or Own Files to expand the unified library."
+                    source: .youtubeMusic,
+                    status: .notConnected,
+                    title: "YouTube Music is signed out",
+                    detail: "Showing only local or connected non-Google sources. Connect Google to show YouTube Music playlists and activity."
                 )
             }
         case .playlists:
@@ -707,7 +703,7 @@ struct YouTubeMusicNativeConceptView: View {
                 )
             }
 
-            if !searchViewModel.playlists.isEmpty {
+            if accountViewModel.state.canDisconnect, !searchViewModel.playlists.isEmpty {
                 libraryPlaylistShelf
             }
 
@@ -715,7 +711,7 @@ struct YouTubeMusicNativeConceptView: View {
                 sourcePlaylistShelf
             }
 
-            if !searchViewModel.activityVideos.isEmpty {
+            if accountViewModel.state.canDisconnect, !searchViewModel.activityVideos.isEmpty {
                 SongCarouselShelf(
                     title: "From Your Activity",
                     items: Array(searchViewModel.activityVideos.prefix(12)),
@@ -724,7 +720,7 @@ struct YouTubeMusicNativeConceptView: View {
                 )
             }
 
-            if !searchViewModel.subscriptions.isEmpty {
+            if accountViewModel.state.canDisconnect, !searchViewModel.subscriptions.isEmpty {
                 librarySubscriptionShelf
             }
         }
@@ -2136,6 +2132,11 @@ struct YouTubeMusicNativeConceptView: View {
 
     private var shouldShowNowPlayingPanel: Bool {
         currentSection == .playlists || searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
+    }
+
+    private var shouldShowInlineStatus: Bool {
+        guard !searchViewModel.status.isEmpty else { return false }
+        return !searchViewModel.status.localizedCaseInsensitiveContains("signed out")
     }
 
     private var youtubeConnectButtonTitle: String {
