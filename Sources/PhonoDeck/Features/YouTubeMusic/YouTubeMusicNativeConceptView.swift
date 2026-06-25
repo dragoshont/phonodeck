@@ -486,14 +486,10 @@ struct YouTubeMusicNativeConceptView: View {
             if let selectedPlaylist = searchViewModel.selectedPlaylist {
                 HStack(spacing: 10) {
                     SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(selectedPlaylist.snippet.title)
-                            .font(.callout.weight(.semibold))
-                            .lineLimit(1)
-                        Text("Official YouTube account playlist API • \(searchViewModel.playlistVideos.count) loaded songs")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text("\(searchViewModel.playlistVideos.count) loaded songs from the official account playlist API")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     Spacer(minLength: 0)
                     if let selectedVideo = searchViewModel.selectedVideo {
                         Button {
@@ -690,7 +686,9 @@ struct YouTubeMusicNativeConceptView: View {
                         PlaylistArtworkCard(
                             title: playlist.snippet.title,
                             songCount: playlist.contentDetails?.itemCount ?? 0,
-                            artworkURL: playlist.snippet.thumbnails?.medium?.url ?? playlist.snippet.thumbnails?.default?.url
+                            artworkURL: playlist.snippet.thumbnails?.medium?.url ?? playlist.snippet.thumbnails?.default?.url,
+                            source: playlistSourceKind(for: playlist),
+                            sourceLabel: playlistSourceLabel(for: playlist)
                         ) {
                             openLibraryPlaylist(playlist)
                         }
@@ -1798,8 +1796,9 @@ struct YouTubeMusicNativeConceptView: View {
             appState.open(.library)
             return
         }
-        if newSection == .library {
+        if newSection == .library || newSection == .playlists {
             await loadAccountLibraryIfConnected()
+            rebuildPageCaches()
         }
         await refreshMusicSurfacesIfNeeded()
         if newSection == .providerLab {
@@ -1918,12 +1917,7 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var windowTitle: String {
-        switch currentSection {
-        case .playlists:
-            searchViewModel.selectedPlaylist?.snippet.title ?? currentSection.title
-        default:
-            currentSection.title
-        }
+        currentSection.title
     }
 
     private var breadcrumbTrail: some View {
@@ -1953,7 +1947,7 @@ struct YouTubeMusicNativeConceptView: View {
         case .artists:
             ["Music", "Artists", selectedArtist?.name ?? "All Artists"]
         case .playlists:
-            ["Music", "Playlists", searchViewModel.selectedPlaylist?.snippet.title ?? "All Playlists"]
+            ["Music", "Playlists"]
         case .queue:
             ["Music", "Queue"]
         case .search:
@@ -1978,7 +1972,11 @@ struct YouTubeMusicNativeConceptView: View {
         case .albums, .artists:
             "Browse albums and artists derived from the current PhonoDeck music library with source attribution."
         case .playlists:
-            accountViewModel.state.canDisconnect ? "Your account playlists, loaded through the official playlist API." : "Connect Google to load account playlists."
+            if let selectedPlaylist = searchViewModel.selectedPlaylist {
+                "\(selectedPlaylistSourceLabel(for: selectedPlaylist)) • \(searchViewModel.playlistVideos.count) loaded songs • official account playlist API"
+            } else {
+                accountViewModel.state.canDisconnect ? "Your account playlists, loaded through the official playlist API." : "Connect Google to load account playlists."
+            }
         case .queue:
             "The local PhonoDeck queue used by Next, Previous, failed-embed skipping, and Watch remote control later."
         case .search:
@@ -2026,7 +2024,8 @@ struct YouTubeMusicNativeConceptView: View {
             searchViewModel.selectedPlaylist?.id ?? "",
             playlistFilterText,
             playlistSortRaw,
-            videoCacheKey(searchViewModel.playlistVideos)
+            videoCacheKey(searchViewModel.playlistVideos),
+            searchViewModel.playlists.map(\.id).joined(separator: ",")
         ].joined(separator: "|")
     }
 
@@ -2288,7 +2287,10 @@ struct YouTubeMusicNativeConceptView: View {
             if !accountViewModel.state.canDisconnect { "Connect Google to Load Music" }
             else { searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "Loading Songs" : "No Songs Yet" }
         case .playlists:
-            accountViewModel.state.canDisconnect ? "No Playlist Songs Loaded" : "Connect Google to Load Playlists"
+            if !accountViewModel.state.canDisconnect { "Connect Google to Load Playlists" }
+            else if searchViewModel.isLoadingLibrary { "Loading Playlist Songs" }
+            else if searchViewModel.selectedPlaylist != nil { "No Playable Playlist Songs" }
+            else { "Choose a Playlist" }
         default:
             "No Songs Loaded"
         }
@@ -2300,7 +2302,17 @@ struct YouTubeMusicNativeConceptView: View {
             if !accountViewModel.state.canDisconnect { "Account activity and playlists appear here after you connect Google." }
             else { searchViewModel.isSearching || searchViewModel.isRefreshingMusicDiscovery ? "PhonoDeck is loading song-first results." : "Search for a song to start playback, or open Search for more focused results." }
         case .playlists:
-            accountViewModel.state.canDisconnect ? "Choose a playlist above, or search for songs while playlist loading catches up." : "Playlist rows appear here after you connect Google."
+            if !accountViewModel.state.canDisconnect {
+                "Playlist rows appear here after you connect Google."
+            } else if searchViewModel.isLoadingLibrary {
+                "PhonoDeck is loading the selected playlist through the official YouTube playlist API."
+            } else if searchViewModel.selectedPlaylist != nil, !searchViewModel.status.isEmpty {
+                searchViewModel.status
+            } else if searchViewModel.selectedPlaylist != nil {
+                "YouTube returned no playable videos for this playlist. Private, deleted, or unavailable rows are skipped."
+            } else {
+                "Choose a playlist above to load its songs and videos."
+            }
         default:
             accountViewModel.state.canDisconnect ? "Search for songs, or switch to Video for clips." : "Connect Google to search official music and video results."
         }
@@ -2319,27 +2331,41 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var selectedPlaylistSourceKind: MediaSourceKind {
-        let videos = searchViewModel.playlistVideos
-        guard !videos.isEmpty else { return .youtubeMusic }
-        let musicCount = videos.filter(\.isSongLike).count
-        return musicCount >= max(1, videos.count / 2) ? .youtubeMusic : .youtube
+        guard let selectedPlaylist = searchViewModel.selectedPlaylist else { return .youtubeMusic }
+        return inferredPlaylistSourceKind(for: selectedPlaylist)
     }
 
     private func selectedPlaylistSourceLabel(for playlist: YouTubePlaylist) -> String {
-        let videos = searchViewModel.selectedPlaylist?.id == playlist.id ? searchViewModel.playlistVideos : []
-        guard !videos.isEmpty else { return "YouTube Music" }
-        let musicCount = videos.filter(\.isSongLike).count
-        if musicCount == videos.count { return "YouTube Music" }
-        if musicCount == 0 { return "YouTube" }
-        return "Mixed YouTube"
+        playlistSourceLabel(for: playlist)
     }
 
     private func playlistSourceKind(for playlist: YouTubePlaylist) -> MediaSourceKind {
-        searchViewModel.selectedPlaylist?.id == playlist.id ? selectedPlaylistSourceKind : .youtube
+        inferredPlaylistSourceKind(for: playlist)
     }
 
     private func playlistSourceLabel(for playlist: YouTubePlaylist) -> String {
-        searchViewModel.selectedPlaylist?.id == playlist.id ? selectedPlaylistSourceLabel(for: playlist) : "YouTube Playlist"
+        switch inferredPlaylistSourceKind(for: playlist) {
+        case .youtubeMusic:
+            "YouTube Music Playlist"
+        case .youtube:
+            "YouTube Playlist"
+        default:
+            playlistSourceKind(for: playlist).descriptor.displayName
+        }
+    }
+
+    private func inferredPlaylistSourceKind(for playlist: YouTubePlaylist) -> MediaSourceKind {
+        let title = playlist.snippet.title.lowercased()
+        if title.contains("music") || title.contains("songs") || title.contains("liked") || title.contains("album") || title.contains("mix") {
+            return .youtubeMusic
+        }
+        if searchViewModel.selectedPlaylist?.id == playlist.id {
+            let videos = searchViewModel.playlistVideos
+            guard !videos.isEmpty else { return .youtubeMusic }
+            let musicCount = videos.filter(\.isSongLike).count
+            return musicCount >= max(1, videos.count / 2) ? .youtubeMusic : .youtube
+        }
+        return .youtube
     }
 
     private var showsInlineResultModePicker: Bool {
@@ -2772,6 +2798,9 @@ struct YouTubeMusicNativeConceptView: View {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedQuery.isEmpty else { return }
         rememberSearch(trimmedQuery)
+        if currentSection != .search {
+            appState.open(.search)
+        }
         Task {
             await searchViewModel.search(trimmedQuery, preference: playbackPreference, engine: musicEngine)
             rebuildPageCaches()
@@ -4403,6 +4432,8 @@ private struct PlaylistArtworkCard: View {
     let title: String
     let songCount: Int
     let artworkURL: URL?
+    var source: MediaSourceKind = .youtubeMusic
+    var sourceLabel: String? = nil
     let action: () -> Void
 
     var body: some View {
@@ -4423,6 +4454,16 @@ private struct PlaylistArtworkCard: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(.separator.opacity(0.4), lineWidth: 1)
+                }
+                .overlay(alignment: .topTrailing) {
+                    Image(systemName: source.descriptor.symbolName)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(source.tint)
+                        .padding(6)
+                        .background(.regularMaterial, in: Circle())
+                        .accessibilityLabel(sourceLabel ?? source.descriptor.displayName)
+                        .padding(6)
+                        .help(sourceLabel ?? source.descriptor.displayName)
                 }
 
                 Text(title)

@@ -55,6 +55,20 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertFalse(surfaceSource.contains("appState.open(.playlists)\n                            Task"))
     }
 
+    func testGlobalSearchOpensSearchScreenBeforeRunningQuery() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("if currentSection != .search"))
+        XCTAssertTrue(surfaceSource.contains("appState.open(.search)"))
+        XCTAssertTrue(surfaceSource.contains("await searchViewModel.search(trimmedQuery"))
+    }
+
+    func testPlaylistEmptyStateExplainsSelectedPlaylistFailures() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("No Playable Playlist Songs"))
+        XCTAssertTrue(surfaceSource.contains("Private, deleted, or unavailable rows are skipped."))
+        XCTAssertTrue(surfaceSource.contains("searchViewModel.selectedPlaylist != nil, !searchViewModel.status.isEmpty"))
+    }
+
     func testNowPlayingInspectorTabsMatchDesignContract() {
         XCTAssertEqual(NowPlayingInspectorTab.allCases.map(\.title), ["Now Playing", "Up Next", "Lyrics", "About"])
         XCTAssertEqual(NowPlayingInspectorTab.upNext.symbolName, "list.bullet")
