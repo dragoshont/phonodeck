@@ -102,3 +102,31 @@ protocol MusicStorageProviding {
 
     func storageAssets() async throws -> [MusicStorageAsset]
 }
+
+extension Array where Element == MusicTrack {
+    func deduplicatedByProviderID() -> [MusicTrack] {
+        var seen = Set<MusicProviderEntityID>()
+        return filter { track in seen.insert(track.id).inserted }
+    }
+}
+
+extension Array where Element == MusicAlbum {
+    func deduplicatedByProviderID() -> [MusicAlbum] {
+        var seen = Set<MusicProviderEntityID>()
+        return filter { album in seen.insert(album.id).inserted }
+    }
+}
+
+extension Array where Element == MusicArtist {
+    func deduplicatedByProviderID() -> [MusicArtist] {
+        var seen = Set<MusicProviderEntityID>()
+        return filter { artist in seen.insert(artist.id).inserted }
+    }
+}
+
+extension Array where Element == MusicPlaylist {
+    func deduplicatedByProviderID() -> [MusicPlaylist] {
+        var seen = Set<MusicProviderEntityID>()
+        return filter { playlist in seen.insert(playlist.id).inserted }
+    }
+}

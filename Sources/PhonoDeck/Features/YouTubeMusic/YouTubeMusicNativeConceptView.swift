@@ -34,6 +34,15 @@ struct YouTubeMusicNativeConceptView: View {
     @State private var pendingCacheClear: StorageCacheClearTarget?
     @State private var isWelcomePresented = false
     @State private var welcomeStatusMessage = ""
+    @State private var sourceLibraryTracks: [MusicTrack] = []
+    @State private var sourceLibraryAlbums: [MusicAlbum] = []
+    @State private var sourceLibraryArtists: [MusicArtist] = []
+    @State private var sourceLibraryPlaylists: [MusicPlaylist] = []
+    @State private var sourceLibraryStatusMessage = ""
+    @State private var isLoadingSourceLibrary = false
+    @State private var selectedSourcePlaylist: MusicPlaylist?
+    @State private var sourcePlaylistTracks: [MusicTrack] = []
+    @State private var isLoadingSourcePlaylist = false
     @State private var cachedLibrarySongs: [YouTubeVideoSearchResult] = []
     @State private var cachedMusicTracks: [MusicTrack] = []
     @State private var cachedMusicAlbums: [MusicAlbum] = []
@@ -43,6 +52,8 @@ struct YouTubeMusicNativeConceptView: View {
     @State private var cachedDisplayedPlaylistVideos: [YouTubeVideoSearchResult] = []
     @State private var cachedAlbumVideosByID: [MusicProviderEntityID: [YouTubeVideoSearchResult]] = [:]
     @State private var cachedArtistVideosByID: [MusicProviderEntityID: [YouTubeVideoSearchResult]] = [:]
+    @State private var cachedAlbumTracksByID: [MusicProviderEntityID: [MusicTrack]] = [:]
+    @State private var cachedArtistTracksByID: [MusicProviderEntityID: [MusicTrack]] = [:]
     @State private var pendingLocalPlayedSeconds = 0.0
     @State private var lastLocalListeningPersistDate = Date.distantPast
     @State private var isVideoVisible = false
@@ -258,6 +269,8 @@ struct YouTubeMusicNativeConceptView: View {
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                         .padding(.bottom, DesignTokens.comfortableSpacing)
                 }
+            } else if currentSection == .playlists, selectedSourcePlaylist != nil {
+                sourcePlaylistPanel
             } else if sectionVideos.isEmpty {
                 emptyState
             } else {
@@ -459,6 +472,8 @@ struct YouTubeMusicNativeConceptView: View {
                     ForEach(searchViewModel.playlists) { playlist in
                         Button {
                             Task {
+                                selectedSourcePlaylist = nil
+                                sourcePlaylistTracks = []
                                 await searchViewModel.selectPlaylist(playlist)
                                 rebuildPageCaches()
                             }
@@ -599,6 +614,10 @@ struct YouTubeMusicNativeConceptView: View {
 
     private var isLibraryEmpty: Bool {
         librarySongs.isEmpty
+            && sourceLibraryTracks.isEmpty
+            && sourceLibraryAlbums.isEmpty
+            && sourceLibraryArtists.isEmpty
+            && sourceLibraryPlaylists.isEmpty
             && searchViewModel.playlists.isEmpty
             && searchViewModel.activityVideos.isEmpty
             && searchViewModel.subscriptions.isEmpty
@@ -606,6 +625,25 @@ struct YouTubeMusicNativeConceptView: View {
 
     private var libraryContentPanel: some View {
         VStack(alignment: .leading, spacing: DesignTokens.comfortableSpacing) {
+            if !sourceLibraryStatusMessage.isEmpty {
+                Text(sourceLibraryStatusMessage)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+
+            if !sourceLibraryTracks.isEmpty {
+                MusicTrackShelf(
+                    title: "Native Library",
+                    items: Array(sourceLibraryTracks.prefix(12)),
+                    playAction: { track in play(track, queue: sourceLibraryTracks) },
+                    enqueueAction: { track in Task { await appState.playback.enqueue(track) } }
+                )
+            }
+
             if !librarySongs.isEmpty {
                 SongCarouselShelf(
                     title: "Recently Played",
@@ -628,6 +666,10 @@ struct YouTubeMusicNativeConceptView: View {
                 libraryPlaylistShelf
             }
 
+            if !sourceLibraryPlaylists.isEmpty {
+                sourcePlaylistShelf
+            }
+
             if !searchViewModel.activityVideos.isEmpty {
                 SongCarouselShelf(
                     title: "From Your Activity",
@@ -639,6 +681,62 @@ struct YouTubeMusicNativeConceptView: View {
 
             if !searchViewModel.subscriptions.isEmpty {
                 librarySubscriptionShelf
+            }
+        }
+    }
+
+    private var sourcePlaylistShelf: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Source Playlists")
+                .font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 14) {
+                    ForEach(sourceLibraryPlaylists.prefix(10)) { playlist in
+                        PlaylistArtworkCard(
+                            title: playlist.title,
+                            songCount: playlist.trackCount ?? 0,
+                            artworkURL: playlist.artworkURL,
+                            source: playlist.source,
+                            sourceLabel: playlist.source.descriptor.displayName
+                        ) {
+                            openSourcePlaylist(playlist)
+                        }
+                    }
+                }
+                .padding(.bottom, 4)
+            }
+        }
+    }
+
+    private var sourcePlaylistPanel: some View {
+        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+            if let selectedSourcePlaylist {
+                HStack(spacing: 10) {
+                    SourcePill(source: selectedSourcePlaylist.source, title: selectedSourcePlaylist.source.descriptor.displayName)
+                    Text("\(sourcePlaylistTracks.count) loaded songs from \(selectedSourcePlaylist.title)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                    if isLoadingSourcePlaylist {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+            }
+
+            if sourcePlaylistTracks.isEmpty {
+                LimitedCatalogEmptyState(
+                    symbol: "music.note.list",
+                    title: isLoadingSourcePlaylist ? "Loading Source Playlist" : "No Songs Loaded",
+                    detail: sourceLibraryStatusMessage.isEmpty ? "This source playlist did not return playable tracks." : sourceLibraryStatusMessage,
+                    action: { appState.open(.settings) }
+                )
+            } else {
+                MusicTrackList(
+                    tracks: sourcePlaylistTracks,
+                    selectedTrack: appState.playback.queueSnapshot.currentItem?.track,
+                    playAction: { track in play(track, queue: sourcePlaylistTracks) },
+                    enqueueAction: { track in Task { await appState.playback.enqueue(track) } }
+                )
             }
         }
     }
@@ -794,9 +892,14 @@ struct YouTubeMusicNativeConceptView: View {
                             isSelected: selectedAlbumID == album.id,
                             action: { selectedAlbumID = album.id },
                             playAction: {
-                                let tracks = albumVideos(for: album)
-                                if let firstTrack = tracks.first {
-                                    play(firstTrack, queue: tracks)
+                                let nativeTracks = albumTracks(for: album)
+                                if let firstTrack = nativeTracks.first {
+                                    play(firstTrack, queue: nativeTracks)
+                                } else {
+                                    let videos = albumVideos(for: album)
+                                    if let firstVideo = videos.first {
+                                        play(firstVideo, queue: videos)
+                                    }
                                 }
                             }
                         )
@@ -804,25 +907,44 @@ struct YouTubeMusicNativeConceptView: View {
                 }
 
                 if let album = selectedAlbum ?? displayedMusicAlbums.first {
-                    MusicCollectionDetailPanel(
-                        title: album.title,
-                        subtitle: "\(album.artistName) - \(album.trackCount ?? 0) songs - \(album.source.descriptor.displayName)",
-                        facts: [
-                            "Year: \(album.releaseYear ?? "Not exposed by this source")",
-                            "Label: \(album.recordLabel ?? "Not exposed by this source")",
-                            "Duration: \(album.displayDuration)"
-                        ],
-                        symbol: "square.stack",
-                        source: album.source,
-                        items: albumVideos(for: album),
-                        selectedVideo: searchViewModel.selectedVideo,
-                        selectAction: { searchViewModel.select($0) },
-                        playAction: { item in play(item, queue: albumVideos(for: album)) },
-                        infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
-                        lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
-                        queueAction: { searchViewModel.addToQueue($0) },
-                        addMenu: { item in AnyView(addToPlaylistMenu(item)) }
-                    )
+                    let nativeTracks = albumTracks(for: album)
+                    if !nativeTracks.isEmpty {
+                        MusicTrackCollectionDetailPanel(
+                            title: album.title,
+                            subtitle: "\(album.artistName) - \(nativeTracks.count) songs - \(album.source.descriptor.displayName)",
+                            facts: [
+                                "Year: \(album.releaseYear ?? "Not exposed by this source")",
+                                "Label: \(album.recordLabel ?? "Not exposed by this source")",
+                                "Duration: \(album.displayDuration)"
+                            ],
+                            symbol: "square.stack",
+                            source: album.source,
+                            tracks: nativeTracks,
+                            selectedTrack: appState.playback.queueSnapshot.currentItem?.track,
+                            playAction: { track in play(track, queue: nativeTracks) },
+                            enqueueAction: { track in Task { await appState.playback.enqueue(track) } }
+                        )
+                    } else {
+                        MusicCollectionDetailPanel(
+                            title: album.title,
+                            subtitle: "\(album.artistName) - \(album.trackCount ?? 0) songs - \(album.source.descriptor.displayName)",
+                            facts: [
+                                "Year: \(album.releaseYear ?? "Not exposed by this source")",
+                                "Label: \(album.recordLabel ?? "Not exposed by this source")",
+                                "Duration: \(album.displayDuration)"
+                            ],
+                            symbol: "square.stack",
+                            source: album.source,
+                            items: albumVideos(for: album),
+                            selectedVideo: searchViewModel.selectedVideo,
+                            selectAction: { searchViewModel.select($0) },
+                            playAction: { item in play(item, queue: albumVideos(for: album)) },
+                            infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
+                            lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
+                            queueAction: { searchViewModel.addToQueue($0) },
+                            addMenu: { item in AnyView(addToPlaylistMenu(item)) }
+                        )
+                    }
                 }
             }
         }
@@ -862,9 +984,14 @@ struct YouTubeMusicNativeConceptView: View {
                             isSelected: selectedArtistID == artist.id,
                             action: { selectedArtistID = artist.id },
                             playAction: {
-                                let tracks = artistVideos(for: artist)
-                                if let firstTrack = tracks.first {
-                                    play(firstTrack, queue: tracks)
+                                let nativeTracks = artistTracks(for: artist)
+                                if let firstTrack = nativeTracks.first {
+                                    play(firstTrack, queue: nativeTracks)
+                                } else {
+                                    let videos = artistVideos(for: artist)
+                                    if let firstVideo = videos.first {
+                                        play(firstVideo, queue: videos)
+                                    }
                                 }
                             }
                         )
@@ -872,27 +999,46 @@ struct YouTubeMusicNativeConceptView: View {
                 }
 
                 if let artist = selectedArtist ?? displayedMusicArtists.first {
-                    MusicCollectionDetailPanel(
-                        title: artist.name,
-                        subtitle: "\(artist.trackCount ?? 0) songs - \(artist.albumCount ?? 0) albums - \(artist.source.descriptor.displayName)",
-                        facts: [
-                            "Following: Not exposed by this source",
-                            "Radio/Playlists: Not exposed by this source",
-                            "Bio/Trivia: No connected metadata provider yet"
-                        ],
-                        symbol: "music.mic",
-                        source: artist.source,
-                        items: artistVideos(for: artist),
-                        selectedVideo: searchViewModel.selectedVideo,
-                        selectAction: { searchViewModel.select($0) },
-                        playAction: { item in play(item, queue: artistVideos(for: artist)) },
-                        infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
-                        lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
-                        queueAction: { searchViewModel.addToQueue($0) },
-                        addMenu: { item in AnyView(addToPlaylistMenu(item)) }
-                    )
-                    if let seed = artistVideos(for: artist).first {
-                        relatedMusicPanel(for: seed, title: "Related to \(artist.name)")
+                    let nativeTracks = artistTracks(for: artist)
+                    if !nativeTracks.isEmpty {
+                        MusicTrackCollectionDetailPanel(
+                            title: artist.name,
+                            subtitle: "\(nativeTracks.count) songs - \(artist.albumCount ?? 0) albums - \(artist.source.descriptor.displayName)",
+                            facts: [
+                                "Following: Not exposed by this source",
+                                "Radio/Playlists: Not exposed by this source",
+                                "Bio/Trivia: No connected metadata provider yet"
+                            ],
+                            symbol: "music.mic",
+                            source: artist.source,
+                            tracks: nativeTracks,
+                            selectedTrack: appState.playback.queueSnapshot.currentItem?.track,
+                            playAction: { track in play(track, queue: nativeTracks) },
+                            enqueueAction: { track in Task { await appState.playback.enqueue(track) } }
+                        )
+                    } else {
+                        MusicCollectionDetailPanel(
+                            title: artist.name,
+                            subtitle: "\(artist.trackCount ?? 0) songs - \(artist.albumCount ?? 0) albums - \(artist.source.descriptor.displayName)",
+                            facts: [
+                                "Following: Not exposed by this source",
+                                "Radio/Playlists: Not exposed by this source",
+                                "Bio/Trivia: No connected metadata provider yet"
+                            ],
+                            symbol: "music.mic",
+                            source: artist.source,
+                            items: artistVideos(for: artist),
+                            selectedVideo: searchViewModel.selectedVideo,
+                            selectAction: { searchViewModel.select($0) },
+                            playAction: { item in play(item, queue: artistVideos(for: artist)) },
+                            infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
+                            lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
+                            queueAction: { searchViewModel.addToQueue($0) },
+                            addMenu: { item in AnyView(addToPlaylistMenu(item)) }
+                        )
+                        if let seed = artistVideos(for: artist).first {
+                            relatedMusicPanel(for: seed, title: "Related to \(artist.name)")
+                        }
                     }
                 }
             }
@@ -1005,6 +1151,8 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func openLibraryPlaylist(_ playlist: YouTubePlaylist) {
         Task {
+            selectedSourcePlaylist = nil
+            sourcePlaylistTracks = []
             await searchViewModel.selectPlaylist(playlist)
             rebuildPageCaches()
             appState.open(.playlists)
@@ -1785,6 +1933,7 @@ struct YouTubeMusicNativeConceptView: View {
         presentWelcomeIfNeeded()
         await accountViewModel.refreshStoredAccount()
         await loadAccountLibraryIfConnected()
+        await loadConnectedSourceLibraries()
         await refreshMusicSurfacesIfNeeded()
         await runInitialSearchIfNeeded()
         await runProviderComparisonIfNeeded()
@@ -1800,6 +1949,9 @@ struct YouTubeMusicNativeConceptView: View {
             await loadAccountLibraryIfConnected()
             rebuildPageCaches()
         }
+        if newSection == .library || newSection == .albums || newSection == .artists || newSection == .playlists {
+            await loadConnectedSourceLibraries()
+        }
         await refreshMusicSurfacesIfNeeded()
         if newSection == .providerLab {
             await runProviderComparisonIfNeeded()
@@ -1812,6 +1964,65 @@ struct YouTubeMusicNativeConceptView: View {
             return
         }
         await searchViewModel.loadLibraryData()
+    }
+
+    private func loadConnectedSourceLibraries() async {
+        guard !isLoadingSourceLibrary else { return }
+        isLoadingSourceLibrary = true
+        defer { isLoadingSourceLibrary = false }
+
+        var tracks: [MusicTrack] = []
+        var albums: [MusicAlbum] = []
+        var artists: [MusicArtist] = []
+        var playlists: [MusicPlaylist] = []
+        var failures: [String] = []
+
+        for adapter in appState.sourceRegistry.ordered where !adapter.kind.isYouTubePlayerBacked {
+            await adapter.restore()
+            guard adapter.connectionState.isConnected else { continue }
+            do {
+                AppLog.app.info("Loading source library snapshot; source=\(adapter.kind.rawValue, privacy: .public)")
+                let snapshot = try await adapter.librarySnapshot()
+                tracks.append(contentsOf: snapshot.tracks)
+                albums.append(contentsOf: snapshot.albums)
+                artists.append(contentsOf: snapshot.artists)
+                playlists.append(contentsOf: snapshot.playlists)
+                AppLog.app.info("Source library snapshot loaded; source=\(adapter.kind.rawValue, privacy: .public), tracks=\(snapshot.tracks.count, privacy: .public), albums=\(snapshot.albums.count, privacy: .public), artists=\(snapshot.artists.count, privacy: .public), playlists=\(snapshot.playlists.count, privacy: .public)")
+            } catch {
+                failures.append("\(adapter.kind.descriptor.displayName): \(error.localizedDescription)")
+                AppLog.app.error("Source library snapshot failed; source=\(adapter.kind.rawValue, privacy: .public), error=\(error.localizedDescription, privacy: .public)")
+            }
+        }
+
+        sourceLibraryTracks = tracks.deduplicatedByProviderID()
+        sourceLibraryAlbums = albums.deduplicatedByProviderID()
+        sourceLibraryArtists = artists.deduplicatedByProviderID()
+        sourceLibraryPlaylists = playlists.deduplicatedByProviderID()
+        sourceLibraryStatusMessage = failures.joined(separator: "\n")
+        rebuildPageCaches()
+    }
+
+    private func openSourcePlaylist(_ playlist: MusicPlaylist) {
+        selectedSourcePlaylist = playlist
+        playlistFilterText = ""
+        appState.open(.playlists)
+        Task {
+            await loadSourcePlaylistTracks(playlist)
+            rebuildPageCaches()
+        }
+    }
+
+    private func loadSourcePlaylistTracks(_ playlist: MusicPlaylist) async {
+        guard let adapter = appState.sourceRegistry.adapter(for: playlist.source) else { return }
+        isLoadingSourcePlaylist = true
+        defer { isLoadingSourcePlaylist = false }
+        do {
+            sourcePlaylistTracks = try await adapter.tracks(in: playlist.id).deduplicatedByProviderID()
+            sourceLibraryStatusMessage = ""
+        } catch {
+            sourcePlaylistTracks = []
+            sourceLibraryStatusMessage = "\(playlist.source.descriptor.displayName) playlist failed: \(error.localizedDescription)"
+        }
     }
 
     private func presentWelcomeIfNeeded() {
@@ -2086,8 +2297,22 @@ struct YouTubeMusicNativeConceptView: View {
         cachedAlbumVideosByID[album.id] ?? []
     }
 
+    private func albumTracks(for album: MusicAlbum) -> [MusicTrack] {
+        cachedAlbumTracksByID[album.id] ?? sourceLibraryTracks.filter { track in
+            track.source == album.source &&
+            track.artistName == album.artistName &&
+            (track.albumTitle ?? track.source.descriptor.displayName) == album.title
+        }
+    }
+
     private func artistVideos(for artist: MusicArtist) -> [YouTubeVideoSearchResult] {
         cachedArtistVideosByID[artist.id] ?? []
+    }
+
+    private func artistTracks(for artist: MusicArtist) -> [MusicTrack] {
+        cachedArtistTracksByID[artist.id] ?? sourceLibraryTracks.filter { track in
+            track.source == artist.source && track.artistName == artist.name
+        }
     }
 
     private func albumRecentIndex(_ album: MusicAlbum) -> Int {
@@ -2129,7 +2354,7 @@ struct YouTubeMusicNativeConceptView: View {
         let libraryItems = songLikeVideos.isEmpty ? deduplicatedVideos : songLikeVideos
         cachedLibrarySongs = libraryItems
 
-        cachedMusicTracks = libraryItems.map { result in
+        let youtubeTracks = libraryItems.map { result in
             let identity = result.musicIdentity
             return MusicTrack(
                 id: .init(source: result.mediaSourceKind, rawValue: result.id),
@@ -2144,6 +2369,7 @@ struct YouTubeMusicNativeConceptView: View {
                 sourceURL: result.watchURL
             )
         }
+        cachedMusicTracks = (sourceLibraryTracks + youtubeTracks).deduplicatedByProviderID()
 
         let albumGroups = Dictionary(grouping: libraryItems) { result in
             "\(result.mediaSourceKind.rawValue)|\(result.musicIdentity.artistName)|\(result.musicAlbumBucketTitle)"
@@ -2175,8 +2401,12 @@ struct YouTubeMusicNativeConceptView: View {
             return left.artistName.localizedCaseInsensitiveCompare(right.artistName) == .orderedAscending
         }
         cachedAlbumVideosByID = albumVideosByID
-        cachedMusicAlbums = albums
-        cachedDisplayedMusicAlbums = displayedAlbums(from: albums)
+        cachedAlbumTracksByID = Dictionary(grouping: sourceLibraryTracks) { track in
+            MusicProviderEntityID(source: track.source, rawValue: "\(track.artistName)|\(track.albumTitle ?? track.source.descriptor.displayName)")
+        }
+        let mergedAlbums = (sourceLibraryAlbums + albums).deduplicatedByProviderID()
+        cachedMusicAlbums = mergedAlbums
+        cachedDisplayedMusicAlbums = displayedAlbums(from: mergedAlbums)
 
         let artistGroups = Dictionary(grouping: libraryItems) { result in
             "\(result.mediaSourceKind.rawValue)|\(result.musicIdentity.artistName)"
@@ -2201,8 +2431,12 @@ struct YouTubeMusicNativeConceptView: View {
         }
         .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         cachedArtistVideosByID = artistVideosByID
-        cachedMusicArtists = artists
-        cachedDisplayedMusicArtists = displayedArtists(from: artists)
+        cachedArtistTracksByID = Dictionary(grouping: sourceLibraryTracks) { track in
+            MusicProviderEntityID(source: track.source, rawValue: track.artistName)
+        }
+        let mergedArtists = (sourceLibraryArtists + artists).deduplicatedByProviderID()
+        cachedMusicArtists = mergedArtists
+        cachedDisplayedMusicArtists = displayedArtists(from: mergedArtists)
     }
 
     private func displayedAlbums(from albums: [MusicAlbum]) -> [MusicAlbum] {
@@ -2395,6 +2629,17 @@ struct YouTubeMusicNativeConceptView: View {
         appState.youtubeNowPlaying = result
         playerController.load(video: result, autoplay: true)
         rebuildPageCaches()
+    }
+
+    private func play(_ track: MusicTrack, queue: [MusicTrack]) {
+        AppLog.playback.info("Native source play requested; source=\(track.source.rawValue, privacy: .public), id=\(track.id.rawValue, privacy: .public), title=\(track.title, privacy: .private), queue=\(queue.count, privacy: .public)")
+        appState.youtubeNowPlaying = nil
+        appState.youtubePlayback.reset()
+        isVideoVisible = false
+        Task {
+            let startIndex = queue.firstIndex(where: { $0.id == track.id }) ?? 0
+            await appState.playback.replaceQueue(with: queue, startAt: startIndex)
+        }
     }
 
     private func findOtherSources(for video: YouTubeVideoSearchResult) {
@@ -3051,6 +3296,62 @@ private struct MusicCollectionDetailPanel: View {
                     SongCarouselShelf(title: "Related", items: relatedItems, selectAction: selectAction, playAction: playAction)
                 }
             }
+        }
+        .padding(14)
+        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct MusicTrackCollectionDetailPanel: View {
+    let title: String
+    let subtitle: String
+    let facts: [String]
+    let symbol: String
+    let source: MediaSourceKind
+    let tracks: [MusicTrack]
+    let selectedTrack: MusicTrack?
+    let playAction: (MusicTrack) -> Void
+    let enqueueAction: (MusicTrack) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .frame(width: 34, height: 34)
+                    .background(source.tint.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .foregroundStyle(source.tint)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.headline)
+                        .lineLimit(2)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            if !facts.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(facts, id: \.self) { fact in
+                        Text(fact)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(source.tint.opacity(0.12), in: Capsule())
+                            .foregroundStyle(source.tint)
+                            .lineLimit(1)
+                    }
+                }
+            }
+
+            MusicTrackList(
+                tracks: tracks,
+                selectedTrack: selectedTrack,
+                playAction: playAction,
+                enqueueAction: enqueueAction
+            )
         }
         .padding(14)
         .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -4424,6 +4725,157 @@ private struct SongCarouselShelf: View {
                     }
                 }
             }
+        }
+    }
+}
+
+private struct MusicTrackShelf: View {
+    let title: String
+    let items: [MusicTrack]
+    let playAction: (MusicTrack) -> Void
+    let enqueueAction: (MusicTrack) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(items) { item in
+                        Button {
+                            playAction(item)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 7) {
+                                CachedArtworkImage(url: item.artworkURL) {
+                                    Rectangle()
+                                        .fill(item.source.tint.opacity(0.15))
+                                        .overlay {
+                                            Image(systemName: item.source.descriptor.symbolName)
+                                                .foregroundStyle(item.source.tint)
+                                        }
+                                }
+                                .scaledToFill()
+                                .frame(width: 132, height: 74)
+                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                                Text(item.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2)
+                                Text("\(item.artistName) · \(item.source.descriptor.displayName)")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 132, alignment: .leading)
+                            .padding(8)
+                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Play", action: { playAction(item) })
+                            Button("Add to Queue", action: { enqueueAction(item) })
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct MusicTrackList: View {
+    let tracks: [MusicTrack]
+    let selectedTrack: MusicTrack?
+    let playAction: (MusicTrack) -> Void
+    let enqueueAction: (MusicTrack) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(tracks) { track in
+                VStack(spacing: 0) {
+                    MusicTrackRow(
+                        track: track,
+                        isSelected: selectedTrack?.id == track.id,
+                        playAction: { playAction(track) },
+                        enqueueAction: { enqueueAction(track) }
+                    )
+                    if track.id != tracks.last?.id {
+                        Divider().padding(.leading, 76)
+                    }
+                }
+            }
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+private struct MusicTrackRow: View {
+    let track: MusicTrack
+    let isSelected: Bool
+    let playAction: () -> Void
+    let enqueueAction: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: playAction) {
+                HStack(spacing: 12) {
+                    CachedArtworkImage(url: track.artworkURL) {
+                        Rectangle()
+                            .fill(track.source.tint.opacity(0.15))
+                            .overlay {
+                                Image(systemName: track.source.descriptor.symbolName)
+                                    .font(.headline)
+                                    .foregroundStyle(track.source.tint)
+                            }
+                    }
+                    .scaledToFill()
+                    .frame(width: 56, height: 56)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(track.title)
+                            .font(.callout.weight(.medium))
+                            .lineLimit(1)
+                        Text(track.artistName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Text(track.albumTitle ?? track.source.descriptor.displayName)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 12)
+                    SourcePill(source: track.source, title: track.source.shortDisplayName)
+                    Text(track.displayDuration)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+            }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 6) {
+                Button(action: playAction) {
+                    Image(systemName: "play.fill")
+                }
+                .help("Play")
+
+                Button(action: enqueueAction) {
+                    Image(systemName: "text.badge.plus")
+                }
+                .help("Add to queue")
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+        .contextMenu {
+            Button("Play", action: playAction)
+            Button("Add to Queue", action: enqueueAction)
         }
     }
 }

@@ -69,6 +69,23 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("searchViewModel.selectedPlaylist != nil, !searchViewModel.status.isEmpty"))
     }
 
+    func testLibraryLoadsConnectedSourceSnapshots() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("loadConnectedSourceLibraries()"))
+        XCTAssertTrue(surfaceSource.contains("adapter.librarySnapshot()"))
+        XCTAssertTrue(surfaceSource.contains("sourceLibraryTracks"))
+        XCTAssertTrue(surfaceSource.contains("sourceLibraryPlaylists"))
+        XCTAssertTrue(surfaceSource.contains("MusicTrackShelf("))
+    }
+
+    func testAlbumsAndArtistsCanRenderNativeSourceTracks() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("albumTracks(for:"))
+        XCTAssertTrue(surfaceSource.contains("artistTracks(for:"))
+        XCTAssertTrue(surfaceSource.contains("MusicTrackCollectionDetailPanel("))
+        XCTAssertTrue(surfaceSource.contains("appState.playback.replaceQueue(with: queue"))
+    }
+
     func testNowPlayingInspectorTabsMatchDesignContract() {
         XCTAssertEqual(NowPlayingInspectorTab.allCases.map(\.title), ["Now Playing", "Up Next", "Lyrics", "About"])
         XCTAssertEqual(NowPlayingInspectorTab.upNext.symbolName, "list.bullet")

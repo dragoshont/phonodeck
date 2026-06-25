@@ -28,6 +28,35 @@ final class MusicLibraryModelsTests: XCTestCase {
         XCTAssertEqual(track.displayDuration, "3:21")
     }
 
+    func testSourceNeutralCatalogDedupKeepsDistinctSources() {
+        let youtubeTrack = MusicTrack(
+            id: .init(source: .youtubeMusic, rawValue: "same-id"),
+            title: "Song",
+            artistName: "Artist",
+            albumTitle: "Album",
+            durationSeconds: nil,
+            releaseYear: nil,
+            recordLabel: nil,
+            artworkURL: nil,
+            source: .youtubeMusic,
+            sourceURL: nil
+        )
+        let plexTrack = MusicTrack(
+            id: .init(source: .plex, rawValue: "same-id"),
+            title: "Song",
+            artistName: "Artist",
+            albumTitle: "Album",
+            durationSeconds: nil,
+            releaseYear: nil,
+            recordLabel: nil,
+            artworkURL: nil,
+            source: .plex,
+            sourceURL: nil
+        )
+
+        XCTAssertEqual([youtubeTrack, youtubeTrack, plexTrack].deduplicatedByProviderID(), [youtubeTrack, plexTrack])
+    }
+
     func testStorageAssetsSeparateArtworkMetadataAndOwnedMedia() {
         let assets: [MusicStorageAsset] = [
             .init(id: "metadata", source: .youtubeMusic, title: "Search cache", kind: .metadata, status: .cached, byteCount: 10, localURL: nil, sourceURL: nil),
