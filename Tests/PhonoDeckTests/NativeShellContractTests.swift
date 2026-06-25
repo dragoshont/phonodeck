@@ -73,6 +73,23 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("Text(selectedPlaylist.snippet.title)"))
     }
 
+    func testRightNowPlayingDrawerIsToggleableAndShowsVideoThenQueue() throws {
+        let rootViewSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/RootView.swift"), encoding: .utf8)
+        let appStateSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/App/AppState.swift"), encoding: .utf8)
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(rootViewSource.contains("sidebar.trailing"))
+        XCTAssertTrue(appStateSource.contains("isNowPlayingDrawerVisible"))
+        XCTAssertTrue(surfaceSource.contains("appState.isNowPlayingDrawerVisible"))
+        XCTAssertTrue(surfaceSource.contains("nowPlayingNowTab\n                    Divider()\n                    upNextPanel"))
+    }
+
+    func testEndedAutoAdvanceRequiresPreviousPlayingState() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("lastObservedPlayerState"))
+        XCTAssertTrue(surfaceSource.contains("case .ended where previousPlayerState == .playing && searchViewModel.canPlayNext"))
+    }
+
     func testGlobalSearchOpensSearchScreenBeforeRunningQuery() throws {
         let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
         XCTAssertTrue(surfaceSource.contains("if currentSection != .search"))

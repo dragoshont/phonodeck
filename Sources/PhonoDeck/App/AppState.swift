@@ -25,6 +25,12 @@ final class AppState: ObservableObject {
         }
     }
     @Published var isSidebarVisible = true
+    @Published var isNowPlayingDrawerVisible: Bool = UserDefaults.standard.object(forKey: "isNowPlayingDrawerVisible") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(isNowPlayingDrawerVisible, forKey: "isNowPlayingDrawerVisible")
+            AppLog.app.info("Now Playing drawer visibility changed; visible=\(self.isNowPlayingDrawerVisible.description, privacy: .public)")
+        }
+    }
     @Published var selectedNowPlayingInspectorTab: NowPlayingInspectorTab = .now
 
     let playback = PlaybackCoordinator()
@@ -53,7 +59,12 @@ final class AppState: ObservableObject {
         AppLog.app.info("Sidebar visibility changed; visible=\(self.isSidebarVisible.description, privacy: .public)")
     }
 
+    func toggleNowPlayingDrawer() {
+        isNowPlayingDrawerVisible.toggle()
+    }
+
     func openNowPlaying(tab: NowPlayingInspectorTab) {
+        isNowPlayingDrawerVisible = true
         selectedNowPlayingInspectorTab = tab
         AppLog.playback.info("Opening Now Playing inspector tab \(tab.rawValue, privacy: .public)")
     }

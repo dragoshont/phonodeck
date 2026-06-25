@@ -57,6 +57,7 @@ struct YouTubeMusicNativeConceptView: View {
     @State private var pendingLocalPlayedSeconds = 0.0
     @State private var lastLocalListeningPersistDate = Date.distantPast
     @State private var isVideoVisible = false
+    @State private var lastObservedPlayerState: YouTubeEmbeddedPlayerState = .idle
     @StateObject private var accountViewModel = YouTubeAccountViewModel()
     @StateObject private var playerController = YouTubeMusicWebPlayerController()
     @StateObject private var searchViewModel = YouTubeSearchViewModel()
@@ -137,7 +138,7 @@ struct YouTubeMusicNativeConceptView: View {
                 songsPanel
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if shouldShowNowPlayingPanel {
+                if shouldShowNowPlayingPanel && appState.isNowPlayingDrawerVisible {
                     nowPlayingPanel
                         .frame(width: 420)
                 }
@@ -1472,6 +1473,13 @@ struct YouTubeMusicNativeConceptView: View {
                 Spacer()
                 sourceBadge
                 accountMenu
+                Button {
+                    appState.toggleNowPlayingDrawer()
+                } label: {
+                    Image(systemName: "sidebar.trailing")
+                }
+                .buttonStyle(.borderless)
+                .help("Hide Now Playing")
             }
 
             Picker("Now Playing Inspector", selection: $appState.selectedNowPlayingInspectorTab) {
@@ -1483,7 +1491,15 @@ struct YouTubeMusicNativeConceptView: View {
             .labelsHidden()
 
             ScrollView {
-                nowPlayingInspectorContent
+                VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+                    nowPlayingNowTab
+                    Divider()
+                    upNextPanel
+                    if appState.selectedNowPlayingInspectorTab == .lyrics || appState.selectedNowPlayingInspectorTab == .about {
+                        Divider()
+                        nowPlayingInspectorContent
+                    }
+                }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
@@ -2912,6 +2928,8 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func handlePlayerStateChange(_ playerState: YouTubeEmbeddedPlayerState) {
         AppLog.player.info("UI observed player state change; state=\(playerState.title, privacy: .public), selected=\(self.searchViewModel.selectedVideo?.id ?? "none", privacy: .public), currentVideo=\(self.playerController.currentVideoID ?? "none", privacy: .public)")
+        let previousPlayerState = lastObservedPlayerState
+        lastObservedPlayerState = playerState
         updatePlaybackBridge()
         if playerState != .playing {
             flushLocalListeningProgress()
@@ -2919,7 +2937,7 @@ struct YouTubeMusicNativeConceptView: View {
         switch playerState {
         case .failed(let message):
             handleEmbeddedPlaybackFailure(message)
-        case .ended where searchViewModel.canPlayNext:
+        case .ended where previousPlayerState == .playing && searchViewModel.canPlayNext:
             playNextFromQueue()
         default:
             break

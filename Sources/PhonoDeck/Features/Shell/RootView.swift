@@ -36,6 +36,11 @@ struct RootView: View {
                     Image(systemName: "sidebar.leading")
                 }
                 .help("Show or hide sidebar")
+
+                Button(action: toggleNowPlayingDrawer) {
+                    Image(systemName: "sidebar.trailing")
+                }
+                .help("Show or hide Now Playing")
             }
             ToolbarItemGroup {
                 if let youtubeNowPlaying = appState.youtubeNowPlaying {
@@ -84,6 +89,10 @@ struct RootView: View {
 
     private func toggleSidebar() {
         appState.toggleSidebar()
+    }
+
+    private func toggleNowPlayingDrawer() {
+        appState.toggleNowPlayingDrawer()
     }
 
     private func openSearch() {
