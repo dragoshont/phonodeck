@@ -1,6 +1,30 @@
 import XCTest
 @testable import PhonoDeck
 
+private final class YouTubeDataClientURLProtocol: URLProtocol, @unchecked Sendable {
+  nonisolated(unsafe) static var handler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+
+  override class func canInit(with request: URLRequest) -> Bool { true }
+  override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+  override func startLoading() {
+    guard let handler = Self.handler else {
+      client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+      return
+    }
+    do {
+      let (response, data) = try handler(request)
+      client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+      client?.urlProtocol(self, didLoad: data)
+      client?.urlProtocolDidFinishLoading(self)
+    } catch {
+      client?.urlProtocol(self, didFailWithError: error)
+    }
+  }
+
+  override func stopLoading() {}
+}
+
 final class YouTubeDataClientTests: XCTestCase {
     func testChannelsResponseDecodesFirstChannelTitle() throws {
         let json = Data(
@@ -130,6 +154,50 @@ final class YouTubeDataClientTests: XCTestCase {
 
         XCTAssertEqual(results.map(\.id), ["playable-video"])
         XCTAssertEqual(results.first?.title, "Playable Song")
+    }
+
+    func testPlaylistItemPageKeepsRowsWhenVideoEnrichmentFails() async throws {
+        YouTubeDataClientURLProtocol.handler = { request in
+            let path = request.url?.path ?? ""
+            if path.hasSuffix("/playlistItems") {
+                let data = Data(
+                    """
+                    {
+                      "items": [
+                        {
+                          "id": "playlist-item-id",
+                          "snippet": {
+                            "title": "Playable Song",
+                            "channelTitle": "Artist - Topic",
+                            "publishedAt": "2026-06-01T12:00:00Z",
+                            "thumbnails": {
+                              "default": { "url": "https://i.ytimg.com/vi/playable-video/default.jpg" }
+                            }
+                          },
+                          "contentDetails": {
+                            "videoId": "playable-video"
+                          }
+                        }
+                      ]
+                    }
+                    """.utf8
+                )
+                return (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!, data)
+            }
+            let data = Data("not-json".utf8)
+            return (HTTPURLResponse(url: request.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!, data)
+        }
+        defer { YouTubeDataClientURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [YouTubeDataClientURLProtocol.self]
+        let client = YouTubeDataClient(urlSession: URLSession(configuration: configuration))
+
+        let page = try await client.playlistItemPage(playlistID: "playlist-id", accessToken: "token")
+
+        XCTAssertEqual(page.items.map(\.id), ["playable-video"])
+        XCTAssertEqual(page.items.first?.durationText, nil)
+        XCTAssertEqual(page.items.first?.popularityText, nil)
     }
 
     func testActivityDecodesPlayableVideoResult() throws {

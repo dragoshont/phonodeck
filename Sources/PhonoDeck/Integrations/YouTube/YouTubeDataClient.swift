@@ -158,7 +158,7 @@ struct YouTubeDataClient: Sendable {
         let data = try await performRequest(url: components.url!, accessToken: accessToken)
         let decoded = try JSONDecoder().decode(YouTubePlaylistItemsResponse.self, from: data)
         let items = decoded.items.compactMap(YouTubeVideoSearchResult.init(playlistItem:))
-        return YouTubeVideoPage(items: try await enrichVideoResults(items, accessToken: accessToken), nextPageToken: decoded.nextPageToken)
+        return YouTubeVideoPage(items: await enrichVideoResultsBestEffort(items, accessToken: accessToken), nextPageToken: decoded.nextPageToken)
     }
 
     func addVideoToPlaylist(videoID: String, playlistID: String, accessToken: String) async throws -> YouTubePlaylistItem {
@@ -232,6 +232,15 @@ struct YouTubeDataClient: Sendable {
         return items.map { item in
             guard let details = detailsByID[item.id] else { return item }
             return item.withRowMetadata(durationText: details.formattedDuration, popularityText: details.popularitySummary)
+        }
+    }
+
+    private func enrichVideoResultsBestEffort(_ items: [YouTubeVideoSearchResult], accessToken: String) async -> [YouTubeVideoSearchResult] {
+        do {
+            return try await enrichVideoResults(items, accessToken: accessToken)
+        } catch {
+            AppLog.playlist.info("Playlist metadata enrichment skipped; rows still loaded. error=\(error.localizedDescription, privacy: .public)")
+            return items
         }
     }
 
