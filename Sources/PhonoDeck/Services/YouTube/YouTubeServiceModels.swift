@@ -56,7 +56,7 @@ enum YouTubeProviderStatus: Equatable, Sendable {
         case .authorizationExpired: "Reconnect Google; YouTube authorization expired."
         case .quotaExceeded: "YouTube API quota is exhausted. Try cached results or search again later."
         case .unsupportedExperimentalVideoMode: "Official YouTube API is unavailable. No undocumented YouTube Music fallback is used."
-        case .invalidProviderResponse: "YouTube returned an invalid response. Try again."
+        case .invalidProviderResponse: "YouTube could not load playable rows for this playlist. Private, deleted, unavailable, or unsupported playlist items are skipped."
         case .failed(let reason): reason
         }
     }

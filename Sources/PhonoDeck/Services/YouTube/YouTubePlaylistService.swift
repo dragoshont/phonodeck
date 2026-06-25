@@ -85,6 +85,9 @@ final class YouTubePlaylistService: YouTubePlaylistServicing {
             cachePlaylist(page: page, playlistID: playlist.id)
             return snapshot(status: .ready, requestCountDeltas: deltas(since: before))
         } catch {
+            if playlistVideos.isEmpty {
+                nextPlaylistPageToken = nil
+            }
             let status: YouTubeProviderStatus = playlistVideos.isEmpty ? YouTubeServiceMapper.status(for: error) : .cachedFallback
             return snapshot(warnings: [.selectedPlaylist], status: status, requestCountDeltas: deltas(since: before))
         }

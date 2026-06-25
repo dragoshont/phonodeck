@@ -67,6 +67,7 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("No Playable Playlist Songs"))
         XCTAssertTrue(surfaceSource.contains("Private, deleted, or unavailable rows are skipped."))
         XCTAssertTrue(surfaceSource.contains("searchViewModel.selectedPlaylist != nil, !searchViewModel.status.isEmpty"))
+        XCTAssertTrue(surfaceSource.contains("playlistLoadSummary"))
     }
 
     func testLibraryLoadsConnectedSourceSnapshots() throws {

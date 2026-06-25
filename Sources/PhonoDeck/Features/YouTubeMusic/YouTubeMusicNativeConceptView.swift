@@ -501,7 +501,7 @@ struct YouTubeMusicNativeConceptView: View {
             if let selectedPlaylist = searchViewModel.selectedPlaylist {
                 HStack(spacing: 10) {
                     SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist))
-                    Text("\(searchViewModel.playlistVideos.count) loaded songs from the official account playlist API")
+                    Text(playlistLoadSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -706,6 +706,12 @@ struct YouTubeMusicNativeConceptView: View {
                 .padding(.bottom, 4)
             }
         }
+    }
+
+    private var playlistLoadSummary: String {
+        if searchViewModel.isLoadingLibrary { return "Loading songs from the official account playlist API" }
+        if searchViewModel.playlistVideos.isEmpty, !searchViewModel.status.isEmpty { return searchViewModel.status }
+        return "\(searchViewModel.playlistVideos.count) loaded songs from the official account playlist API"
     }
 
     private var sourcePlaylistPanel: some View {

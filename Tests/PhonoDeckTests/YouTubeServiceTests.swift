@@ -226,6 +226,16 @@ final class YouTubeServiceTests: XCTestCase {
         XCTAssertTrue(snapshot.warnings.contains(.selectedPlaylist))
     }
 
+    func testPlaylistInvalidResponseExplainsSkippedUnavailableRows() async {
+        let playlist = YouTubeFixtureFactory.playlist(title: "Unavailable")
+        let service = playlistService(tokens: .fixture, provider: FixtureYouTubeOfficialProvider(playlists: [playlist], error: YouTubeDataError.invalidResponse))
+
+        let snapshot = await service.loadMorePlaylistItems(playlist: playlist, pageToken: "next")
+
+        XCTAssertEqual(snapshot.status.message, "YouTube could not load playable rows for this playlist. Private, deleted, unavailable, or unsupported playlist items are skipped.")
+        XCTAssertTrue(snapshot.warnings.contains(.selectedPlaylist))
+    }
+
     func testQAStatusScriptExitCodes() throws {
         let temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
