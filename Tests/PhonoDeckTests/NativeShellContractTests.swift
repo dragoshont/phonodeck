@@ -45,6 +45,7 @@ final class NativeShellContractTests: XCTestCase {
         let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
         XCTAssertTrue(surfaceSource.contains("Label(windowTitle, systemImage: currentSection.symbolName)"))
         XCTAssertFalse(surfaceSource.contains("Text(sectionTitle)"))
+        XCTAssertFalse(surfaceSource.contains("breadcrumbTrail\n                    Text(sectionSubtitle)"))
     }
 
     func testLibraryPlaylistCardLoadsBeforeNavigatingToPlaylistScreen() throws {
@@ -53,6 +54,14 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("await searchViewModel.selectPlaylist(playlist)"))
         XCTAssertTrue(surfaceSource.contains("appState.open(.playlists)"))
         XCTAssertFalse(surfaceSource.contains("appState.open(.playlists)\n                            Task"))
+    }
+
+    func testPlaylistsKeepRightPanelAndFocusedHero() throws {
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        XCTAssertTrue(surfaceSource.contains("currentSection == .playlists || searchViewModel.selectedVideo != nil"))
+        XCTAssertTrue(surfaceSource.contains("Choose another playlist below"))
+        XCTAssertTrue(surfaceSource.contains("Label(\"Up Next\", systemImage: \"list.bullet\")"))
+        XCTAssertTrue(surfaceSource.contains("Text(selectedPlaylist.snippet.title)"))
     }
 
     func testGlobalSearchOpensSearchScreenBeforeRunningQuery() throws {

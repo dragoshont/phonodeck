@@ -197,7 +197,6 @@ struct YouTubeMusicNativeConceptView: View {
         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    breadcrumbTrail
                     Text(sectionSubtitle)
                         .font(.callout)
                         .foregroundStyle(.secondary)
@@ -441,34 +440,34 @@ struct YouTubeMusicNativeConceptView: View {
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
 
+            HStack(spacing: 8) {
+                Button {
+                    Task { await searchViewModel.createDefaultPlaylist() }
+                } label: {
+                    Label(searchViewModel.isCreatingPlaylist ? "Creating Playlist" : "New Playlist", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(searchViewModel.isCreatingPlaylist || !accountViewModel.state.hasPlaylistWriteScope)
+                .help(accountViewModel.state.hasPlaylistWriteScope ? "Create a private YouTube Music playlist" : "Connect Google with playlist access first")
+
+                if let selectedPlaylist = searchViewModel.selectedPlaylist {
+                    ShareLink(item: selectedPlaylist.shareURL) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+
+                Spacer(minLength: 0)
+
+                Text("Choose another playlist below")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    Button {
-                        Task { await searchViewModel.createDefaultPlaylist() }
-                    } label: {
-                        Label(searchViewModel.isCreatingPlaylist ? "Creating Playlist" : "New YouTube Music Playlist", systemImage: "plus")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .disabled(searchViewModel.isCreatingPlaylist || !accountViewModel.state.hasPlaylistWriteScope)
-                    .help(accountViewModel.state.hasPlaylistWriteScope ? "Create a private YouTube Music playlist" : "Connect Google with playlist access first")
-
-                    if let selectedPlaylist = searchViewModel.selectedPlaylist {
-                        ShareLink(item: selectedPlaylist.shareURL) {
-                            Label("Share Playlist", systemImage: "square.and.arrow.up")
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    } else {
-                        Button {} label: {
-                            Label("Share Playlist", systemImage: "square.and.arrow.up")
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(true)
-                        .help("Select a playlist to share")
-                    }
-
                     ForEach(searchViewModel.playlists) { playlist in
                         Button {
                             Task {
@@ -499,13 +498,57 @@ struct YouTubeMusicNativeConceptView: View {
     private var playlistContentToolbar: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let selectedPlaylist = searchViewModel.selectedPlaylist {
-                HStack(spacing: 10) {
-                    SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist))
-                    Text(playlistLoadSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(alignment: .top, spacing: 14) {
+                    CachedArtworkImage(url: selectedPlaylist.snippet.thumbnails?.medium?.url ?? selectedPlaylist.snippet.thumbnails?.default?.url) {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(selectedPlaylistSourceKind.tint.opacity(0.16))
+                            .overlay {
+                                Image(systemName: selectedPlaylistSourceKind.descriptor.symbolName)
+                                    .font(.largeTitle)
+                                    .foregroundStyle(selectedPlaylistSourceKind.tint)
+                            }
+                    }
+                    .scaledToFill()
+                    .frame(width: 112, height: 112)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist))
+                        Text(selectedPlaylist.snippet.title)
+                            .font(.title2.weight(.semibold))
+                            .lineLimit(2)
+                        Text(playlistLoadSummary)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 8) {
+                            Button {
+                                if let firstVideo = displayedPlaylistVideos.first {
+                                    play(firstVideo, queue: displayedPlaylistVideos)
+                                }
+                            } label: {
+                                Label("Play", systemImage: "play.fill")
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                            .disabled(displayedPlaylistVideos.isEmpty)
+
+                            Button {
+                                if let firstVideo = displayedPlaylistVideos.first {
+                                    searchViewModel.select(firstVideo, queue: displayedPlaylistVideos)
+                                    appState.openNowPlaying(tab: .upNext)
+                                }
+                            } label: {
+                                Label("Up Next", systemImage: "list.bullet")
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .disabled(displayedPlaylistVideos.isEmpty)
+                        }
+                    }
+
                     Spacer(minLength: 0)
+
                     if let selectedVideo = searchViewModel.selectedVideo {
                         Button {
                             findOtherSources(for: selectedVideo)
@@ -517,6 +560,8 @@ struct YouTubeMusicNativeConceptView: View {
                         .help("Inspect official YouTube API readiness and disabled provider policy for the selected song")
                     }
                 }
+                .padding(14)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
             HStack(spacing: 10) {
@@ -2090,7 +2135,7 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var shouldShowNowPlayingPanel: Bool {
-        searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
+        currentSection == .playlists || searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
     }
 
     private var youtubeConnectButtonTitle: String {
