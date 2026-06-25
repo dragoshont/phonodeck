@@ -138,9 +138,9 @@ struct YouTubeMusicNativeConceptView: View {
                 songsPanel
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if shouldShowNowPlayingPanel && appState.isNowPlayingDrawerVisible {
+                if shouldShowNowPlayingPanel {
                     nowPlayingPanel
-                        .frame(width: 420)
+                    .frame(width: appState.isNowPlayingDrawerVisible ? 420 : 72)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1466,46 +1466,93 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var nowPlayingPanel: some View {
-        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            HStack {
-                Text(appState.selectedNowPlayingInspectorTab.title)
-                    .font(.headline)
-                Spacer()
-                sourceBadge
-                accountMenu
-                Button {
-                    appState.toggleNowPlayingDrawer()
-                } label: {
-                    Image(systemName: "sidebar.trailing")
-                }
-                .buttonStyle(.borderless)
-                .help("Hide Now Playing")
-            }
-
-            Picker("Now Playing Inspector", selection: $appState.selectedNowPlayingInspectorTab) {
-                ForEach(NowPlayingInspectorTab.allCases) { tab in
-                    Label(tab.title, systemImage: tab.symbolName).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-
-            ScrollView {
+        ZStack(alignment: .topLeading) {
+            if appState.isNowPlayingDrawerVisible {
                 VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-                    nowPlayingNowTab
-                    Divider()
-                    upNextPanel
-                    if appState.selectedNowPlayingInspectorTab == .lyrics || appState.selectedNowPlayingInspectorTab == .about {
-                        Divider()
-                        nowPlayingInspectorContent
+                    HStack {
+                        Text("Now Playing")
+                            .font(.headline)
+                        Spacer()
+                        sourceBadge
+                        accountMenu
+                        Button {
+                            appState.toggleNowPlayingDrawer()
+                        } label: {
+                            Image(systemName: "sidebar.trailing")
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Collapse Now Playing")
+                    }
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
+                            nowPlayingNowTab
+                            Divider()
+                            upNextPanel
+                            if appState.selectedNowPlayingInspectorTab == .lyrics || appState.selectedNowPlayingInspectorTab == .about {
+                                Divider()
+                                nowPlayingInspectorContent
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
                 }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(16)
+            } else {
+                collapsedNowPlayingRail
             }
         }
-        .padding(16)
         .frame(maxWidth: .infinity, minHeight: 540, alignment: .topLeading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+
+    private var collapsedNowPlayingRail: some View {
+        VStack(spacing: 14) {
+            Button {
+                appState.toggleNowPlayingDrawer()
+            } label: {
+                Image(systemName: "sidebar.trailing")
+            }
+            .buttonStyle(.borderless)
+            .help("Show Now Playing")
+
+            Divider()
+
+            if isVideoVisible {
+                YouTubeMusicWebPlayerView(controller: playerController)
+                    .frame(width: 1, height: 1)
+                    .opacity(0.01)
+                    .accessibilityHidden(true)
+            }
+
+            SourceBadge(source: activeYouTubeSource, style: .dot)
+
+            Button {
+                togglePanelPlayback()
+            } label: {
+                Image(systemName: playerPlayPauseSymbol)
+            }
+            .buttonStyle(.borderless)
+            .disabled(!canControlPanelPlayer)
+            .help("Play or pause")
+
+            Button {
+                appState.openNowPlaying(tab: .upNext)
+            } label: {
+                Image(systemName: "list.bullet")
+            }
+            .buttonStyle(.borderless)
+            .help("Show Up Next")
+
+            if playerController.duration > 0 {
+                ProgressView(value: playerProgress, total: 1)
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 52, height: 8)
+            }
+        }
+        .padding(.vertical, 14)
+        .frame(width: 72)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     @ViewBuilder
@@ -1550,34 +1597,6 @@ struct YouTubeMusicNativeConceptView: View {
 
                 alwaysVisibleMediaInfo(for: selectedVideo)
 
-                HStack(spacing: 8) {
-                    Button {
-                        appState.openNowPlaying(tab: .about)
-                    } label: {
-                        Label("Info", systemImage: "info.circle")
-                    }
-                    Button {
-                        openLyrics(for: selectedVideo)
-                    } label: {
-                        Label("Lyrics", systemImage: "text.quote")
-                    }
-                    Button {
-                        appState.openNowPlaying(tab: .upNext)
-                    } label: {
-                        Label("Up Next", systemImage: "list.bullet")
-                    }
-                    ShareLink(item: selectedVideo.watchURL) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                    addToPlaylistMenu(selectedVideo)
-                    Button {
-                        NSWorkspace.shared.open(selectedVideo.watchURL)
-                    } label: {
-                        Label("Open", systemImage: "arrow.up.right.square")
-                    }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
             } else {
                 nowPlayingEmptyState
             }

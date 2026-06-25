@@ -12,7 +12,10 @@ final class NativeShellContractTests: XCTestCase {
 
     func testSidebarUsesCompactTokenWidthAndNoTitlebarSourceBadge() throws {
         let rootViewSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/RootView.swift"), encoding: .utf8)
+        let sidebarSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/SidebarView.swift"), encoding: .utf8)
         XCTAssertTrue(rootViewSource.contains(".frame(width: DesignTokens.sidebarMinWidth)"))
+        XCTAssertTrue(sidebarSource.contains("RoundedRectangle(cornerRadius: 18"))
+        XCTAssertTrue(sidebarSource.contains(".strokeBorder(.separator.opacity(0.55)"))
         XCTAssertFalse(rootViewSource.contains("youtubeSourceBadge"))
         XCTAssertFalse(rootViewSource.contains("Label(\"YouTube Music\""))
         XCTAssertTrue(rootViewSource.contains("Select a song to share"))
@@ -22,10 +25,10 @@ final class NativeShellContractTests: XCTestCase {
         let data = try Data(contentsOf: repoRoot().appendingPathComponent("docs/design/phonodeck-ui-map.json"))
         let object = try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         let designTokens = try XCTUnwrap(object["designTokens"] as? [String: Any])
-        XCTAssertEqual(designTokens["sidebarRenderedWidth"] as? Int, 220)
+        XCTAssertEqual(designTokens["sidebarRenderedWidth"] as? Int, 250)
         let navigation = try XCTUnwrap(object["navigation"] as? [String: Any])
         let sidebar = try XCTUnwrap(navigation["sidebar"] as? [String: Any])
-        XCTAssertEqual(sidebar["renderedWidth"] as? Int, 220)
+        XCTAssertEqual(sidebar["renderedWidth"] as? Int, 250)
         let sections = try XCTUnwrap(navigation["sections"] as? [[String: Any]])
         let providerLab = try XCTUnwrap(sections.first { $0["case"] as? String == "providerLab" })
         XCTAssertEqual(providerLab["inSidebar"] as? Bool, false)
@@ -81,7 +84,10 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(rootViewSource.contains("sidebar.trailing"))
         XCTAssertTrue(appStateSource.contains("isNowPlayingDrawerVisible"))
         XCTAssertTrue(surfaceSource.contains("appState.isNowPlayingDrawerVisible"))
-        XCTAssertTrue(surfaceSource.contains("nowPlayingNowTab\n                    Divider()\n                    upNextPanel"))
+        XCTAssertTrue(surfaceSource.contains("collapsedNowPlayingRail"))
+        XCTAssertTrue(surfaceSource.contains("YouTubeMusicWebPlayerView(controller: playerController)"))
+        XCTAssertTrue(surfaceSource.contains("nowPlayingNowTab"))
+        XCTAssertTrue(surfaceSource.contains("upNextPanel"))
     }
 
     func testEndedAutoAdvanceRequiresPreviousPlayingState() throws {
