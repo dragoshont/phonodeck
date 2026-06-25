@@ -595,6 +595,25 @@ struct YouTubePlaylistsResponse: Decodable, Equatable {
 struct YouTubePlaylistItemsResponse: Decodable, Equatable {
     let nextPageToken: String?
     let items: [YouTubePlaylistItem]
+
+    enum CodingKeys: String, CodingKey {
+        case nextPageToken
+        case items
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        nextPageToken = try container.decodeIfPresent(String.self, forKey: .nextPageToken)
+        items = try container.decodeIfPresent([LossyYouTubePlaylistItem].self, forKey: .items)?.compactMap(\.item) ?? []
+    }
+}
+
+private struct LossyYouTubePlaylistItem: Decodable, Equatable {
+    let item: YouTubePlaylistItem?
+
+    init(from decoder: Decoder) throws {
+        item = try? YouTubePlaylistItem(from: decoder)
+    }
 }
 
 private struct YouTubePlaylistItemInsertRequest: Encodable {

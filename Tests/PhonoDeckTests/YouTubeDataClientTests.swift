@@ -94,6 +94,44 @@ final class YouTubeDataClientTests: XCTestCase {
         XCTAssertEqual(result.playlistAddedAt, "2026-06-01T12:00:00Z")
     }
 
+    func testPlaylistItemsSkipMalformedRowsAndKeepPlayableVideos() throws {
+        let json = Data(
+            """
+            {
+              "items": [
+                {
+                  "id": "deleted-item-id",
+                  "snippet": {
+                    "title": "Deleted video",
+                    "publishedAt": "2026-06-01T12:00:00Z"
+                  }
+                },
+                {
+                  "id": "playlist-item-id",
+                  "snippet": {
+                    "title": "Playable Song",
+                    "channelTitle": "Artist - Topic",
+                    "publishedAt": "2026-06-01T12:00:00Z",
+                    "thumbnails": {
+                      "default": { "url": "https://i.ytimg.com/vi/playable-video/default.jpg" }
+                    }
+                  },
+                  "contentDetails": {
+                    "videoId": "playable-video"
+                  }
+                }
+              ]
+            }
+            """.utf8
+        )
+
+        let response = try JSONDecoder().decode(YouTubePlaylistItemsResponse.self, from: json)
+        let results = response.items.compactMap(YouTubeVideoSearchResult.init(playlistItem:))
+
+        XCTAssertEqual(results.map(\.id), ["playable-video"])
+        XCTAssertEqual(results.first?.title, "Playable Song")
+    }
+
     func testActivityDecodesPlayableVideoResult() throws {
         let json = Data(
             """
