@@ -11,21 +11,15 @@ final class YouTubePlaybackBridge: ObservableObject {
     @Published private(set) var duration: Double = 0
 
     private var playPauseHandler: (() -> Void)?
-    private var previousHandler: (() -> Void)?
-    private var nextHandler: (() -> Void)?
     private var muteHandler: (() -> Void)?
     private var volumeHandler: ((Double) -> Void)?
 
     func setHandlers(
         playPause: @escaping () -> Void,
-        previous: @escaping () -> Void,
-        next: @escaping () -> Void,
         mute: @escaping () -> Void,
         volume: @escaping (Double) -> Void
     ) {
         playPauseHandler = playPause
-        previousHandler = previous
-        nextHandler = next
         muteHandler = mute
         volumeHandler = volume
     }
@@ -53,16 +47,6 @@ final class YouTubePlaybackBridge: ObservableObject {
     func playPause() {
         guard playerState.acceptsCommands else { return }
         playPauseHandler?()
-    }
-
-    func previous() {
-        guard canPlayPrevious else { return }
-        previousHandler?()
-    }
-
-    func next() {
-        guard canPlayNext else { return }
-        nextHandler?()
     }
 
     func toggleMute() {

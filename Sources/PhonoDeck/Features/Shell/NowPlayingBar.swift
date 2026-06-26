@@ -106,11 +106,12 @@ struct NowPlayingBar: View {
     private var controls: some View {
         VStack(spacing: 7) {
             HStack(spacing: DesignTokens.standardSpacing) {
-                Button(action: previousAction) {
-                    Image(systemName: "backward.fill")
+                if !isYouTubeMode {
+                    Button(action: previousAction) {
+                        Image(systemName: "backward.fill")
+                    }
+                    .help("Previous")
                 }
-                .disabled(isYouTubeMode ? !youtubePlayback.canPlayPrevious : false)
-                .help(isYouTubeMode ? "Previous song in the current PhonoDeck list" : "Previous")
 
                 Button(action: playPauseAction) {
                     Image(systemName: playPauseSymbol)
@@ -119,11 +120,12 @@ struct NowPlayingBar: View {
                 .disabled(isYouTubeMode ? !canControlYouTubePlayer : false)
                 .help(isYouTubeMode ? "Play or pause the visible YouTube player" : "Play or pause")
 
-                Button(action: nextAction) {
-                    Image(systemName: "forward.fill")
+                if !isYouTubeMode {
+                    Button(action: nextAction) {
+                        Image(systemName: "forward.fill")
+                    }
+                    .help("Next")
                 }
-                .disabled(isYouTubeMode ? !youtubePlayback.canPlayNext : false)
-                .help(isYouTubeMode ? "Next song in the current PhonoDeck list" : "Next")
             }
             .buttonStyle(.borderless)
             .font(.title3)
@@ -174,7 +176,7 @@ struct NowPlayingBar: View {
     }
 
     private func previousAction() {
-        isYouTubeMode ? youtubePlayback.previous() : playback.previousTrack()
+        playback.previousTrack()
     }
 
     private func playPauseAction() {
@@ -182,7 +184,7 @@ struct NowPlayingBar: View {
     }
 
     private func nextAction() {
-        isYouTubeMode ? youtubePlayback.next() : playback.nextTrack()
+        playback.nextTrack()
     }
 
     private var timeText: String {

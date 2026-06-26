@@ -93,7 +93,20 @@ final class NativeShellContractTests: XCTestCase {
     func testEndedAutoAdvanceRequiresPreviousPlayingState() throws {
         let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
         XCTAssertTrue(surfaceSource.contains("lastObservedPlayerState"))
-        XCTAssertTrue(surfaceSource.contains("case .ended where previousPlayerState == .playing && searchViewModel.canPlayNext"))
+        XCTAssertFalse(surfaceSource.contains("case .ended where previousPlayerState == .playing && searchViewModel.canPlayNext"))
+        XCTAssertFalse(surfaceSource.contains("playNextFromQueue()\n        default:"))
+    }
+
+    func testYouTubeChromeDoesNotExposePreviousNextNavigation() throws {
+        let nowPlayingBarSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/NowPlayingBar.swift"), encoding: .utf8)
+        let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
+        let bridgeSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubePlaybackBridge.swift"), encoding: .utf8)
+
+        XCTAssertTrue(nowPlayingBarSource.contains("if !isYouTubeMode"))
+        XCTAssertFalse(surfaceSource.contains("previous: { playPreviousFromQueue() }"))
+        XCTAssertFalse(surfaceSource.contains("next: { playNextFromQueue() }"))
+        XCTAssertFalse(bridgeSource.contains("func previous()"))
+        XCTAssertFalse(bridgeSource.contains("func next()"))
     }
 
     func testGlobalSearchOpensSearchScreenBeforeRunningQuery() throws {

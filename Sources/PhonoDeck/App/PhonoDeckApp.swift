@@ -145,24 +145,16 @@ struct PlaybackCommands: Commands {
             .disabled(!canPlayPause)
 
             Button("Next Track") {
-                if shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked {
-                    appState.playback.nextTrack()
-                } else {
-                    appState.youtubePlayback.next()
-                }
+                appState.playback.nextTrack()
             }
             .keyboardShortcut(.rightArrow, modifiers: [.command])
-            .disabled(shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked ? appState.playback.queueSnapshot.currentIndex == nil : !appState.youtubePlayback.canPlayNext)
+            .disabled(appState.activeSource.isYouTubePlayerBacked || appState.playback.queueSnapshot.currentIndex == nil)
 
             Button("Previous Track") {
-                if shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked {
-                    appState.playback.previousTrack()
-                } else {
-                    appState.youtubePlayback.previous()
-                }
+                appState.playback.previousTrack()
             }
             .keyboardShortcut(.leftArrow, modifiers: [.command])
-            .disabled(shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked ? appState.playback.queueSnapshot.currentIndex == nil : !appState.youtubePlayback.canPlayPrevious)
+            .disabled(appState.activeSource.isYouTubePlayerBacked || appState.playback.queueSnapshot.currentIndex == nil)
         }
     }
 }

@@ -10,8 +10,6 @@ final class YouTubePlaybackBridgeTests: XCTestCase {
         var volumeValues: [Double] = []
         bridge.setHandlers(
             playPause: { playPauseCount += 1 },
-            previous: {},
-            next: {},
             mute: { muteCount += 1 },
             volume: { volumeValues.append($0) }
         )
@@ -33,8 +31,6 @@ final class YouTubePlaybackBridgeTests: XCTestCase {
         var volumeValues: [Double] = []
         bridge.setHandlers(
             playPause: { playPauseCount += 1 },
-            previous: {},
-            next: {},
             mute: { muteCount += 1 },
             volume: { volumeValues.append($0) }
         )

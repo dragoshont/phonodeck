@@ -1826,15 +1826,6 @@ struct YouTubeMusicNativeConceptView: View {
         VStack(spacing: 6) {
             HStack(spacing: 12) {
                 Button {
-                    playPreviousFromQueue()
-                } label: {
-                    Image(systemName: "backward.fill")
-                        .frame(width: 22)
-                }
-                .disabled(!searchViewModel.canPlayPrevious)
-                .help(searchViewModel.canPlayPrevious ? "Previous song" : "No previous song in queue")
-
-                Button {
                     togglePanelPlayback()
                 } label: {
                     Image(systemName: playerPlayPauseSymbol)
@@ -1842,15 +1833,6 @@ struct YouTubeMusicNativeConceptView: View {
                 }
                 .disabled(!canControlPanelPlayer)
                 .help(canControlPanelPlayer ? "Play or pause" : "Select a playable song first")
-
-                Button {
-                    playNextFromQueue()
-                } label: {
-                    Image(systemName: "forward.fill")
-                        .frame(width: 22)
-                }
-                .disabled(!searchViewModel.canPlayNext)
-                .help(searchViewModel.canPlayNext ? "Next song" : "No next song in queue")
 
                 Divider()
                     .frame(height: 18)
@@ -2920,8 +2902,6 @@ struct YouTubeMusicNativeConceptView: View {
     private func configurePlaybackBridge() {
         appState.youtubePlayback.setHandlers(
             playPause: { togglePanelPlayback() },
-            previous: { playPreviousFromQueue() },
-            next: { playNextFromQueue() },
             mute: { playerController.toggleMute() },
             volume: { playerController.setVolume($0) }
         )
@@ -2956,8 +2936,6 @@ struct YouTubeMusicNativeConceptView: View {
         switch playerState {
         case .failed(let message):
             handleEmbeddedPlaybackFailure(message)
-        case .ended where previousPlayerState == .playing && searchViewModel.canPlayNext:
-            playNextFromQueue()
         default:
             break
         }
