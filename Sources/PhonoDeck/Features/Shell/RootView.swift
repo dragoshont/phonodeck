@@ -82,7 +82,7 @@ struct RootView: View {
 
     private var shouldShowNowPlayingBar: Bool {
         if appState.activeSource.isYouTubePlayerBacked {
-            return appState.youtubeNowPlaying != nil
+            return appState.youtubeNowPlaying != nil && !appState.isNowPlayingDrawerVisible
         }
         return appState.playback.currentTrack != .placeholder || appState.playback.state == .playing
     }

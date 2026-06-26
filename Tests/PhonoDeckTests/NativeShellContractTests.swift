@@ -90,6 +90,11 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("upNextPanel"))
     }
 
+    func testBottomBarHidesWhileYouTubeDrawerIsOpen() throws {
+        let rootViewSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/Shell/RootView.swift"), encoding: .utf8)
+        XCTAssertTrue(rootViewSource.contains("appState.youtubeNowPlaying != nil && !appState.isNowPlayingDrawerVisible"))
+    }
+
     func testEndedAutoAdvanceRequiresPreviousPlayingState() throws {
         let surfaceSource = try String(contentsOf: repoRoot().appendingPathComponent("Sources/PhonoDeck/Features/YouTubeMusic/YouTubeMusicNativeConceptView.swift"), encoding: .utf8)
         XCTAssertTrue(surfaceSource.contains("lastObservedPlayerState"))
