@@ -140,7 +140,7 @@ struct YouTubeMusicNativeConceptView: View {
 
                 if shouldShowNowPlayingPanel {
                     nowPlayingPanel
-                    .frame(width: appState.isNowPlayingDrawerVisible ? 420 : 72)
+                        .frame(width: nowPlayingPanelWidth)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1506,7 +1506,62 @@ struct YouTubeMusicNativeConceptView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
+    private var nowPlayingPanelWidth: CGFloat {
+        if appState.isNowPlayingDrawerVisible { return 420 }
+        return isYouTubePlaybackActive ? 252 : 72
+    }
+
+    private var isYouTubePlaybackActive: Bool {
+        searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
+    }
+
+    @ViewBuilder
     private var collapsedNowPlayingRail: some View {
+        if isYouTubePlaybackActive {
+            compactYouTubeMiniPlayer
+        } else {
+            collapsedEmptyRail
+        }
+    }
+
+    private var compactYouTubeMiniPlayer: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                SourcePill(source: activeYouTubeSource, title: activeYouTubeSource.shortDisplayName)
+                Spacer(minLength: 0)
+                Button {
+                    appState.toggleNowPlayingDrawer()
+                } label: {
+                    Image(systemName: "sidebar.trailing")
+                }
+                .buttonStyle(.borderless)
+                .help("Expand Now Playing")
+            }
+
+            if isVideoVisible {
+                YouTubeMusicWebPlayerView(controller: playerController)
+                    .frame(width: 220, height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            } else {
+                Button {
+                    togglePanelPlayback()
+                } label: {
+                    Label("Show Player", systemImage: "play.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(searchViewModel.selectedVideo == nil)
+            }
+
+            playerTransportControls
+        }
+        .padding(12)
+        .frame(width: 252)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private var collapsedEmptyRail: some View {
         VStack(spacing: 14) {
             Button {
                 appState.toggleNowPlayingDrawer()
@@ -1517,13 +1572,6 @@ struct YouTubeMusicNativeConceptView: View {
             .help("Show Now Playing")
 
             Divider()
-
-            if isVideoVisible {
-                YouTubeMusicWebPlayerView(controller: playerController)
-                    .frame(width: 1, height: 1)
-                    .opacity(0.01)
-                    .accessibilityHidden(true)
-            }
 
             SourceBadge(source: activeYouTubeSource, style: .dot)
 

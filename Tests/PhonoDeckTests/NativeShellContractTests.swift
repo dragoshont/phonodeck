@@ -86,6 +86,9 @@ final class NativeShellContractTests: XCTestCase {
         XCTAssertTrue(surfaceSource.contains("appState.isNowPlayingDrawerVisible"))
         XCTAssertTrue(surfaceSource.contains("collapsedNowPlayingRail"))
         XCTAssertTrue(surfaceSource.contains("YouTubeMusicWebPlayerView(controller: playerController)"))
+        XCTAssertTrue(surfaceSource.contains("compactYouTubeMiniPlayer"))
+        XCTAssertTrue(surfaceSource.contains(".frame(width: 220, height: 200)"))
+        XCTAssertFalse(surfaceSource.contains(".frame(width: 1, height: 1)"))
         XCTAssertTrue(surfaceSource.contains("nowPlayingNowTab"))
         XCTAssertTrue(surfaceSource.contains("upNextPanel"))
     }
