@@ -47,6 +47,10 @@ Give the user a quiet, native, Apple-quality music desk for browsing, playing, c
 | iOS companion | Remote control and setup companion | Uses the Mac app/session as source of truth |
 | Apple Watch | WatchConnectivity remote for playback, queue peek, current track, and output route | No direct service-token handling on watch |
 
+## iPhone Interaction Notes
+
+- Markdown editing on iPhone should use live preview with focused source editing, visible mode controls, and accessible gesture alternatives. See [iPhone Markdown Edit and Preview UX](iphone-markdown-edit-preview.md).
+
 ## P0 YouTube Music Acceptance
 
 - The app does not attempt to extract streams, run background-only playback, hide a web player, or download YouTube content.
