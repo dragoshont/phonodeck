@@ -4,9 +4,15 @@
 
 [Latest mockups](https://dragoshont.github.io/phonodeck/) are published from the Storybook UI lab.
 
+| Home | Playlist + Player |
+| --- | --- |
+| ![PhonoDeck Home mockup](docs/assets/phonodeck-home.png) | ![PhonoDeck playlist and player mockup](docs/assets/phonodeck-playlist.png) |
+
 PhonoDeck is a native-first macOS music app experiment built while testing Architrave, my judge-gated agent workflow for product and engineering work. It is a personal, exploratory project rather than a polished commercial app, but the current build works with a Google/YouTube account.
 
 The interesting constraint was trying to make a YouTube-backed music app that feels like more than a plain iframe holder. PhonoDeck uses official YouTube account/data APIs for account identity, search, playlists, playlist items, subscriptions, and activity, then uses a visible official YouTube player for playback because YouTube does not expose native third-party audio streams. The surrounding app is SwiftUI: Home, playlists, queue-aware controls, metadata, and source-honest playback chrome.
+
+It is also a proof of concept for using the YouTube API from a desktop app: OAuth through the system browser, account/library surfaces through official Data API calls, and playback handled through a visible compliant player instead of hidden extraction.
 
 The product direction is deliberately conservative: feel native, use official/public APIs, and keep provider rules honest. No hidden YouTube playback, no scraped YouTube Music endpoints, and no YouTube downloads/offline playback without approval.
 
@@ -25,8 +31,6 @@ PhonoDeck is open source under the MIT license. The official signed App Store bu
 PhonoDeck is a multi-platform product with native implementations per platform:
 
 - Apple platforms: Swift and SwiftUI.
-- Windows: native .NET / WinUI.
-- Web: React / TypeScript.
 
 Shared behavior should live in contracts, provider policy, fixtures, and docs. Platform UI and OS media APIs stay platform-native.
 
