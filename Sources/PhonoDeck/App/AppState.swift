@@ -25,6 +25,9 @@ final class AppState: ObservableObject {
         }
     }
     @Published var isSidebarVisible = true
+    @Published var isTopSearchVisible = false
+    @Published var topSearchText = ""
+    @Published var submittedTopSearchQuery: String?
     @Published var isNowPlayingDrawerVisible: Bool = UserDefaults.standard.object(forKey: "isNowPlayingDrawerVisible") as? Bool ?? true {
         didSet {
             UserDefaults.standard.set(isNowPlayingDrawerVisible, forKey: "isNowPlayingDrawerVisible")
@@ -59,8 +62,31 @@ final class AppState: ObservableObject {
         AppLog.app.info("Sidebar visibility changed; visible=\(self.isSidebarVisible.description, privacy: .public)")
     }
 
+    func toggleTopSearch() {
+        isTopSearchVisible.toggle()
+        AppLog.app.info("Top search visibility changed; visible=\(self.isTopSearchVisible.description, privacy: .public)")
+    }
+
+    func submitTopSearch() {
+        let query = topSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        isTopSearchVisible = true
+        selectedSection = .search
+        submittedTopSearchQuery = query
+        AppLog.search.info("Top search submitted; query=\(query, privacy: .private)")
+    }
+
     func toggleNowPlayingDrawer() {
+        guard canCollapseNowPlayingDrawer else {
+            isNowPlayingDrawerVisible = true
+            AppLog.app.info("Now Playing drawer collapse ignored while YouTube playback is active")
+            return
+        }
         isNowPlayingDrawerVisible.toggle()
+    }
+
+    var canCollapseNowPlayingDrawer: Bool {
+        !(activeSource.isYouTubePlayerBacked && youtubeNowPlaying != nil)
     }
 
     func openNowPlaying(tab: NowPlayingInspectorTab) {
@@ -75,8 +101,8 @@ final class AppState: ObservableObject {
             AppLog.app.info("No valid saved section; defaulting to library")
             return .library
         }
-        if section == .listenNow {
-            AppLog.app.info("Saved Listen Now section replaced with Library")
+        if section.isHiddenPrimaryNavigationSection {
+            AppLog.app.info("Saved hidden section replaced with Library")
             return .library
         }
         AppLog.app.info("Loaded saved section \(section.rawValue, privacy: .public)")
@@ -98,6 +124,15 @@ enum LibrarySection: String, CaseIterable, Identifiable, Hashable {
     case settings
 
     var id: String { rawValue }
+
+    var isHiddenPrimaryNavigationSection: Bool {
+        switch self {
+        case .listenNow, .queue, .downloads, .devices, .providerLab, .settings:
+            true
+        case .library, .albums, .artists, .playlists, .search:
+            false
+        }
+    }
 
     var title: String {
         switch self {

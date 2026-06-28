@@ -14,7 +14,7 @@ PhonoDeck should feel like a native music player that happens to use official Yo
 - We must not hide, obscure, or cover the player controls.
 - We must not pretend the app owns native audio playback for YouTube content.
 - We can make the surrounding app song-first and Apple Music-like.
-- Plex, Spotify, Local files, Watch/iOS remote, downloads, AirPlay, and cast targets must not appear as working source switches until their playback/control paths are actually implemented.
+- Spotify, Watch/iOS remote, downloads, AirPlay, and cast targets must not appear as working source switches until their playback/control paths are actually implemented.
 
 ## Apple/Mac Principles Applied
 
@@ -233,7 +233,8 @@ It should show:
 - title;
 - channel/artist;
 - source badge: YouTube;
-- play/pause/previous/next where supported by the visible player or local queue;
+- play/pause and progress for the visible player;
+- queue-aware Previous/Next in PhonoDeck chrome for YouTube only when the explicit PhonoDeck queue has adjacent items; real ended events advance to the next queued song, while pause and failures never auto-advance;
 - queue position;
 - output/volume controls only when supported by the current playback route.
 
@@ -241,11 +242,10 @@ If the IFrame API cannot reliably expose a state, the bar must avoid lying. Use 
 
 ## Source And Roadmap Surfaces
 
-Plex, Spotify, Local files, Watch/iOS remote, device routing, and downloads can be shown as roadmap/status surfaces, but they must not steal focus from YouTube P0 playback.
+Spotify, Watch/iOS remote, device routing, and downloads can be shown as roadmap/status surfaces, but they must not steal focus from YouTube P0 playback.
 
 - Source rows are informational until their integration exists.
 - YouTube downloads remain unavailable without an approved Google route.
-- Plex downloads are only for user-owned media once Plex browsing and playback are real.
 - Spotify is treated as Connect/control/metadata unless Spotify grants native playback rights.
 - Watch and iOS companion apps depend on the macOS queue/playback model being stable first.
 
@@ -268,9 +268,7 @@ Common surfaces:
 Source-specific truth:
 
 - YouTube: official Data API metadata, account activity, subscriptions, playlist read/write, and a visible official embedded player. Songs mode filters to official audio/topic/lyric-style results. Clips appear only in Videos/Balanced or in user playlists/history where they are honestly labeled.
-- Plex: native personal-library playback, playlists, downloads, albums, artists, and server history are appropriate once Plex auth/server browsing are implemented.
 - Spotify: Web API can provide metadata, search, playlists, library, top/recent items, queue, and Spotify Connect control with scopes. Native streaming is limited to Spotify-approved playback SDK routes and Premium requirements.
-- Local files: native playback, local playlists, imports, iTunes XML compatibility, and offline availability are appropriate because the user owns the files.
 
 YouTube player sizing/collapse rule:
 
@@ -314,7 +312,7 @@ The following issues were identified by adversarial review and verified against 
 - Add quota, authorization-expiry, and API-error states.
 - Implement result pagination and deduplication.
 - Ensure player size and embed identity match YouTube RMF requirements.
-- Verify IFrame API control support before enabling native play/pause/next/previous.
+- Verify IFrame API control support before enabling additional PhonoDeck chrome; current YouTube chrome is limited to Play/Pause, progress, and embed volume.
 
 ### Accessibility Corrections
 

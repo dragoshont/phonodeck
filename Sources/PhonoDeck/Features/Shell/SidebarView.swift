@@ -7,9 +7,8 @@ struct SidebarView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 brandHeader
-                SidebarSection(title: "PhonoDeck", sections: [.library, .search], selection: $selection)
-                SidebarSection(title: "Library", sections: [.playlists, .albums, .artists, .queue, .downloads], selection: $selection)
-                SidebarSection(title: "System", sections: [.devices, .settings], selection: $selection)
+                SidebarSection(title: "PhonoDeck", sections: [.library], selection: $selection)
+                SidebarSection(title: "Library", sections: [.playlists, .albums, .artists], selection: $selection)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 18)

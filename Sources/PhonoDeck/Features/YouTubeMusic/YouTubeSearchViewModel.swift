@@ -569,63 +569,29 @@ final class YouTubeSearchViewModel: ObservableObject {
     }
 
     var canPlayPrevious: Bool {
-        guard let selectedVideo, let index = queue.firstIndex(where: { $0.id == selectedVideo.id }) else { return false }
-        return index > 0
+        previousQueueItem != nil
     }
 
     var canPlayNext: Bool {
-        guard let selectedVideo, let index = queue.firstIndex(where: { $0.id == selectedVideo.id }) else { return false }
-        return index < queue.count - 1
+        nextQueueItem != nil
     }
 
-    @discardableResult
-    func playPrevious() -> YouTubeVideoSearchResult? {
-        guard let selectedVideo, let index = queue.firstIndex(where: { $0.id == selectedVideo.id }), index > 0 else { return nil }
-        let previousVideo = queue[index - 1]
-        AppLog.playback.info("Queue previous; from=\(selectedVideo.id, privacy: .public), to=\(previousVideo.id, privacy: .public), position=\(index, privacy: .public)")
-        recordPlayback(previousVideo)
-        select(previousVideo)
-        return previousVideo
+    var previousQueueItem: YouTubeVideoSearchResult? {
+        adjacentQueueItem(offset: -1)
     }
 
-    @discardableResult
-    func playNext() -> YouTubeVideoSearchResult? {
-        guard let selectedVideo, let index = queue.firstIndex(where: { $0.id == selectedVideo.id }), index < queue.count - 1 else { return nil }
-        let nextVideo = queue[index + 1]
-        AppLog.playback.info("Queue next; from=\(selectedVideo.id, privacy: .public), to=\(nextVideo.id, privacy: .public), position=\(index + 2, privacy: .public)")
-        recordPlayback(nextVideo)
-        select(nextVideo)
-        return nextVideo
+    var nextQueueItem: YouTubeVideoSearchResult? {
+        adjacentQueueItem(offset: 1)
     }
 
-    @discardableResult
-    func skipFailedSelectedVideo(reason: String) -> YouTubeVideoSearchResult? {
-        guard let selectedVideo else { return nil }
-        skippedVideoIDs.insert(selectedVideo.id)
-        AppLog.playback.warning("Skipping failed selected video; id=\(selectedVideo.id, privacy: .public), reason=\(reason, privacy: .public)")
-
-        guard let currentIndex = queue.firstIndex(where: { $0.id == selectedVideo.id }) else {
-            status = "YouTube could not play this embed. Choose another result."
-            return nil
+    func markSelectedPlaybackFailed(reason: String) {
+        if let selectedVideo {
+            skippedVideoIDs.insert(selectedVideo.id)
+            AppLog.playback.warning("Selected video embed failed; id=\(selectedVideo.id, privacy: .public), reason=\(reason, privacy: .public)")
+        } else {
+            AppLog.playback.warning("YouTube embed failed without a selected video; reason=\(reason, privacy: .public)")
         }
-
-        let followingVideos = queue.suffix(from: min(currentIndex + 1, queue.count))
-        if let replacement = followingVideos.first(where: { !skippedVideoIDs.contains($0.id) }) {
-            status = "Skipped an unavailable YouTube embed."
-            recordPlayback(replacement)
-            select(replacement)
-            return replacement
-        }
-
-        if let replacement = queue.first(where: { !skippedVideoIDs.contains($0.id) }) {
-            status = "Skipped unavailable embeds and resumed from the queue."
-            recordPlayback(replacement)
-            select(replacement)
-            return replacement
-        }
-
-        status = "YouTube could not play the queued embeds. Try another search result."
-        return nil
+        status = "YouTube could not play this embed. Choose another result."
     }
 
     private func adoptQueue(_ videos: [YouTubeVideoSearchResult]) {
@@ -640,6 +606,14 @@ final class YouTubeSearchViewModel: ObservableObject {
         } else {
             queue = ([selectedVideo] + deduplicatedVideos).deduplicatedByVideoID()
         }
+    }
+
+    private func adjacentQueueItem(offset: Int) -> YouTubeVideoSearchResult? {
+        guard let selectedVideo,
+              let index = queue.firstIndex(where: { $0.id == selectedVideo.id }) else { return nil }
+        let adjacentIndex = index + offset
+        guard queue.indices.contains(adjacentIndex) else { return nil }
+        return queue[adjacentIndex]
     }
 
     private func loadVideoDetails(_ video: YouTubeVideoSearchResult, generation: Int) async {

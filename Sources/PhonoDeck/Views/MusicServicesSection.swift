@@ -2,8 +2,7 @@ import SwiftUI
 
 /// The contents of the Settings "Music Services" section: one consistent
 /// `ServiceAccountRow` per source. YouTube + YouTube Music share the single Google
-/// account (state + actions injected from the host); Spotify and Plex are driven
-/// by their adapters via `SourcesOverviewModel`; Own Files is a planned folder pick.
+/// account (state + actions injected from the host); Spotify is driven by its adapter.
 struct MusicServicesSection: View {
     @StateObject private var model: SourcesOverviewModel
     private let youTubeState: SourceConnectionState
@@ -36,8 +35,6 @@ struct MusicServicesSection: View {
                 disconnect: disconnectYouTube
             )
             adapterRow(.spotify, canConnect: true)
-            adapterRow(.plex, canConnect: true)
-            adapterRow(.ownFiles, canConnect: false)
 
             if let error = model.lastError {
                 Text(error)
@@ -78,9 +75,6 @@ struct MusicServicesSection: View {
         case .failed(let reason):
             return .failed(reason)
         case .notConnected:
-            if kind == .ownFiles {
-                return .notConfigured("Choose a local music folder before Own Files can provide native playback.")
-            }
             return canConnect ? .notConnected : .notConfigured("Setup for \(kind.descriptor.displayName) is not available yet.")
         }
     }

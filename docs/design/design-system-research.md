@@ -102,10 +102,10 @@ Source: *Toolbars* (https://developer.apple.com/design/human-interface-guideline
 Source: *The menu bar* (https://developer.apple.com/design/human-interface-guidelines/the-menu-bar).
 
 - **MUST** support the standard menu set and order: **App, File, Edit, Format, View, [app-specific], Window, Help.**
-- **MUST** always show the same items; **disable** (don't hide) unavailable commands so people can learn capabilities.
+- **MUST** normally show the same items; **disable** unavailable commands so people can learn capabilities, except where source/policy honesty requires omitting a command the active route must not expose.
 - **MUST** support standard shortcuts (⌘C/⌘V/⌘X/⌘S/⌘Z…) and not override them.
 - **SHOULD** use one-word, title-case menu titles. The View menu owns `Show/Hide Toolbar`, `Show/Hide Sidebar`, `Enter/Exit Full Screen`; titles reflect current state.
-- **PhonoDeck:** Provide a custom **Navigate** menu (Library ⌘1, Playlists ⌘2, Albums ⌘3, Artists ⌘4, Queue ⌘5, Search ⌘F, Settings ⌘,) and a **Playback** menu (Play/Pause Space, Next ⌘→, Previous ⌘←). Disable items that don't apply to the active source instead of hiding them.
+- **PhonoDeck:** Provide a custom **Navigate** menu (Library ⌘1, Playlists ⌘2, Albums ⌘3, Artists ⌘4, Queue ⌘5, Search ⌘F, Settings ⌘,) and a **Playback** menu. Play/Pause (Space) remains available for supported active routes. Next ⌘→ and Previous ⌘← are native-source commands; they are omitted while YouTube-backed playback is active so PhonoDeck chrome does not advertise unsupported YouTube skip.
 
 ---
 
@@ -171,8 +171,10 @@ Source: *Playing audio* (https://developer.apple.com/design/human-interface-guid
   source can't truthfully perform** and must not advertise media-key ownership while a YouTube source is
   active. Native sources (Plex/local) get full `MPNowPlayingInfoCenter` + `MPRemoteCommandCenter` integration.
 - **Now Playing bar anatomy (persistent, compact, bottom):** artwork (≤46–56 pt), title (1–2 lines) + artist
-  + small source cue, transport (prev / play-pause / next), progress + elapsed/remaining, route control,
-  queue button. Only show the bar when there is a real current item (no placeholder "ready" state).
+  + small source cue, source-honest transport, progress + elapsed/remaining, route control, queue button.
+  Native sources show Previous / Play-Pause / Next. YouTube-backed sources show Play/Pause and progress only;
+  song changes happen by choosing a row from Up Next/search/playlists. Only show the bar when there is a real
+  current item (no placeholder "ready" state).
 
 ---
 

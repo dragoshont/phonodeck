@@ -450,9 +450,9 @@ struct YouTubeVideoSearchResult: Identifiable, Equatable, Codable {
         guard let videoID = playlistItem.contentDetails?.videoID ?? playlistItem.snippet.resourceID?.videoID else { return nil }
         id = videoID
         title = playlistItem.snippet.title.decodingHTMLEntities()
-        channelTitle = playlistItem.snippet.channelTitle.decodingHTMLEntities()
+        channelTitle = (playlistItem.snippet.videoOwnerChannelTitle ?? playlistItem.snippet.channelTitle).decodingHTMLEntities()
         thumbnailURL = playlistItem.snippet.thumbnails.medium?.url ?? playlistItem.snippet.thumbnails.default?.url
-        sourceLabel = "Playlist"
+        sourceLabel = "Music"
         playlistItemID = playlistItem.id
         playlistAddedAt = playlistItem.snippet.publishedAt
         durationText = nil
@@ -485,6 +485,64 @@ struct YouTubeVideoSearchResult: Identifiable, Equatable, Codable {
         playlistAddedAt = nil
         durationText = nil
         popularityText = nil
+    }
+}
+
+struct MusicIdentity: Hashable {
+    let artistName: String
+    let albumTitle: String?
+}
+
+extension YouTubeVideoSearchResult {
+    var musicIdentity: MusicIdentity {
+        if let artist = artistFromTopicChannel(channelTitle) ?? artistFromVEVOChannel(channelTitle) {
+            return MusicIdentity(artistName: artist, albumTitle: nil)
+        }
+
+        let components = channelTitle
+            .components(separatedBy: " - ")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if sourceLabel == "Music", components.count >= 2 {
+            let artist = components.first ?? artistFromTitle(title) ?? "Artist not exposed"
+            let album = components.dropFirst().joined(separator: " - ")
+            if !album.localizedCaseInsensitiveContains("topic") {
+                return MusicIdentity(artistName: artist, albumTitle: album)
+            }
+        }
+
+        if let artist = artistFromTitle(title) {
+            return MusicIdentity(artistName: artist, albumTitle: nil)
+        }
+
+        return MusicIdentity(artistName: "Artist not exposed", albumTitle: nil)
+    }
+
+    private func artistFromTopicChannel(_ channelTitle: String) -> String? {
+        let suffix = " - Topic"
+        guard channelTitle.localizedCaseInsensitiveContains(suffix),
+              channelTitle.lowercased().hasSuffix(suffix.lowercased()) else { return nil }
+        let artist = String(channelTitle.dropLast(suffix.count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        return artist.isEmpty ? nil : artist
+    }
+
+    private func artistFromVEVOChannel(_ channelTitle: String) -> String? {
+        guard channelTitle.localizedCaseInsensitiveContains("vevo"), channelTitle.lowercased().hasSuffix("vevo") else { return nil }
+        let artist = String(channelTitle.dropLast(4)).trimmingCharacters(in: .whitespacesAndNewlines)
+        return artist.isEmpty ? nil : artist
+    }
+
+    private func artistFromTitle(_ title: String) -> String? {
+        let components = title
+            .components(separatedBy: " - ")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard components.count >= 2,
+              let artist = components.first,
+              !artist.localizedCaseInsensitiveContains("official"),
+              !artist.localizedCaseInsensitiveContains("lyrics") else { return nil }
+        return artist
     }
 }
 
@@ -530,6 +588,15 @@ extension YouTubeVideoSearchResult {
 
     var songBadge: String {
         resultKind.rawValue
+    }
+
+    var mediaSourceKind: MediaSourceKind {
+        switch resultKind {
+        case .song, .lyrics:
+            .youtubeMusic
+        case .clip, .live, .cover, .video:
+            .youtube
+        }
     }
 
     var isSongLike: Bool {
@@ -676,13 +743,15 @@ struct YouTubePlaylistItem: Decodable, Equatable {
     struct Snippet: Decodable, Equatable {
         let title: String
         let channelTitle: String
+        let videoOwnerChannelTitle: String?
         let publishedAt: String?
         let thumbnails: YouTubeSearchItem.Thumbnails
         let resourceID: ResourceID?
 
-        init(title: String = "Unavailable playlist item", channelTitle: String = "Unknown channel", publishedAt: String? = nil, thumbnails: YouTubeSearchItem.Thumbnails = .empty, resourceID: ResourceID? = nil) {
+        init(title: String = "Unavailable playlist item", channelTitle: String = "Unknown channel", videoOwnerChannelTitle: String? = nil, publishedAt: String? = nil, thumbnails: YouTubeSearchItem.Thumbnails = .empty, resourceID: ResourceID? = nil) {
             self.title = title
             self.channelTitle = channelTitle
+            self.videoOwnerChannelTitle = videoOwnerChannelTitle
             self.publishedAt = publishedAt
             self.thumbnails = thumbnails
             self.resourceID = resourceID
@@ -691,6 +760,7 @@ struct YouTubePlaylistItem: Decodable, Equatable {
         enum CodingKeys: String, CodingKey {
             case title
             case channelTitle
+            case videoOwnerChannelTitle
             case publishedAt
             case thumbnails
             case resourceID = "resourceId"
@@ -700,6 +770,7 @@ struct YouTubePlaylistItem: Decodable, Equatable {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             title = try container.decodeIfPresent(String.self, forKey: .title) ?? "Unavailable playlist item"
             channelTitle = try container.decodeIfPresent(String.self, forKey: .channelTitle) ?? "Unknown channel"
+            videoOwnerChannelTitle = try container.decodeIfPresent(String.self, forKey: .videoOwnerChannelTitle)
             publishedAt = try container.decodeIfPresent(String.self, forKey: .publishedAt)
             thumbnails = try container.decodeIfPresent(YouTubeSearchItem.Thumbnails.self, forKey: .thumbnails) ?? .empty
             resourceID = try container.decodeIfPresent(ResourceID.self, forKey: .resourceID)
@@ -846,7 +917,7 @@ extension YouTubeVideoDetails {
     }
 
     var audioBitrateSummary: String {
-        "Exact YouTube audio bitrate is not exposed. Navidrome, Plex, and local files can expose real file bitrate when those sources are connected."
+        "Exact YouTube audio bitrate is not exposed by the public API. Native owned-file sources can expose file bitrate when they are connected."
     }
 
     var labelSummary: String {

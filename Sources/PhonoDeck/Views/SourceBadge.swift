@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// The discrete per-item source marker used across the unified library, lists, and
-/// cards so provenance is never ambiguous (YouTube / YT Music / Spotify / Plex /
-/// Own Files). Three densities for different contexts.
+/// cards so provenance is never ambiguous (YouTube / YT Music / Spotify).
+/// Three densities for different contexts.
 struct SourceBadge: View {
     enum Style {
         case dot      // dense list rows

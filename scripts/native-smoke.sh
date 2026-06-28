@@ -67,7 +67,7 @@ delay 0.2
 tell application "System Events"
   key code $key using {$modifiers}
 end tell
-delay 0.6
+delay 1.2
 do shell script "screencapture -x \"$OUT_DIR/$label.png\""
 APPLESCRIPT
   if [[ -s "$OUT_DIR/$label.png" ]]; then
@@ -126,6 +126,14 @@ if [[ "$spotify_status" -eq 0 ]]; then
 else
   warn "Spotify credentials absent; skipping Spotify account assertions"
 fi
+
+for section in library playlists albums artists queue search settings; do
+  if grep -q "Selected section changed to $section" "$LOG_FILE"; then
+    pass "navigation evidence found for $section"
+  else
+    fail "no navigation evidence found for $section"
+  fi
+done
 
 if grep -q 'Playlist metadata enrichment skipped; rows still loaded' "$LOG_FILE"; then
   pass "playlist row fallback path is observable"

@@ -47,17 +47,17 @@ Config/Secrets.xcconfig
 - Playback uses a visible official YouTube embed in `YouTubeMusicWebPlayerView`.
 - Default YouTube `Songs` search filters out clip/music-video results unless the user switches to Videos or Balanced.
 - Local PhonoDeck playback history is persisted separately from YouTube account activity and is used in Listen Now.
-- The right Now Playing panel no longer duplicates transport or volume controls; the official player owns its own player chrome.
-- The bottom bar mirrors the selected YouTube result and exposes only queue/play-pause controls that PhonoDeck can honestly route.
+- The right Now Playing panel no longer duplicates unsupported skip controls; it keeps the visible official player and Up Next visible.
+- The bottom bar mirrors the selected YouTube result when shown and exposes only Play/Pause/progress controls that PhonoDeck can honestly route for YouTube.
 - The app persists the last selected YouTube song locally and restores it on launch.
-- If a YouTube embed fails, PhonoDeck skips to the next local queue item instead of leaving the player stuck.
+- If a YouTube embed fails, PhonoDeck shows the failed player state and the user chooses another item from Up Next/search/playlists.
 - Plex, Spotify, Local files, Watch/iOS remote, device routing, and downloads are represented as non-clickable roadmap/status rows, not fake source switches.
 
 ## Code State To Verify Next
 
 - Confirm real playback after launch with the current restored song and a fresh search result.
 - If playlist create/add reports a scope error, disconnect and reconnect Google so the stored token includes the YouTube write scope.
-- Confirm failed/unavailable embeds advance to the next queued result.
+- Confirm failed/unavailable embeds show a clear failed state and keep Up Next/search/playlist row selection available.
 - Confirm YouTube Music playlist pagination with a larger playlist.
 - Keep YouTube downloads unavailable unless an approved Google route exists.
 - Implement Plex downloads only for user-owned media and only after Plex browsing/playback are real.

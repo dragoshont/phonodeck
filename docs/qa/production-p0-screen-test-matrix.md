@@ -611,10 +611,10 @@ Primary surfaces covered:
 | NP-005 | Player autoplay occurs only on explicit play/double-click. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |
 | NP-006 | Single-click selection loads/updates context without autoplay. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |
 | NP-007 | Double-click starts playback. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |
-| NP-008 | Play/Pause button below video works. | PASS | Now Playing panel now has a visible play/pause button directly below the video. |
-| NP-009 | Previous button below/bottom works when queue has previous item. | PASS | Now Playing panel now has a visible previous button with queue-aware disabled state. |
-| NP-010 | Next button below/bottom works when queue has next item. | PASS | Now Playing panel now has a visible next button with queue-aware disabled state. |
-| NP-011 | Disabled state is correct when queue lacks previous/next. | PASS | Panel transport controls now use disabled states for previous/play/next availability. |
+| NP-008 | Play/Pause control works for the visible YouTube player. | PASS | `YouTubePlaybackBridge` exposes play/pause for the visible embed without claiming native media-key ownership. |
+| NP-009 | YouTube Previous control is absent from PhonoDeck chrome. | PASS | YouTube song changes are made by selecting Up Next/search/playlist rows; native sources keep Previous through `PlaybackCoordinator`. |
+| NP-010 | YouTube Next control is absent from PhonoDeck chrome. | PASS | YouTube song changes are made by selecting Up Next/search/playlist rows; native sources keep Next through `PlaybackCoordinator`. |
+| NP-011 | Disabled/absent states are correct for unsupported YouTube controls. | PASS | The bottom bar, app menu, and `YouTubePlaybackBridge` do not expose YouTube Previous/Next; system routing remains honestly unavailable. |
 | NP-012 | Player state updates Ready/Buffering/Playing/Paused/Failed. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |
 | NP-013 | Current time updates while playing. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |
 | NP-014 | Duration updates when player exposes it. | PASS | Visible YouTube player, playback bridge, bottom bar, and info/share/open paths are wired. |

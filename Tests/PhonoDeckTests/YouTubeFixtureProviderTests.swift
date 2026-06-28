@@ -324,7 +324,7 @@ final class YouTubeFixtureProviderTests: XCTestCase {
         XCTAssertTrue(source.contains("Button(\"Log Out of Google\", role: .destructive) {\n                    disconnectYouTubeAccount()"))
     }
 
-    func testSelectingSongFromListAdoptsQueueForNextSong() {
+    func testSelectingSongFromListAdoptsExplicitChoiceQueue() {
         let first = YouTubeVideoSearchResult(id: "first", title: "First", channelTitle: "Artist", thumbnailURL: nil)
         let second = YouTubeVideoSearchResult(id: "second", title: "Second", channelTitle: "Artist", thumbnailURL: nil)
         let viewModel = YouTubeSearchViewModel(
@@ -336,8 +336,29 @@ final class YouTubeFixtureProviderTests: XCTestCase {
         viewModel.select(first, queue: [first, second])
 
         XCTAssertEqual(viewModel.queue, [first, second])
+        XCTAssertFalse(viewModel.canPlayPrevious)
         XCTAssertTrue(viewModel.canPlayNext)
+        XCTAssertEqual(viewModel.nextQueueItem, second)
         XCTAssertEqual(viewModel.queuePositionText, "1 of 2")
+    }
+
+    func testSelectingMiddleSongExposesPreviousAndNextQueueItems() {
+        let first = YouTubeVideoSearchResult(id: "first", title: "First", channelTitle: "Artist", thumbnailURL: nil)
+        let second = YouTubeVideoSearchResult(id: "second", title: "Second", channelTitle: "Artist", thumbnailURL: nil)
+        let third = YouTubeVideoSearchResult(id: "third", title: "Third", channelTitle: "Artist", thumbnailURL: nil)
+        let viewModel = YouTubeSearchViewModel(
+            accountStore: FixtureAccountStore(tokens: nil),
+            dataClient: FixtureYouTubeOfficialProvider(),
+            metadataProvider: FixtureYouTubeMusicMetadataProvider()
+        )
+
+        viewModel.select(second, queue: [first, second, third])
+
+        XCTAssertTrue(viewModel.canPlayPrevious)
+        XCTAssertTrue(viewModel.canPlayNext)
+        XCTAssertEqual(viewModel.previousQueueItem, first)
+        XCTAssertEqual(viewModel.nextQueueItem, third)
+        XCTAssertEqual(viewModel.queuePositionText, "2 of 3")
     }
 
     private func repoRoot() -> URL {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shell } from '../components/PhonoDeck.jsx';
+import { Shell, TopBarShell } from '../components/PhonoDeck.jsx';
 
 export default {
   title: 'Screens',
@@ -25,3 +25,6 @@ export const Search = { args: { screen: 'search' } };
 export const Settings = { args: { screen: 'settings' } };
 export const HomeWithLyrics = { args: { screen: 'home', panelTab: 'lyrics' } };
 export const HomeNoPanel = { args: { screen: 'home', showPanel: false } };
+export const TopBarHome = { name: 'Top bar nav — Home', render: (args) => <TopBarShell {...args} screen="home" showPanel={false} /> };
+export const TopBarPlaylist = { name: 'Top bar nav — Playlist', render: (args) => <TopBarShell {...args} screen="playlist" /> };
+export const TopBarAlbums = { name: 'Top bar nav — Albums', render: (args) => <TopBarShell {...args} screen="albums" /> };

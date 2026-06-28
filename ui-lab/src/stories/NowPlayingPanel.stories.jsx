@@ -7,7 +7,7 @@ export default {
   parameters: { layout: 'fullscreen' },
   argTypes: {
     tab: { control: 'inline-radio', options: ['now', 'next', 'lyrics', 'about'] },
-    source: { control: 'inline-radio', options: ['ytm', 'yt', 'spotify', 'plex', 'own', 'native'] },
+    source: { control: 'inline-radio', options: ['ytm', 'yt', 'spotify'] },
     routeStatus: { control: 'inline-radio', options: ['ready', 'notConnected', 'notConfigured', 'rateLimited', 'policyBlocked', 'failed'] },
     lyricsAvailable: { control: 'boolean' },
   },
@@ -23,7 +23,4 @@ export const LyricsUnavailable = { args: { tab: 'lyrics', source: 'ytm', lyricsA
 export const LyricsProviderConfigured = { args: { tab: 'lyrics', source: 'ytm', lyricsAvailable: true } };
 export const About = { args: { tab: 'about', source: 'ytm' } };
 export const SpotifyVisibleEmbed = { args: { tab: 'now', source: 'spotify' } };
-export const NativeArtwork = { args: { tab: 'now', source: 'plex' } };
-export const NativeAbout = { args: { tab: 'about', source: 'plex' } };
-export const BlockedRoute = { args: { tab: 'now', source: 'plex', routeStatus: 'notConfigured' } };
 export const FailedRoute = { args: { tab: 'now', source: 'ytm', routeStatus: 'failed' } };

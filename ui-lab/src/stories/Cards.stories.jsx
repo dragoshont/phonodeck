@@ -39,7 +39,7 @@ export const SubscriptionAvatar = {
 export const SourcePills = {
   name: 'SourcePill',
   render: () => (<div style={{ display: 'flex', gap: 8 }}>
-    <SourcePill src="ytm" /><SourcePill src="yt" /><SourcePill src="spotify" /><SourcePill src="plex" />
+    <SourcePill src="ytm" /><SourcePill src="yt" /><SourcePill src="spotify" />
   </div>),
 };
 

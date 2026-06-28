@@ -110,10 +110,6 @@ struct ServiceAccountRow: View {
                               busy: false, canConnect: true, connect: {}, disconnect: {})
             ServiceAccountRow(title: "Spotify", kind: .spotify, detail: "Metadata, library surfaces, and Spotify Connect control.",
                               state: .notConnected, busy: false, canConnect: true, connect: {}, disconnect: {})
-            ServiceAccountRow(title: "Plex", kind: .plex, detail: "Native playback, your library, and downloads.",
-                              state: .notConnected, busy: false, canConnect: true, connect: {}, disconnect: {})
-            ServiceAccountRow(title: "Own Files", kind: .ownFiles, detail: "User-owned files, imports, and iTunes XML.",
-                              state: .notConnected, busy: false, canConnect: false, connect: {}, disconnect: {})
         }
     }
     .formStyle(.grouped)

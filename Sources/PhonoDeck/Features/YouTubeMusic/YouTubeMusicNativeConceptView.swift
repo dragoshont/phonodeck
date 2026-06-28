@@ -6,6 +6,7 @@ import SwiftUI
 struct YouTubeMusicNativeConceptView: View {
     @EnvironmentObject private var appState: AppState
     @State private var searchText = ""
+    @State private var lastHandledTopSearchQuery = ""
     @State private var didRunInitialSearch = false
     @State private var lastProviderLabQuery = ""
     @State private var inspectorMode: YouTubeInspectorMode?
@@ -91,27 +92,28 @@ struct YouTubeMusicNativeConceptView: View {
                     await runProviderComparisonIfNeeded()
                 }
             }
+            .onChange(of: appState.submittedTopSearchQuery) { _, query in
+                guard let query,
+                      query != lastHandledTopSearchQuery else { return }
+                lastHandledTopSearchQuery = query
+                searchText = query
+                searchFromUI(query)
+            }
             .onChange(of: searchViewModel.selectedVideo) { _, selectedVideo in
                 guard let selectedVideo else { return }
                 AppLog.playback.info("UI selected video changed; id=\(selectedVideo.id, privacy: .public), title=\(selectedVideo.title, privacy: .private), videoVisible=\(self.isVideoVisible.description, privacy: .public)")
-                appState.youtubeNowPlaying = selectedVideo
-                persistLastPlayback(selectedVideo)
                 rebuildPageCaches()
-                if isVideoVisible, playerController.currentVideoID != selectedVideo.id {
-                    AppLog.player.info("UI loading selected video into visible player; id=\(selectedVideo.id, privacy: .public)")
-                    playerController.load(video: selectedVideo)
-                }
             }
             .onChange(of: playerController.playerState) { _, playerState in
                 handlePlayerStateChange(playerState)
             }
-            .onChange(of: searchViewModel.canPlayPrevious) { _, _ in updatePlaybackBridge() }
-            .onChange(of: searchViewModel.canPlayNext) { _, _ in updatePlaybackBridge() }
             .onChange(of: playerController.volume) { _, _ in updatePlaybackBridge() }
             .onChange(of: playerController.isMuted) { _, _ in updatePlaybackBridge() }
             .onChange(of: playerController.currentTime) { previousTime, currentTime in
                 trackLocalListening(previousTime: previousTime, currentTime: currentTime)
+                updatePlaybackBridge()
             }
+            .onChange(of: playerController.duration) { _, _ in updatePlaybackBridge() }
             .alert(item: $pendingCacheClear) { target in
                 Alert(
                     title: Text(target.title),
@@ -158,39 +160,7 @@ struct YouTubeMusicNativeConceptView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
             Spacer()
-
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search songs", text: $searchText)
-                    .textFieldStyle(.plain)
-                    .frame(width: 260)
-                    .onSubmit {
-                        searchFromUI(searchText)
-                    }
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(.secondary)
-                    .help("Clear search")
-                }
-                Button {
-                    searchFromUI(searchText)
-                } label: {
-                    Image(systemName: "arrow.forward")
-                }
-                .buttonStyle(.borderless)
-                .disabled(searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
     }
 
@@ -277,7 +247,7 @@ struct YouTubeMusicNativeConceptView: View {
                                 result: result,
                                 isSelected: result.id == searchViewModel.selectedVideo?.id,
                                 action: {
-                                    searchViewModel.select(result, queue: sectionVideos)
+                                    play(result, queue: sectionVideos)
                                 },
                                 playAction: {
                                     play(result, queue: sectionVideos)
@@ -510,7 +480,7 @@ struct YouTubeMusicNativeConceptView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 8) {
-                        SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist))
+                        SourcePill(source: selectedPlaylistSourceKind, title: selectedPlaylistSourceLabel(for: selectedPlaylist), prominence: .soft)
                         Text(selectedPlaylist.snippet.title)
                             .font(.title2.weight(.semibold))
                             .lineLimit(2)
@@ -602,16 +572,16 @@ struct YouTubeMusicNativeConceptView: View {
                 SongCarouselShelf(
                     title: "YouTube Music",
                     items: Array(searchViewModel.musicDiscoveryVideos.prefix(8)),
-                    selectAction: { searchViewModel.select($0) },
+                    selectAction: { play($0, queue: searchViewModel.musicDiscoveryVideos) },
                     playAction: { play($0, queue: searchViewModel.musicDiscoveryVideos) }
                 )
             }
             if !searchViewModel.playbackHistory.isEmpty {
-                ContextShelf(title: "PhonoDeck History", items: searchViewModel.playbackHistory.prefix(4).map { "\($0.title) - \($0.channelTitle)" })
+                ContextShelf(title: "PhonoDeck History", items: searchViewModel.playbackHistory.prefix(4).map { "\($0.title) · Channel: \($0.channelTitle)" })
                 SongCarouselShelf(
                     title: "Recently Played",
                     items: Array(searchViewModel.playbackHistory.prefix(8)),
-                    selectAction: { searchViewModel.select($0) },
+                    selectAction: { play($0, queue: searchViewModel.playbackHistory) },
                     playAction: { play($0, queue: searchViewModel.playbackHistory) }
                 )
             }
@@ -677,20 +647,11 @@ struct YouTubeMusicNativeConceptView: View {
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
 
-            if !sourceLibraryTracks.isEmpty {
-                MusicTrackShelf(
-                    title: "Native Library",
-                    items: Array(sourceLibraryTracks.prefix(12)),
-                    playAction: { track in play(track, queue: sourceLibraryTracks) },
-                    enqueueAction: { track in Task { await appState.playback.enqueue(track) } }
-                )
-            }
-
             if !librarySongs.isEmpty {
                 SongCarouselShelf(
                     title: "Recently Played",
                     items: Array(librarySongs.prefix(12)),
-                    selectAction: { searchViewModel.select($0) },
+                    selectAction: { play($0, queue: librarySongs) },
                     playAction: { play($0, queue: librarySongs) }
                 )
             }
@@ -699,14 +660,13 @@ struct YouTubeMusicNativeConceptView: View {
                 SongCarouselShelf(
                     title: "Made for You",
                     items: Array(searchViewModel.musicDiscoveryVideos.prefix(12)),
-                    selectAction: { searchViewModel.select($0) },
+                    selectAction: { play($0, queue: searchViewModel.musicDiscoveryVideos) },
                     playAction: { play($0, queue: searchViewModel.musicDiscoveryVideos) }
                 )
             }
 
-            if accountViewModel.state.canDisconnect, !searchViewModel.playlists.isEmpty {
-                libraryPlaylistShelf
-            }
+            youtubeMusicPlaylistShelf
+            youtubePlaylistShelf
 
             if !sourceLibraryPlaylists.isEmpty {
                 sourcePlaylistShelf
@@ -716,7 +676,7 @@ struct YouTubeMusicNativeConceptView: View {
                 SongCarouselShelf(
                     title: "From Your Activity",
                     items: Array(searchViewModel.activityVideos.prefix(12)),
-                    selectAction: { searchViewModel.select($0) },
+                    selectAction: { play($0, queue: searchViewModel.activityVideos) },
                     playAction: { play($0, queue: searchViewModel.activityVideos) }
                 )
             }
@@ -811,10 +771,53 @@ struct YouTubeMusicNativeConceptView: View {
         }
     }
 
-    private var libraryPlaylistShelf: some View {
+    private var youtubeMusicPlaylists: [YouTubePlaylist] {
+        searchViewModel.playlists.filter { playlistSourceKind(for: $0) == .youtubeMusic }
+    }
+
+    private var youtubePlaylists: [YouTubePlaylist] {
+        searchViewModel.playlists.filter { playlistSourceKind(for: $0) == .youtube }
+    }
+
+    private var youtubeMusicPlaylistShelf: some View {
+        accountPlaylistShelf(
+            title: "YouTube Music Playlists",
+            playlists: youtubeMusicPlaylists,
+            source: .youtubeMusic
+        )
+    }
+
+    private var youtubePlaylistShelf: some View {
+        accountPlaylistShelf(
+            title: "YouTube Playlists",
+            playlists: youtubePlaylists,
+            source: .youtube
+        )
+    }
+
+    @ViewBuilder
+    private func accountPlaylistShelf(title: String, playlists: [YouTubePlaylist], source: MediaSourceKind) -> some View {
+        if playlists.isEmpty {
+            EmptyPlaylistShelf(
+                title: title,
+                source: source,
+                detail: accountViewModel.state.canDisconnect ? "No \(title.lowercased()) loaded yet. Open Playlists to refresh or create one." : "Connect Google to show your \(title.lowercased()) here."
+            ) {
+                if accountViewModel.state.canDisconnect {
+                    appState.open(.playlists)
+                } else {
+                    Task { await accountViewModel.connect() }
+                }
+            }
+        } else {
+            accountPlaylistShelfContent(title: title, playlists: playlists, source: source)
+        }
+    }
+
+    private func accountPlaylistShelfContent(title: String, playlists: [YouTubePlaylist], source: MediaSourceKind) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Your Playlists")
+                Text(title)
                     .font(.headline)
                 Spacer()
                 Button {
@@ -828,12 +831,12 @@ struct YouTubeMusicNativeConceptView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 14) {
-                    ForEach(searchViewModel.playlists.prefix(10)) { playlist in
+                    ForEach(playlists.prefix(10)) { playlist in
                         PlaylistArtworkCard(
                             title: playlist.snippet.title,
                             songCount: playlist.contentDetails?.itemCount ?? 0,
                             artworkURL: playlist.snippet.thumbnails?.medium?.url ?? playlist.snippet.thumbnails?.default?.url,
-                            source: playlistSourceKind(for: playlist),
+                            source: source,
                             sourceLabel: playlistSourceLabel(for: playlist)
                         ) {
                             openLibraryPlaylist(playlist)
@@ -877,12 +880,6 @@ struct YouTubeMusicNativeConceptView: View {
                 }
                 .buttonStyle(.bordered)
 
-                Button {
-                    showPlannedConnection(for: .plex)
-                } label: {
-                    Label("Add Plex", systemImage: MediaSourceKind.plex.descriptor.symbolName)
-                }
-                .buttonStyle(.bordered)
             }
             .controlSize(.small)
 
@@ -912,7 +909,7 @@ struct YouTubeMusicNativeConceptView: View {
                 source: .youtubeMusic,
                 title: musicAlbums.isEmpty ? "Albums need a catalog source" : "Limited album grouping",
                 detail: musicAlbums.isEmpty
-                    ? "YouTube Music search can play songs, but it does not expose canonical albums to third-party apps. Connect Plex, Spotify, or Own Files metadata before Albums behaves like a full catalog."
+                    ? "YouTube Music search can play songs, but it does not expose canonical albums to third-party apps. Connect Spotify metadata before Albums behaves like a full catalog."
                     : "These albums are derived from YouTube Music results and may miss year, label, credits, track order, and canonical album identity.",
                 status: musicAlbums.isEmpty ? .notConnected : .policyBlocked("YouTube does not expose canonical album metadata to third-party apps.")
             )
@@ -929,7 +926,7 @@ struct YouTubeMusicNativeConceptView: View {
                 LimitedCatalogEmptyState(
                     symbol: "square.stack",
                     title: "Albums need a catalog source",
-                    detail: "Search and play songs now. Canonical albums require Plex, Spotify, Own Files, or another provider that exposes album metadata.",
+                    detail: "Search and play songs now. Canonical albums require Spotify or another approved provider that exposes album metadata.",
                     action: { appState.open(.settings) }
                 )
             } else {
@@ -985,7 +982,7 @@ struct YouTubeMusicNativeConceptView: View {
                             source: album.source,
                             items: albumVideos(for: album),
                             selectedVideo: searchViewModel.selectedVideo,
-                            selectAction: { searchViewModel.select($0) },
+                            selectAction: { item in play(item, queue: albumVideos(for: album)) },
                             playAction: { item in play(item, queue: albumVideos(for: album)) },
                             infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
                             lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
@@ -1077,7 +1074,7 @@ struct YouTubeMusicNativeConceptView: View {
                             source: artist.source,
                             items: artistVideos(for: artist),
                             selectedVideo: searchViewModel.selectedVideo,
-                            selectAction: { searchViewModel.select($0) },
+                            selectAction: { item in play(item, queue: artistVideos(for: artist)) },
                             playAction: { item in play(item, queue: artistVideos(for: artist)) },
                             infoAction: { item in searchViewModel.select(item); appState.openNowPlaying(tab: .about) },
                             lyricsAction: { item in searchViewModel.select(item); openLyrics(for: item) },
@@ -1307,7 +1304,7 @@ struct YouTubeMusicNativeConceptView: View {
                             item: item,
                             isSelected: item.id == searchViewModel.selectedVideo?.id,
                             playAction: { play(item, queue: searchViewModel.queue) },
-                            selectAction: { searchViewModel.select(item, queue: searchViewModel.queue) },
+                            selectAction: { play(item, queue: searchViewModel.queue) },
                             removeAction: { searchViewModel.removeFromQueue(item) }
                         )
                         if item.id != searchViewModel.queue.last?.id {
@@ -1333,19 +1330,9 @@ struct YouTubeMusicNativeConceptView: View {
                 detail: "Search, Listen Now, Library, playlists, queue, sharing, and visible official playback are music-first for P0."
             )
             SourceIntegrationRow(
-                source: .plex,
-                status: "Planned",
-                detail: "Native server browsing, personal library playback, downloads for owned media, and artwork sync."
-            )
-            SourceIntegrationRow(
                 source: .spotify,
                 status: "Planned",
                 detail: "Spotify Connect control and metadata/library surfaces where Spotify policy allows it."
-            )
-            SourceIntegrationRow(
-                source: .ownFiles,
-                status: "Planned",
-                detail: "User-owned file imports, local playback, and iTunes XML compatibility."
             )
         }
     }
@@ -1469,12 +1456,15 @@ struct YouTubeMusicNativeConceptView: View {
         ZStack(alignment: .topLeading) {
             if appState.isNowPlayingDrawerVisible {
                 VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-                    HStack {
-                        Text("Now Playing")
-                            .font(.headline)
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Now Playing")
+                                .font(.headline)
+                            Text("Inspector")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         Spacer()
-                        sourceBadge
-                        accountMenu
                         Button {
                             appState.toggleNowPlayingDrawer()
                         } label: {
@@ -1486,13 +1476,21 @@ struct YouTubeMusicNativeConceptView: View {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-                            nowPlayingNowTab
-                            Divider()
-                            upNextPanel
-                            if appState.selectedNowPlayingInspectorTab == .lyrics || appState.selectedNowPlayingInspectorTab == .about {
-                                Divider()
-                                nowPlayingInspectorContent
+                            if shouldKeepYouTubePlayerVisible {
+                                videoSurface
                             }
+
+                            Picker("Now Playing Inspector", selection: $appState.selectedNowPlayingInspectorTab) {
+                                ForEach(NowPlayingInspectorTab.allCases) { tab in
+                                    Label(tab.title, systemImage: tab.symbolName).tag(tab)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+
+                            Divider()
+
+                            nowPlayingInspectorContent
                         }
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
@@ -1504,61 +1502,30 @@ struct YouTubeMusicNativeConceptView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 540, alignment: .topLeading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(.separator.opacity(0.45))
+                .frame(width: 1)
+        }
+        .shadow(color: .black.opacity(0.08), radius: 18, x: -2, y: 6)
     }
 
     private var nowPlayingPanelWidth: CGFloat {
         if appState.isNowPlayingDrawerVisible { return 420 }
-        return isYouTubePlaybackActive ? 252 : 72
+        return 72
     }
 
-    private var isYouTubePlaybackActive: Bool {
-        searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
+    private var shouldKeepYouTubePlayerVisible: Bool {
+        appState.youtubeNowPlaying != nil || isVideoVisible || playerController.currentVideoID != nil
+    }
+
+    private var hasActiveNowPlayingMedia: Bool {
+        appState.youtubeNowPlaying != nil || isVideoVisible || playerController.currentVideoID != nil || playerController.playerState.acceptsCommands
     }
 
     @ViewBuilder
     private var collapsedNowPlayingRail: some View {
-        if isYouTubePlaybackActive {
-            compactYouTubeMiniPlayer
-        } else {
-            collapsedEmptyRail
-        }
-    }
-
-    private var compactYouTubeMiniPlayer: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                SourcePill(source: activeYouTubeSource, title: activeYouTubeSource.shortDisplayName)
-                Spacer(minLength: 0)
-                Button {
-                    appState.toggleNowPlayingDrawer()
-                } label: {
-                    Image(systemName: "sidebar.trailing")
-                }
-                .buttonStyle(.borderless)
-                .help("Expand Now Playing")
-            }
-
-            if isVideoVisible {
-                YouTubeMusicWebPlayerView(controller: playerController)
-                    .frame(width: 220, height: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            } else {
-                Button {
-                    togglePanelPlayback()
-                } label: {
-                    Label("Show Player", systemImage: "play.rectangle")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .disabled(searchViewModel.selectedVideo == nil)
-            }
-
-            playerTransportControls
-        }
-        .padding(12)
-        .frame(width: 252)
-        .frame(maxHeight: .infinity, alignment: .top)
+        collapsedEmptyRail
     }
 
     private var collapsedEmptyRail: some View {
@@ -1574,15 +1541,6 @@ struct YouTubeMusicNativeConceptView: View {
             Divider()
 
             SourceBadge(source: activeYouTubeSource, style: .dot)
-
-            Button {
-                togglePanelPlayback()
-            } label: {
-                Image(systemName: playerPlayPauseSymbol)
-            }
-            .buttonStyle(.borderless)
-            .disabled(!canControlPanelPlayer)
-            .help("Play or pause")
 
             Button {
                 appState.openNowPlaying(tab: .upNext)
@@ -1619,22 +1577,22 @@ struct YouTubeMusicNativeConceptView: View {
 
     private var nowPlayingNowTab: some View {
         VStack(alignment: .leading, spacing: DesignTokens.standardSpacing) {
-            videoSurface
-
-            if let selectedVideo = searchViewModel.selectedVideo {
-                visibleWebPlaybackNote(for: selectedVideo)
-            }
-
-            playerTransportControls
-
             if let selectedVideo = searchViewModel.selectedVideo {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(selectedVideo.title)
                         .font(.headline)
                         .lineLimit(3)
-                    Text(selectedVideo.channelTitle)
+                    Text(nowPlayingSubtitle(for: selectedVideo))
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                    if let details = searchViewModel.selectedVideoDetails {
+                        Text(nowPlayingQualitySummary(for: selectedVideo, details: details))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+                    visibleWebPlaybackNote(for: selectedVideo)
                 }
 
                 if let queuePositionText = searchViewModel.queuePositionText {
@@ -1642,8 +1600,6 @@ struct YouTubeMusicNativeConceptView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-
-                alwaysVisibleMediaInfo(for: selectedVideo)
 
             } else {
                 nowPlayingEmptyState
@@ -1657,7 +1613,7 @@ struct YouTubeMusicNativeConceptView: View {
                 .frame(width: 28, height: 28)
                 .background(Color.accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .foregroundStyle(Color.accentColor)
-            Text("Select a song to show info, lyrics, sharing, playlist, and open actions.")
+            Text("Choose a song, playlist, album, or artist to start listening.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1739,9 +1695,9 @@ struct YouTubeMusicNativeConceptView: View {
                     .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Video hidden")
+                    Text("Choose something to play")
                         .font(.headline)
-                    Text("Press Play to show the official YouTube player. Hiding the video stops playback.")
+                    Text("Pick a song or playlist from Home, Playlists, Albums, or Artists. The player will appear here once music starts.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1760,36 +1716,6 @@ struct YouTubeMusicNativeConceptView: View {
             .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
-    }
-
-    private func alwaysVisibleMediaInfo(for video: YouTubeVideoSearchResult) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Media Info")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                SourcePill(source: video.mediaSourceKind, title: video.mediaSourceKind.shortDisplayName)
-                Text(video.songBadge)
-                    .font(.caption2.weight(.semibold))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 4)
-                    .background(video.songBadgeColor.opacity(0.14), in: Capsule())
-                    .foregroundStyle(video.songBadgeColor)
-                if let durationText = video.durationText ?? searchViewModel.selectedVideoDetails?.formattedDuration {
-                    Label(durationText, systemImage: "clock")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                if let popularityText = video.popularityText ?? searchViewModel.selectedVideoDetails?.popularitySummary {
-                    Label(popularityText, systemImage: "chart.bar.fill")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private var upNextPanel: some View {
@@ -1818,7 +1744,7 @@ struct YouTubeMusicNativeConceptView: View {
                         item: currentItem,
                         isSelected: true,
                         playAction: { play(currentItem, queue: searchViewModel.queue.isEmpty ? [currentItem] : searchViewModel.queue) },
-                        selectAction: { searchViewModel.select(currentItem, queue: searchViewModel.queue) },
+                        selectAction: { play(currentItem, queue: searchViewModel.queue.isEmpty ? [currentItem] : searchViewModel.queue) },
                         removeAction: { searchViewModel.removeFromQueue(currentItem) }
                     )
                 }
@@ -1849,7 +1775,7 @@ struct YouTubeMusicNativeConceptView: View {
                             item: item,
                             isSelected: false,
                             playAction: { play(item, queue: searchViewModel.queue) },
-                            selectAction: { searchViewModel.select(item, queue: searchViewModel.queue) },
+                            selectAction: { play(item, queue: searchViewModel.queue) },
                             removeAction: { searchViewModel.removeFromQueue(item) }
                         )
                         if item.id != upNextItems.prefix(8).last?.id {
@@ -1870,58 +1796,30 @@ struct YouTubeMusicNativeConceptView: View {
         return Array(searchViewModel.queue.dropFirst(index + 1))
     }
 
-    private var playerTransportControls: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 12) {
-                Button {
-                    togglePanelPlayback()
-                } label: {
-                    Image(systemName: playerPlayPauseSymbol)
-                        .frame(width: 30)
-                }
-                .disabled(!canControlPanelPlayer)
-                .help(canControlPanelPlayer ? "Play or pause" : "Select a playable song first")
-
-                Divider()
-                    .frame(height: 18)
-
-                Text(playerController.playerState.title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text(timeText)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-
-                Spacer(minLength: 0)
-            }
-            .buttonStyle(.borderless)
-
-            ProgressView(value: playerProgress)
-                .frame(height: 4)
-                .help(timeText)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-    }
-
-    private var playerPlayPauseSymbol: String {
-        playerController.playerState == .playing ? "pause.fill" : "play.fill"
-    }
-
-    private var canControlPanelPlayer: Bool {
-        guard searchViewModel.selectedVideo != nil else { return false }
-        return !isVideoVisible || playerController.playerState.acceptsCommands
-    }
-
     private func visibleWebPlaybackNote(for video: YouTubeVideoSearchResult) -> some View {
-        compactStatusCallout(
-            source: video.mediaSourceKind,
-            status: .partial,
-            title: "Visible official player",
-            detail: "Play/Pause, next/previous, and embed volume control the visible YouTube player. Seeking remains planned. System Now Playing, media keys, AirPlay routing, and hidden audio stay unavailable for this source."
-        )
+        Label("Visible YouTube player · Play/Pause + progress/seek · no hidden audio", systemImage: "play.rectangle")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func nowPlayingSubtitle(for video: YouTubeVideoSearchResult) -> String {
+        let identity = video.musicIdentity
+        guard let albumTitle = identity.albumTitle, !albumTitle.isEmpty else { return identity.artistName }
+        return "\(identity.artistName) · \(albumTitle)"
+    }
+
+    private func nowPlayingQualitySummary(for video: YouTubeVideoSearchResult, details: YouTubeVideoDetails) -> String {
+        "Format: YouTube adaptive · \(compactAudioQualitySummary(for: details))"
+    }
+
+    private func compactAudioQualitySummary(for details: YouTubeVideoDetails) -> String {
+        let definition = switch details.contentDetails?.definition?.lowercased() {
+        case "hd": "HD video"
+        case "sd": "SD video"
+        default: "video definition unavailable"
+        }
+        return "\(definition) · audio bitrate not exposed"
     }
 
     private func playbackBlockedState(for video: YouTubeVideoSearchResult) -> PlaybackBlockedState? {
@@ -1960,6 +1858,7 @@ struct YouTubeMusicNativeConceptView: View {
         AppLog.player.info("Video surface hidden by user; currentVideo=\(self.playerController.currentVideoID ?? "none", privacy: .public), state=\(self.playerController.playerState.title, privacy: .public)")
         playerController.stopAndReset()
         isVideoVisible = false
+        appState.youtubeNowPlaying = nil
         updatePlaybackBridge()
     }
 
@@ -2196,7 +2095,7 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private var shouldShowNowPlayingPanel: Bool {
-        currentSection == .playlists || searchViewModel.selectedVideo != nil || isVideoVisible || playerController.currentVideoID != nil
+        hasActiveNowPlayingMedia
     }
 
     private var shouldShowInlineStatus: Bool {
@@ -2306,7 +2205,7 @@ struct YouTubeMusicNativeConceptView: View {
                 accountViewModel.state.canDisconnect ? "Your account playlists, loaded through the official playlist API." : "Connect Google to load account playlists."
             }
         case .queue:
-            "The local PhonoDeck queue used by Next, Previous, failed-embed skipping, and Watch remote control later."
+            "The local PhonoDeck queue shown in Up Next; YouTube song changes come from row selection, while native sources keep skip controls."
         case .search:
             accountViewModel.state.canDisconnect ? "Find songs first; switch to Video for clips and music videos." : "Connect Google to search official music and video results."
         case .downloads:
@@ -2463,9 +2362,8 @@ struct YouTubeMusicNativeConceptView: View {
     }
 
     private func rebuildLibraryCaches() {
-        let currentSelection = searchViewModel.selectedVideo.map { [$0] } ?? []
         let nowPlayingSelection = appState.youtubeNowPlaying.map { [$0] } ?? []
-        let mergedVideos = currentSelection + nowPlayingSelection + searchViewModel.playbackHistory + searchViewModel.musicDiscoveryVideos + searchViewModel.playlistVideos + searchViewModel.results
+        let mergedVideos = nowPlayingSelection + searchViewModel.playbackHistory + searchViewModel.musicDiscoveryVideos + searchViewModel.playlistVideos + searchViewModel.results
         let deduplicatedVideos = mergedVideos.deduplicatedByVideoID()
         let songLikeVideos = deduplicatedVideos.filter(\.isSongLike)
         let libraryItems = songLikeVideos.isEmpty ? deduplicatedVideos : songLikeVideos
@@ -2707,7 +2605,7 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func inferredPlaylistSourceKind(for playlist: YouTubePlaylist) -> MediaSourceKind {
         let title = playlist.snippet.title.lowercased()
-        if title.contains("music") || title.contains("songs") || title.contains("liked") || title.contains("album") || title.contains("mix") {
+        if title.contains("music") || title.contains("songs") || title.contains("liked") || title.contains("album") || title.contains("mix") || title.contains("motivate") {
             return .youtubeMusic
         }
         if searchViewModel.selectedPlaylist?.id == playlist.id {
@@ -2741,6 +2639,9 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func play(_ result: YouTubeVideoSearchResult, queue: [YouTubeVideoSearchResult]) {
         AppLog.playback.info("UI play requested; id=\(result.id, privacy: .public), title=\(result.title, privacy: .private), queue=\(queue.count, privacy: .public)")
+        appState.activeSource = result.mediaSourceKind
+        appState.playback.clearQueue()
+        appState.openNowPlaying(tab: .now)
         isVideoVisible = true
         searchViewModel.play(result, queue: queue)
         appState.youtubeNowPlaying = result
@@ -2750,6 +2651,7 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func play(_ track: MusicTrack, queue: [MusicTrack]) {
         AppLog.playback.info("Native source play requested; source=\(track.source.rawValue, privacy: .public), id=\(track.id.rawValue, privacy: .public), title=\(track.title, privacy: .private), queue=\(queue.count, privacy: .public)")
+        appState.activeSource = track.source
         appState.youtubeNowPlaying = nil
         appState.youtubePlayback.reset()
         isVideoVisible = false
@@ -2789,7 +2691,7 @@ struct YouTubeMusicNativeConceptView: View {
                 SongCarouselShelf(
                     title: "",
                     items: Array(relatedItems.prefix(8)),
-                    selectAction: { searchViewModel.select($0, queue: relatedItems) },
+                    selectAction: { play($0, queue: relatedItems) },
                     playAction: { play($0, queue: relatedItems) }
                 )
             }
@@ -2876,7 +2778,8 @@ struct YouTubeMusicNativeConceptView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 VStack(alignment: .leading, spacing: 5) {
-                    MusicInfoLine(title: "Artist / Channel", value: video.channelTitle)
+                    MusicInfoLine(title: "Artist", value: video.musicIdentity.artistName)
+                    MusicInfoLine(title: "YouTube channel", value: video.channelTitle)
                     MusicInfoLine(title: "Kind", value: video.songBadge)
                     MusicInfoLine(title: "Lyrics", value: lyricsAvailabilityText(for: video, details: details))
                     MusicInfoLine(title: "Trivia", value: "No official trivia provider connected yet; future candidates are MusicBrainz/Wikipedia-style metadata, not YouTube claims.")
@@ -2949,28 +2852,36 @@ struct YouTubeMusicNativeConceptView: View {
 
     private func configurePlaybackBridge() {
         appState.youtubePlayback.setHandlers(
+            previous: { playPreviousQueuedVideo() },
+            next: { playNextQueuedVideo() },
             playPause: { togglePanelPlayback() },
             mute: { playerController.toggleMute() },
-            volume: { playerController.setVolume($0) }
+            volume: { playerController.setVolume($0) },
+            seek: { playerController.seek(to: $0) }
         )
         updatePlaybackBridge()
     }
 
     private func updatePlaybackBridge() {
-        let effectivePlayerState: YouTubeEmbeddedPlayerState = if !isVideoVisible, searchViewModel.selectedVideo != nil {
-            .ready
-        } else {
-            playerController.playerState
-        }
         appState.youtubePlayback.update(
-            canPlayPrevious: searchViewModel.canPlayPrevious,
-            canPlayNext: searchViewModel.canPlayNext,
-            playerState: effectivePlayerState,
+            playerState: playerController.playerState,
             volume: playerController.volume,
             isMuted: playerController.isMuted,
             currentTime: playerController.currentTime,
-            duration: playerController.duration
+            duration: playerController.duration,
+            canPlayPrevious: searchViewModel.canPlayPrevious,
+            canPlayNext: searchViewModel.canPlayNext
         )
+    }
+
+    private func playPreviousQueuedVideo() {
+        guard let previousVideo = searchViewModel.previousQueueItem else { return }
+        play(previousVideo, queue: searchViewModel.queue.isEmpty ? [previousVideo] : searchViewModel.queue)
+    }
+
+    private func playNextQueuedVideo() {
+        guard let nextVideo = searchViewModel.nextQueueItem else { return }
+        play(nextVideo, queue: searchViewModel.queue.isEmpty ? [nextVideo] : searchViewModel.queue)
     }
 
     private func handlePlayerStateChange(_ playerState: YouTubeEmbeddedPlayerState) {
@@ -2982,11 +2893,26 @@ struct YouTubeMusicNativeConceptView: View {
             flushLocalListeningProgress()
         }
         switch playerState {
+        case .ended where previousPlayerState == .playing:
+            handleEmbeddedPlaybackEnded()
         case .failed(let message):
             handleEmbeddedPlaybackFailure(message)
         default:
             break
         }
+    }
+
+    private func handleEmbeddedPlaybackEnded() {
+        guard playerController.currentVideoID == appState.youtubeNowPlaying?.id else {
+            AppLog.player.debug("Ignoring ended event for non-current YouTube video; currentVideo=\(self.playerController.currentVideoID ?? "none", privacy: .public), nowPlaying=\(self.appState.youtubeNowPlaying?.id ?? "none", privacy: .public)")
+            return
+        }
+        guard searchViewModel.nextQueueItem != nil else {
+            AppLog.playback.info("YouTube playback ended with no next queued item")
+            return
+        }
+        AppLog.playback.info("YouTube playback ended; advancing to next queued song")
+        playNextQueuedVideo()
     }
 
     private var timeText: String {
@@ -3071,7 +2997,8 @@ struct YouTubeMusicNativeConceptView: View {
         appState.openNowPlaying(tab: .lyrics)
         lyricsStatus = ""
         guard video.songBadge != "Lyrics" else {
-            play(video, queue: sectionVideos)
+            searchViewModel.select(video, queue: sectionVideos)
+            lyricsStatus = "Selected lyric video. Press Play to start it."
             return
         }
 
@@ -3083,44 +3010,18 @@ struct YouTubeMusicNativeConceptView: View {
         Task {
             await searchViewModel.search(lyricQuery, preference: .balanced, engine: musicEngine)
             if let lyricVideo = searchViewModel.results.first(where: { $0.songBadge == "Lyrics" }) {
-                lyricsStatus = "Found a lyric video."
-                play(lyricVideo, queue: searchViewModel.results)
+                lyricsStatus = "Found a lyric video. Press Play to start it."
+                searchViewModel.select(lyricVideo, queue: searchViewModel.results)
             } else {
                 lyricsStatus = "No lyric video found for this song. Synced YouTube Music lyrics are not exposed by the public API."
             }
         }
     }
 
-    private func playPreviousFromQueue() {
-        guard let previousVideo = searchViewModel.playPrevious() else { return }
-        AppLog.playback.info("UI previous from queue; id=\(previousVideo.id, privacy: .public), title=\(previousVideo.title, privacy: .private)")
-        isVideoVisible = true
-        appState.youtubeNowPlaying = previousVideo
-        persistLastPlayback(previousVideo)
-        playerController.load(video: previousVideo, autoplay: true)
-    }
-
-    private func playNextFromQueue() {
-        guard let nextVideo = searchViewModel.playNext() else { return }
-        AppLog.playback.info("UI next from queue; id=\(nextVideo.id, privacy: .public), title=\(nextVideo.title, privacy: .private)")
-        isVideoVisible = true
-        appState.youtubeNowPlaying = nextVideo
-        persistLastPlayback(nextVideo)
-        playerController.load(video: nextVideo, autoplay: true)
-    }
-
     private func handleEmbeddedPlaybackFailure(_ message: String) {
         AppLog.player.error("UI handling embedded playback failure; message=\(message, privacy: .public), selected=\(self.searchViewModel.selectedVideo?.id ?? "none", privacy: .public)")
-        guard let replacement = searchViewModel.skipFailedSelectedVideo(reason: message) else {
-            updatePlaybackBridge()
-            AppLog.player.error("No replacement available after embedded playback failure")
-            return
-        }
-        AppLog.player.warning("Loading replacement after embedded playback failure; replacement=\(replacement.id, privacy: .public)")
-        appState.youtubeNowPlaying = replacement
-        persistLastPlayback(replacement)
-        isVideoVisible = true
-        playerController.load(video: replacement, autoplay: true)
+        searchViewModel.markSelectedPlaybackFailed(reason: message)
+        updatePlaybackBridge()
     }
 
     private func restoreLastPlaybackIfNeeded() {
@@ -3401,7 +3302,7 @@ private struct MusicCollectionDetailPanel: View {
                 CollectionInfoPlaceholder(
                     symbol: "star.bubble",
                     title: "Ratings & Reviews",
-                    detail: "YouTube Data API does not expose editorial album reviews or canonical music ratings. Future MusicKit, Plex, Navidrome, or local metadata sources can fill this tab honestly."
+                    detail: "YouTube Data API does not expose editorial album reviews or canonical music ratings. Future catalog or owned-file sources can fill this tab honestly."
                 )
             case .related:
                 let relatedItems = Array(items.dropFirst().prefix(8))
@@ -3554,6 +3455,56 @@ private struct LimitedCatalogEmptyState: View {
     }
 }
 
+private struct EmptyPlaylistShelf: View {
+    let title: String
+    let source: MediaSourceKind
+    let detail: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    Button(action: action) {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: source.descriptor.symbolName)
+                                .font(.title3)
+                                .frame(width: 38, height: 38)
+                                .background(source.tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                .foregroundStyle(source.tint)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(title)
+                                    .font(.callout.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text(detail)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(3)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(12)
+                        .frame(width: 310, alignment: .topLeading)
+                        .frame(minHeight: 110, alignment: .topLeading)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(alignment: .topTrailing) {
+                            SourcePill(source: source, title: source.descriptor.displayName, prominence: .soft)
+                                .padding(8)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(title). \(detail)")
+                }
+                .padding(.bottom, 4)
+            }
+        }
+    }
+}
+
 private struct QueueItemRow: View {
     let index: Int
     let item: YouTubeVideoSearchResult
@@ -3574,7 +3525,7 @@ private struct QueueItemRow: View {
                     Text(item.title)
                         .font(.callout.weight(.medium))
                         .lineLimit(1)
-                    Text(item.channelTitle)
+                    Text(item.musicIdentity.artistName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -3646,11 +3597,6 @@ private struct MusicCollectionToolbar: View {
             .controlSize(.small)
         }
     }
-}
-
-private struct MusicIdentity: Hashable {
-    let artistName: String
-    let albumTitle: String?
 }
 
 private struct AirPlayRoutePickerButton: NSViewRepresentable {
@@ -3746,7 +3692,7 @@ private enum StorageCacheClearTarget: String, Identifiable {
         case .metadata:
             "Retained artwork, account tokens, playlists, provider libraries, and media files."
         case .all:
-            "Retained account tokens, playlists, provider libraries, user-owned files, and media files."
+            "Retained account tokens, playlists, provider libraries, and media files."
         }
     }
 
@@ -3846,7 +3792,7 @@ private struct StorageCacheActionsPanel: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Cache Controls")
                 .font(.headline)
-            Text("Actions are scoped to PhonoDeck metadata and artwork. They do not delete YouTube playlists, account data, or user-owned music files.")
+            Text("Actions are scoped to PhonoDeck metadata and artwork. They do not delete YouTube playlists, account data, or provider libraries.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -4035,7 +3981,7 @@ private struct StorageSourcePolicyRow: View {
 private struct StorageSafetyPanel: View {
     private let rows: [(String, String, String, Color)] = [
         ("play.slash", "No hidden media paths", "No ytdl, stream extraction, copied cookies, or background YouTube media caches are exposed.", .red),
-        ("folder.badge.gearshape", "Sandboxed files only", "Future Own Files imports must use user-selected file or folder access and surface permission errors.", .blue),
+        ("lock.doc", "Provider data stays scoped", "Provider tokens, playlists, metadata, and artwork caches stay separated by source and action.", .blue),
         ("exclamationmark.triangle", "No silent no-ops", "Unavailable actions are disabled and explain why through labels, status rows, or help text.", .orange)
     ]
 
@@ -4226,7 +4172,7 @@ private struct SongResultRow: View {
                     Text(result.title)
                         .font(.callout.weight(.medium))
                         .lineLimit(1)
-                    Text(result.channelTitle)
+                    Text(result.musicIdentity.artistName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -4311,24 +4257,58 @@ private struct SongResultRow: View {
                 Button("Remove from Playlist", role: .destructive, action: removeAction)
             }
         }
-        .accessibilityLabel("\(result.title), \(result.channelTitle), \(result.songBadge)")
-        .accessibilityHint("Double-click to play in the visible YouTube player")
+        .accessibilityLabel("\(result.title), \(result.musicIdentity.artistName), \(result.songBadge)")
+        .accessibilityHint("Press to play in the visible YouTube player")
     }
 }
 
 private struct SourcePill: View {
     let source: MediaSourceKind
     let title: String
+    var prominence: SourceBadgeProminence = .standard
 
     var body: some View {
         Label(title, systemImage: source.descriptor.symbolName)
             .font(.caption.weight(.semibold))
             .lineLimit(1)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(source.tint.opacity(0.14), in: Capsule())
-            .foregroundStyle(source.tint)
+            .padding(.horizontal, prominence.horizontalPadding)
+            .padding(.vertical, prominence.verticalPadding)
+            .background(source.tint.opacity(prominence.backgroundOpacity), in: Capsule())
+            .foregroundStyle(prominence.foregroundColor(source: source))
             .help(source.descriptor.displayName)
+    }
+}
+
+private enum SourceBadgeProminence {
+    case standard
+    case soft
+
+    var horizontalPadding: CGFloat {
+        switch self {
+        case .standard: 7
+        case .soft: 6
+        }
+    }
+
+    var verticalPadding: CGFloat {
+        switch self {
+        case .standard: 3
+        case .soft: 2
+        }
+    }
+
+    var backgroundOpacity: Double {
+        switch self {
+        case .standard: 0.10
+        case .soft: 0.06
+        }
+    }
+
+    func foregroundColor(source: MediaSourceKind) -> Color {
+        switch self {
+        case .standard: source.tint
+        case .soft: .secondary
+        }
     }
 }
 
@@ -4652,7 +4632,7 @@ private struct LibraryEmptyShelf: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("No source songs yet")
                     .font(.headline)
-                Text("Search or play songs from YouTube Music now. Plex, Spotify, and local libraries will appear here as those sources are connected.")
+                Text("Search or play songs from YouTube Music now. Spotify library items will appear here when that source is connected.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -4728,7 +4708,7 @@ private struct ProviderComparisonCard: View {
                                     Text(item.title)
                                         .font(.caption.weight(.semibold))
                                         .lineLimit(1)
-                                    Text(item.channelTitle)
+                                    Text("Channel: \(item.channelTitle)")
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
@@ -5134,35 +5114,8 @@ private struct RoadmapRow: View {
 }
 
 private extension YouTubeVideoSearchResult {
-    var mediaSourceKind: MediaSourceKind {
-        sourceLabel == "Music" || isSongLike ? .youtubeMusic : .youtube
-    }
-
-    var musicIdentity: MusicIdentity {
-        let components = channelTitle
-            .components(separatedBy: " - ")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        if sourceLabel == "Music", components.count >= 2 {
-            let artist = components.first ?? fallbackArtistName
-            let album = components.dropFirst().joined(separator: " - ")
-            if !album.localizedCaseInsensitiveContains("topic") {
-                return MusicIdentity(artistName: artist, albumTitle: album)
-            }
-        }
-
-        return MusicIdentity(artistName: fallbackArtistName, albumTitle: nil)
-    }
-
     var musicAlbumBucketTitle: String {
         musicIdentity.albumTitle ?? "Singles & Videos"
-    }
-
-    private var fallbackArtistName: String {
-        let withoutTopic = channelTitle.replacingOccurrences(of: " - Topic", with: "")
-        let trimmed = withoutTopic.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Unknown Artist" : trimmed
     }
 
     var songBadgeColor: Color {
@@ -5180,9 +5133,9 @@ private extension MediaSourceKind {
         switch self {
         case .youtubeMusic: "YT Music"
         case .youtube: "YouTube"
-        case .plex: "Plex"
+        case .plex: "Source"
         case .spotify: "Spotify"
-        case .ownFiles: "Files"
+        case .ownFiles: "Source"
         }
     }
 }

@@ -96,7 +96,7 @@ struct NowPlayingBar: View {
     private var subtitle: String {
         if isYouTubeMode {
             if let youtubeNowPlaying {
-                return youtubeNowPlaying.channelTitle
+                return youtubeNowPlaying.musicIdentity.artistName
             }
             return "Choose a song to start playback"
         }
@@ -106,12 +106,11 @@ struct NowPlayingBar: View {
     private var controls: some View {
         VStack(spacing: 7) {
             HStack(spacing: DesignTokens.standardSpacing) {
-                if !isYouTubeMode {
-                    Button(action: previousAction) {
-                        Image(systemName: "backward.fill")
-                    }
-                    .help("Previous")
+                Button(action: previousAction) {
+                    Image(systemName: "backward.fill")
                 }
+                .disabled(!canPlayPrevious)
+                .help(isYouTubeMode ? "Previous queued YouTube song" : "Previous")
 
                 Button(action: playPauseAction) {
                     Image(systemName: playPauseSymbol)
@@ -120,20 +119,27 @@ struct NowPlayingBar: View {
                 .disabled(isYouTubeMode ? !canControlYouTubePlayer : false)
                 .help(isYouTubeMode ? "Play or pause the visible YouTube player" : "Play or pause")
 
-                if !isYouTubeMode {
-                    Button(action: nextAction) {
-                        Image(systemName: "forward.fill")
-                    }
-                    .help("Next")
+                Button(action: nextAction) {
+                    Image(systemName: "forward.fill")
                 }
+                .disabled(!canPlayNext)
+                .help(isYouTubeMode ? "Next queued YouTube song" : "Next")
             }
             .buttonStyle(.borderless)
             .font(.title3)
 
             if isYouTubeMode {
                 VStack(spacing: 3) {
-                    ProgressView(value: youtubeProgress)
+                    Slider(
+                        value: Binding(
+                            get: { youtubePlayback.currentTime },
+                            set: { youtubePlayback.seek(to: $0) }
+                        ),
+                        in: 0...max(youtubePlayback.duration, 1)
+                    )
                         .frame(width: 260)
+                        .disabled(!canSeekYouTubePlayer)
+                        .help(canSeekYouTubePlayer ? "Seek in the visible YouTube player" : "Duration is not available yet")
                     HStack(spacing: 8) {
                         Text(formatTime(youtubePlayback.currentTime))
                         Spacer(minLength: 0)
@@ -165,7 +171,19 @@ struct NowPlayingBar: View {
     private var canControlYouTubePlayer: Bool {
         guard youtubeNowPlaying != nil else { return false }
         if case .failed = youtubePlayback.playerState { return false }
-        return true
+        return youtubePlayback.playerState.acceptsCommands
+    }
+
+    private var canSeekYouTubePlayer: Bool {
+        canControlYouTubePlayer && youtubePlayback.duration > 0
+    }
+
+    private var canPlayPrevious: Bool {
+        isYouTubeMode ? youtubePlayback.canPlayPrevious : playback.queueSnapshot.currentIndex != nil
+    }
+
+    private var canPlayNext: Bool {
+        isYouTubeMode ? youtubePlayback.canPlayNext : playback.queueSnapshot.currentIndex != nil
     }
 
     private var playerStateText: String {
@@ -176,7 +194,7 @@ struct NowPlayingBar: View {
     }
 
     private func previousAction() {
-        playback.previousTrack()
+        isYouTubeMode ? youtubePlayback.previous() : playback.previousTrack()
     }
 
     private func playPauseAction() {
@@ -184,7 +202,7 @@ struct NowPlayingBar: View {
     }
 
     private func nextAction() {
-        playback.nextTrack()
+        isYouTubeMode ? youtubePlayback.next() : playback.nextTrack()
     }
 
     private var timeText: String {
@@ -196,11 +214,6 @@ struct NowPlayingBar: View {
         guard youtubePlayback.duration > 0 else { return "--:--" }
         let remaining = max(youtubePlayback.duration - youtubePlayback.currentTime, 0)
         return "-\(formatTime(remaining))"
-    }
-
-    private var youtubeProgress: Double {
-        guard youtubePlayback.duration > 0 else { return 0 }
-        return min(max(youtubePlayback.currentTime / youtubePlayback.duration, 0), 1)
     }
 
     private func formatTime(_ seconds: Double) -> String {
@@ -253,9 +266,9 @@ private extension MediaSourceKind {
         switch self {
         case .youtubeMusic: "YT Music"
         case .youtube: "YouTube"
-        case .plex: "Plex"
+        case .plex: "Source"
         case .spotify: "Spotify"
-        case .ownFiles: "Files"
+        case .ownFiles: "Source"
         }
     }
 }

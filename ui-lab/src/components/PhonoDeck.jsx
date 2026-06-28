@@ -5,8 +5,7 @@ import { Icon } from '../icons.jsx';
 const G = (i) => `g${(i % 10) + 1}`;
 export const sourceMeta = {
   ytm: { name: 'YT Music', color: 'var(--ytm)' }, yt: { name: 'YouTube', color: 'var(--yt)' },
-  spotify: { name: 'Spotify', color: 'var(--spotify)' }, plex: { name: 'Plex', color: 'var(--plex)' },
-  own: { name: 'Own Files', color: 'var(--accent)' },
+  spotify: { name: 'Spotify', color: 'var(--spotify)' },
 };
 export const sampleSongs = [
   { title: 'Neon Skyline', artist: 'The Midnight', album: 'Monsters', time: '3:35', src: 'ytm', badge: 'Official Audio', playing: true, liked: true },
@@ -17,24 +16,24 @@ export const sampleSongs = [
   { title: 'A Real Hero', artist: 'College & Electric Youth', album: 'Drive OST', time: '4:30', src: 'ytm', badge: 'Official Audio' },
 ];
 export const samplePlaylists = [
-  { title: 'Late Night Drive', count: 18, src: 'ytm' }, { title: 'Focus', count: 42, src: 'spotify' },
-  { title: 'Throwbacks', count: 60, src: 'yt' }, { title: 'Workout', count: 25, src: 'plex' }, { title: 'Coding', count: 88, src: 'ytm' },
+  { title: 'Late Night Drive', count: 18, src: 'ytm' }, { title: 'Motivate Mix', count: 24, src: 'ytm' },
+  { title: 'Official Audio Saved', count: 42, src: 'ytm' }, { title: 'Throwbacks', count: 60, src: 'yt' },
+  { title: 'Music Videos', count: 25, src: 'yt' }, { title: 'Live Sets', count: 32, src: 'yt' },
 ];
+const youtubeMusicPlaylists = samplePlaylists.filter((playlist) => playlist.src === 'ytm');
+const youtubePlaylists = samplePlaylists.filter((playlist) => playlist.src === 'yt');
 /* mixed-source library: every row carries a discrete source marker (dot + textual badge) */
 export const mixedSongs = [
   { title: 'Neon Skyline', artist: 'The Midnight', album: 'Monsters', time: '3:35', src: 'ytm', badge: 'YT Music', playing: true, liked: true },
   { title: 'Midnight City', artist: 'M83', album: "Hurry Up, We're Dreaming", time: '4:03', src: 'spotify', badge: 'Spotify' },
-  { title: 'Open Your Eyes', artist: 'School of Seven Bells', album: 'Ripped CD (FLAC)', time: '5:12', src: 'plex', badge: 'Plex · FLAC' },
   { title: 'Resonance', artist: 'HOME', album: 'Odyssey', time: '3:32', src: 'yt', badge: 'YouTube' },
   { title: 'Sunset', artist: 'Petit Biscuit', album: 'Presence', time: '3:58', src: 'spotify', badge: 'Spotify' },
   { title: 'A Real Hero', artist: 'College', album: 'Drive OST', time: '4:30', src: 'ytm', badge: 'YT Music' },
-  { title: 'Innerbloom', artist: 'RÜFÜS DU SOL', album: 'Bloom (ALAC)', time: '9:38', src: 'plex', badge: 'Plex · ALAC' },
 ];
-/* Plex-style cross-service discovery: new releases per configured source, each provenance-labeled */
+/* Cross-service discovery: new releases per configured source, each provenance-labeled */
 export const mixedNew = [
   { title: 'Sonic Bloom', artist: 'RÜFÜS DU SOL', src: 'ytm', tag: 'New on YT Music' },
   { title: 'Afterglow', artist: 'ODESZA', src: 'spotify', tag: 'New on Spotify' },
-  { title: 'Night Tapes', artist: 'Added to your server', src: 'plex', tag: 'New in your library' },
   { title: 'Echoes', artist: 'HOME', src: 'yt', tag: 'New on YouTube' },
   { title: 'Polaris', artist: 'Tycho', src: 'ytm', tag: 'New on YT Music' },
   { title: 'Drift', artist: 'Bonobo', src: 'spotify', tag: 'New on Spotify' },
@@ -44,7 +43,6 @@ export const connectedServices = [
   { src: 'ytm', detail: 'Premium · 12 new' },
   { src: 'yt', detail: 'Connected' },
   { src: 'spotify', detail: 'Free · library only' },
-  { src: 'plex', detail: 'Plex Pass · 3 new' },
 ];
 export const sampleSubs = ['Majestic Casual', 'Mr.SuicideSheep', 'NoCopyrightSounds', 'Proximity', 'The Midnight', 'Monstercat'];
 export const relatedSongs = [
@@ -120,8 +118,8 @@ const readinessConfig = {
   failed: { label: 'Failed', icon: 'info', pill: 'blocked' },
 };
 
-export function ReadinessCallout({ src = 'plex', status = 'notConfigured', title, detail }) {
-  const meta = sourceMeta[src];
+export function ReadinessCallout({ src = 'ytm', status = 'notConfigured', title, detail }) {
+  const meta = sourceMeta[src] || sourceMeta.ytm;
   const config = readinessConfig[status] || readinessConfig.failed;
   return (
     <div className="ready-callout" role="status" aria-label={`${meta.name}: ${config.label}. ${detail}`}>
@@ -134,7 +132,7 @@ export function ReadinessCallout({ src = 'plex', status = 'notConfigured', title
 
 /* ====== SourceFilterChips — unify the library but let users filter by origin ====== */
 export function SourceFilterChips({ active = 'all' }) {
-  const chips = [['all', 'All', null], ['yt', 'YouTube', 'yt'], ['ytm', 'YT Music', 'ytm'], ['spotify', 'Spotify', 'spotify'], ['plex', 'Plex', 'plex']];
+  const chips = [['all', 'All', null], ['yt', 'YouTube', 'yt'], ['ytm', 'YT Music', 'ytm'], ['spotify', 'Spotify', 'spotify']];
   return (
     <div className="srcchips" role="tablist" aria-label="Filter by source">
       {chips.map(([id, label, src]) => (
@@ -270,7 +268,7 @@ export function SongCarouselShelf({ title = 'Recently Played', items = sampleSon
   );
 }
 
-/* ====== DiscoveryShelf — Plex-style 'New From Your Services' (source-marked + provenance-labeled) ====== */
+/* ====== DiscoveryShelf — source-marked cross-service recommendations ====== */
 export function DiscoveryShelf({ title = 'New From Your Services', items = mixedNew }) {
   return (
     <div className="shelf">
@@ -289,7 +287,7 @@ export function DiscoveryShelf({ title = 'New From Your Services', items = mixed
   );
 }
 
-/* ====== ConnectedServicesRow — Plex-style 'Your Services' (honest tier) ====== */
+/* ====== ConnectedServicesRow — connected visible sources ====== */
 export function ConnectedServicesRow({ items = connectedServices }) {
   return (
     <div className="shelf">
@@ -369,8 +367,8 @@ export function NowPlayingPanel({ tab = 'now', source = 'ytm', autoplay = true, 
   React.useEffect(() => setMode(mediaMode), [mediaMode]);
   const youtube = source === 'ytm' || source === 'yt';
   const spotify = source === 'spotify';
-  const native = source === 'plex' || source === 'own' || source === 'native';
-  const meta = sourceMeta[source] || sourceMeta.plex;
+  const native = false;
+  const meta = sourceMeta[source] || sourceMeta.ytm;
   const blocked = routeStatus !== 'ready';
   const tabs = [['now', 'Now Playing', 'play'], ['next', 'Up Next', 'list'], ['lyrics', 'Lyrics', 'lyrics'], ['about', 'About', 'info']];
   return (
@@ -382,9 +380,9 @@ export function NowPlayingPanel({ tab = 'now', source = 'ytm', autoplay = true, 
       </div>
       <div className="npp-body">
         {active === 'now' && <>
-          {empty && <div className="npp-empty"><Icon name="note" size={32} /><div><div className="n">Select a song</div><div className="d">Choose a row from Home, Search, Library, or Playlists to start playback.</div></div></div>}
+          {empty && <div className="npp-empty"><Icon name="note" size={32} /><div><div className="n">Choose something to play</div><div className="d">Pick a song, playlist, album, or artist. The player appears here once music starts.</div></div></div>}
           {!empty && <>
-          {routeStatus !== 'ready' && <ReadinessCallout src={sourceMeta[source] ? source : 'plex'} status={routeStatus} title="Playback route" detail={routeStatus === 'failed' ? 'The provider could not load this item. Choose another song or manage the source in Settings.' : 'This item cannot start playback until the source is ready.'} />}
+          {routeStatus !== 'ready' && <ReadinessCallout src={sourceMeta[source] ? source : 'ytm'} status={routeStatus} title="Playback route" detail={routeStatus === 'failed' ? 'The provider could not load this item. Choose another song or manage the source in Settings.' : 'This item cannot start playback until the source is ready.'} />}
           {youtube && <div className="media-toggle"><div className="seg2" role="tablist" aria-label="Audio or video">
             <button role="tab" className={mode === 'song' ? 'active' : ''} aria-selected={mode === 'song'} onClick={() => setMode('song')}>Song</button>
             <button role="tab" className={mode === 'video' ? 'active' : ''} aria-selected={mode === 'video'} onClick={() => setMode('video')}>Video</button>
@@ -403,17 +401,9 @@ export function NowPlayingPanel({ tab = 'now', source = 'ytm', autoplay = true, 
             </div>
             <LikeButton on size={19} />
           </div>
-          <div className={'npp-transport' + (blocked ? ' disabled' : '')}>
-            <span className="b sm" role="button" tabIndex={blocked ? -1 : 0} aria-disabled={blocked} aria-label="Shuffle"><Icon name="shuffle" size={15} /></span>
-            <span className="b" role="button" tabIndex={blocked ? -1 : 0} aria-disabled={blocked} aria-label="Previous"><Icon name="back" size={17} /></span>
-            <span className="b play" role="button" tabIndex={blocked ? -1 : 0} aria-disabled={blocked} aria-label={blocked ? 'Playback unavailable' : 'Pause'}><Icon name={blocked ? 'play' : 'pause'} size={22} /></span>
-            <span className="b" role="button" tabIndex={blocked ? -1 : 0} aria-disabled={blocked} aria-label="Next"><Icon name="fwd" size={17} /></span>
-            <span className="b sm" role="button" tabIndex={blocked ? -1 : 0} aria-disabled={blocked} aria-label="Repeat"><Icon name="repeat" size={15} /></span>
-          </div>
-          <div className="npp-scrub"><span>1:24</span><div className="bar"><i /></div><span>-2:11</span></div>
-          {youtube && <div className="npp-srcnote">These controls drive the visible official YouTube player (IFrame Player API). System AirPlay &amp; device volume aren’t available for web playback.</div>}
-          {spotify && <div className="npp-srcnote">These controls drive the visible official Spotify player. System media-key ownership and app AirPlay routing stay disabled for web playback.</div>}
-          {native && <div className="npp-srcnote">Native playback can publish system Now Playing and use media keys only after the provider route resolves ready.</div>}
+          {youtube && <div className="npp-srcnote compact">Visible YouTube player · queue-aware Previous/Play/Pause/Next + progress in PhonoDeck · bitrate and record label not exposed by YouTube.</div>}
+          {spotify && <div className="npp-srcnote">Use the centered bottom bar for transport. It drives the visible official Spotify player; system media-key ownership and app AirPlay routing stay disabled for web playback.</div>}
+          {native && <div className="npp-srcnote">Use the centered bottom bar for transport. Native playback can publish system Now Playing and use media keys only after the provider route resolves ready.</div>}
           <div className="npp-quick">
             <button className="btn bordered" disabled={blocked}><Icon name="addplaylist" size={15} />Add</button>
             <button className="btn bordered" disabled={blocked}><Icon name="share" size={15} />Share</button>
@@ -492,14 +482,12 @@ export function AboutUnavailable() {
 export const phase5Albums = [
   { title: 'Monsters', artist: 'The Midnight', count: 5, src: 'ytm', source: 'Derived from YouTube results' },
   { title: 'OutRun', artist: 'Kavinsky', count: 3, src: 'ytm', source: 'Derived from YouTube results' },
-  { title: 'Bloom (FLAC)', artist: 'RÜFÜS DU SOL', count: 11, src: 'plex', source: 'Plex library metadata' },
   { title: 'Presence', artist: 'Petit Biscuit', count: 14, src: 'spotify', source: 'Spotify catalog metadata' },
 ];
 
 export const phase5Artists = [
   { name: 'The Midnight', count: 9, src: 'ytm', source: 'Derived from YouTube channels' },
   { name: 'Kavinsky', count: 4, src: 'ytm', source: 'Derived from YouTube channels' },
-  { name: 'RÜFÜS DU SOL', count: 24, src: 'plex', source: 'Plex artist metadata' },
   { name: 'M83', count: 18, src: 'spotify', source: 'Spotify artist metadata' },
 ];
 
@@ -537,9 +525,9 @@ export function AlbumsSurface({ mode = 'limited' }) {
     <div className="scroll">
       <div className="page-title">Albums</div>
       <div className="page-sub">Album catalog surfaces require provider-grade metadata. YouTube-only groupings stay labeled as limited.</div>
-      {empty && <ReadinessCallout src="plex" status="notConnected" title="No album catalog source is ready" detail="Connect Plex, Spotify, or Own Files metadata before Albums can behave like a canonical catalog." />}
+      {empty && <ReadinessCallout src="spotify" status="notConnected" title="No album catalog source is ready" detail="Connect Spotify metadata before Albums can behave like a canonical catalog." />}
       {!empty && !real && <ReadinessCallout src="ytm" status="policyBlocked" title="Limited album grouping" detail="These albums are derived from YouTube Music results and may miss year, label, credits, track order, and canonical album identity." />}
-      {real && <ReadinessCallout src="plex" status="ready" title="Plex album metadata ready" detail="Showing albums from a connected catalog source with native playback routes where available." />}
+      {real && <ReadinessCallout src="spotify" status="ready" title="Spotify album metadata ready" detail="Showing albums from a connected catalog source where available." />}
       {!empty && <><div className="coll-toolbar phase5-toolbar"><label className="searchbar"><Icon name="search" size={14} /><input placeholder="Find albums" aria-label="Find albums" /></label><SourceFilterChips active="all" /></div><div className="row wraprow">{albums.map((album, index) => <Phase5AlbumCard key={album.title} album={album} index={index} />)}</div></>}
       {empty && <LimitedEmpty symbol="stack" title="Albums need a catalog source" detail="YouTube Music search can play songs, but it does not expose canonical albums to third-party apps." />}
     </div>
@@ -554,7 +542,7 @@ export function ArtistsSurface({ mode = 'limited' }) {
     <div className="scroll">
       <div className="page-title">Artists</div>
       <div className="page-sub">Artist pages stay restrained until a catalog source provides artist identity, imagery, and facts.</div>
-      {empty && <ReadinessCallout src="spotify" status="notConnected" title="No artist catalog source is ready" detail="Connect Spotify, Plex, or Own Files metadata before Artists can behave like canonical artist pages." />}
+      {empty && <ReadinessCallout src="spotify" status="notConnected" title="No artist catalog source is ready" detail="Connect Spotify metadata before Artists can behave like canonical artist pages." />}
       {!empty && !real && <ReadinessCallout src="ytm" status="policyBlocked" title="Limited artist grouping" detail="These artists are derived from YouTube channels/results. Subscriber counts, bios, credits, and canonical identities are not inferred." />}
       {real && <ReadinessCallout src="spotify" status="ready" title="Artist metadata ready" detail="Showing artists from a connected catalog source; rich hero and bio can be enabled only when provider facts are present." />}
       {!empty && <><div className="coll-toolbar phase5-toolbar"><label className="searchbar"><Icon name="search" size={14} /><input placeholder="Find artists" aria-label="Find artists" /></label><SourceFilterChips active="all" /></div><div className="row wraprow">{artists.map((artist, index) => <Phase5ArtistCard key={artist.name} artist={artist} index={index} />)}</div></>}
@@ -569,7 +557,7 @@ export function HomeState({ state = 'partial' }) {
     <div className="scroll">
       <div className="page-title">Home</div>
       <div className="page-sub">Recent, recommended, and resumable — source-marked and honest about partial provider availability.</div>
-      {state === 'partial' && <ReadinessCallout src="spotify" status="notConnected" title="Some services are not connected" detail="Showing YouTube Music and PhonoDeck history. Connect Spotify or Plex to expand the Home shelves." />}
+      {state === 'partial' && <ReadinessCallout src="spotify" status="notConnected" title="Spotify is not connected" detail="Showing YouTube Music and PhonoDeck history. Connect Spotify to expand metadata shelves." />}
       {state === 'stale' && <ReadinessCallout src="ytm" status="rateLimited" title="Showing cached Home shelves" detail="YouTube rate-limited fresh discovery. Cached recent songs and playlists stay visible." />}
       <TopPicksShelf />
       <SongCarouselShelf title="Recently Played" items={sampleSongs} showAll />
@@ -603,9 +591,10 @@ export function LibraryState({ state = 'partial' }) {
     <div className="scroll">
       <div className="page-title">Library</div>
       <div className="page-sub">A unified library view, with each row and card marked by source and readiness.</div>
-      {state === 'partial' && <ReadinessCallout src="plex" status="notConfigured" title="Showing YouTube library only" detail="Plex and Spotify are not ready yet, so the Library is not claiming a complete cross-source catalog." />}
+      {state === 'partial' && <ReadinessCallout src="spotify" status="notConnected" title="Showing YouTube library only" detail="Spotify is not connected yet, so the Library is not claiming a complete cross-source catalog." />}
       <SourceFilterChips active="all" />
-      <div className="shelf"><div className="shelf-h"><h3>Playlists</h3><a>Show All ›</a></div><div className="row">{samplePlaylists.slice(0, 4).map((p, i) => <PlaylistArtworkCard key={i} index={i} title={p.title} count={p.count} src={p.src} />)}</div></div>
+      <PlaylistShelf title="YouTube Music Playlists" playlists={youtubeMusicPlaylists} />
+      <PlaylistShelf title="YouTube Playlists" playlists={youtubePlaylists} />
       <div className="shelf"><div className="shelf-h"><h3>Songs</h3></div><SongTable songs={mixedSongs} /></div>
     </div>
   );
@@ -625,16 +614,14 @@ export function PlaylistsState({ state = 'missingScope' }) {
 
 export function QueueState({ state = 'blocked' }) {
   if (state === 'empty') return <div className="scroll"><div className="page-title">Queue</div><LimitedEmpty symbol="list" title="There is no music in the queue" detail="Play a song, open a playlist, or add rows to queue from Search, Albums, Artists, or Playlists." /></div>;
-  const blocked = { title: 'Plex track without ready route', artist: 'Home Server', album: 'No Plex server configured', time: '—', src: 'plex', badge: 'Blocked' };
-  return <div className="scroll"><div className="page-title">Queue</div><div className="page-sub">Blocked items remain visible with the source reason; native playback does not attempt to load them.</div><ReadinessCallout src="plex" status="notConfigured" title="Queue item blocked" detail="No Plex music server is configured, so this item cannot start native playback." /><SongTable songs={[sampleSongs[0], blocked, sampleSongs[1]]} /></div>;
+  const blocked = { title: 'Spotify track without ready route', artist: 'Example Artist', album: 'Spotify unavailable', time: '—', src: 'spotify', badge: 'Blocked' };
+  return <div className="scroll"><div className="page-title">Queue</div><div className="page-sub">Blocked items remain visible with the source reason; playback does not attempt to load them.</div><ReadinessCallout src="spotify" status="notConnected" title="Queue item blocked" detail="Spotify is not connected, so this item cannot start playback." /><SongTable songs={[sampleSongs[0], blocked, sampleSongs[1]]} /></div>;
 }
 
 const evidenceTime = 'Today 04:58';
 const storagePolicies = [
   { src: 'ytm', state: 'Metadata only', detail: 'Metadata and artwork cache only. YouTube media downloads remain unavailable.' },
   { src: 'spotify', state: 'Unavailable', detail: 'Spotify offline files are not exposed for third-party app storage.' },
-  { src: 'plex', state: 'Planned', detail: 'Owned-media storage requires a future Plex operation with permission and disk preflight.' },
-  { src: 'own', state: 'Local', detail: 'User-selected local files remain offline when import/indexing lands.' },
 ];
 
 export function EvidenceLine({ label, value }) {
@@ -652,9 +639,9 @@ export function StorageCenter({ state = 'populated' }) {
       <div className="ops-grid">
         <div className="ops-metric"><Icon name="list" /><div><b>{empty ? '0 KB' : '18.4 MB'}</b><span>Metadata · measured {evidenceTime}</span><EvidenceLine label="Source" value="PhonoDeck metadata cache" /></div></div>
         <div className="ops-metric"><Icon name="note" /><div><b>{empty ? '0 KB' : '42.7 MB'}</b><span>Artwork · measured {evidenceTime}</span><EvidenceLine label="Source" value="PhonoDeck artwork cache" /></div></div>
-        <div className="ops-metric blocked"><Icon name="down" /><div><b>0 B</b><span>Owned media · checked {evidenceTime}</span><EvidenceLine label="Scope" value="YouTube/Spotify policy blocked" /></div></div>
+        <div className="ops-metric blocked"><Icon name="down" /><div><b>0 B</b><span>Media files · checked {evidenceTime}</span><EvidenceLine label="Scope" value="YouTube/Spotify policy blocked" /></div></div>
       </div>
-      {state === 'confirm' && <ReadinessCallout src="ytm" status="partial" title="Clear metadata cache?" detail="This removes PhonoDeck metadata/artwork cache only. It keeps account tokens, playlists, user-owned files, and provider libraries." />}
+      {state === 'confirm' && <ReadinessCallout src="ytm" status="partial" title="Clear metadata cache?" detail="This removes PhonoDeck metadata/artwork cache only. It keeps account tokens, playlists, and provider libraries." />}
       {receipt && <div className="receipt"><Icon name="info" /><div><b>Metadata cache cleared</b><span>Completed {evidenceTime}. Previous cache: 18.4 MB. Retained Google tokens, playlists, and media files.</span></div></div>}
       {error && <ReadinessCallout src="ytm" status="providerUnavailable" title="Storage measurement partial" detail="Artwork cache size could not be measured; metadata and policy rows are still current." />}
       {empty ? <LimitedEmpty symbol="list" title="No local cache yet" detail="Search or browse music to populate metadata and artwork caches. YouTube media files will not appear here." /> : <div className="panel"><h3>Stored Items</h3><div className="srow"><div><div className="n">YouTube Music metadata cache</div><div className="d">Metadata · cached · measured {evidenceTime}</div></div><span className="pill ok right">18.4 MB</span></div><div className="srow"><div><div className="n">Artwork cache</div><div className="d">Artwork · cached · measured {evidenceTime}</div></div><span className="pill ok right">42.7 MB</span></div></div>}
@@ -665,8 +652,7 @@ export function StorageCenter({ state = 'populated' }) {
 
 const deviceRows = [
   { src: 'ytm', title: 'YouTube Web Playback', state: 'Limited', source: 'YouTube IFrame API', detail: 'The visible YouTube player owns output selection. PhonoDeck cannot force HomePod or Cast routing.' },
-  { src: 'plex', title: 'Native AVFoundation Routes', state: 'Available', source: 'AVRoutePickerView', detail: 'Native Plex and Own Files playback can use the system route picker after a ready native route.' },
-  { src: 'own', title: 'HomePod Default Service', state: 'Not exposed', source: 'HomeKit public API', detail: 'HomeKit does not expose whether HomePod is configured to use YouTube Music as a default service.' },
+  { src: 'ytm', title: 'HomePod Default Service', state: 'Not exposed', source: 'HomeKit public API', detail: 'HomeKit does not expose whether HomePod is configured to use YouTube Music as a default service.' },
   { src: 'spotify', title: 'Cross-device Listening History', state: 'Not exposed', source: 'Provider APIs', detail: 'Provider APIs do not expose a full device history with iPhone, TV, car, or speaker names.' },
 ];
 
@@ -675,9 +661,8 @@ export function DevicesSurface({ mode = 'youtube' }) {
     <div className="scroll ops-page">
       <div className="page-title">Devices</div>
       <div className="page-sub">Route capability and public API readiness. This is not a fabricated device inventory.</div>
-      {mode === 'native' ? <ReadinessCallout src="plex" status="ready" title="Native route picker available" detail="System AirPlay route picker is available for ready native AVFoundation playback." /> : <ReadinessCallout src="ytm" status="policyBlocked" title="YouTube route is web-player owned" detail="The visible official YouTube player owns output selection; PhonoDeck cannot enumerate or force routes." />}
-      {mode === 'native' && <div className="airplay-preview" role="button" tabIndex={0} aria-label="System AirPlay route picker preview"><Icon name="airplay" size={20} /><div><b>System AirPlay Route Picker</b><span>Native macOS control · opens system-owned route menu</span></div></div>}
-      <div className="panel"><h3>Route Capability Evidence</h3>{deviceRows.map((row) => <div className="srow" key={row.title}><div className="ic" style={{ background: `color-mix(in srgb, ${sourceMeta[row.src].color} 16%, transparent)`, color: sourceMeta[row.src].color }}><Icon name={row.src === 'plex' ? 'airplay' : 'info'} /></div><div><div className="n">{row.title}</div><div className="d">{row.detail}</div><EvidenceLine label="Source" value={row.source} /><EvidenceLine label="Checked" value={evidenceTime} /></div><span className="pill plan right">{row.state}</span></div>)}</div>
+      <ReadinessCallout src="ytm" status="policyBlocked" title="YouTube route is web-player owned" detail="The visible official YouTube player owns output selection; PhonoDeck cannot enumerate or force routes." />
+      <div className="panel"><h3>Route Capability Evidence</h3>{deviceRows.map((row) => <div className="srow" key={row.title}><div className="ic" style={{ background: `color-mix(in srgb, ${sourceMeta[row.src].color} 16%, transparent)`, color: sourceMeta[row.src].color }}><Icon name="info" /></div><div><div className="n">{row.title}</div><div className="d">{row.detail}</div><EvidenceLine label="Source" value={row.source} /><EvidenceLine label="Checked" value={evidenceTime} /></div><span className="pill plan right">{row.state}</span></div>)}</div>
     </div>
   );
 }
@@ -806,9 +791,9 @@ export function FullScreenPlayer({ source = 'ytm' }) {
         <div className="npp-scrub" style={{ marginTop: 14 }}><span>1:24</span><div className="bar"><i /></div><span>-2:11</span></div>
         <div className="fsp-transport">
           <button className="b" aria-label="Shuffle"><Icon name="shuffle" size={18} /></button>
-          <button className="b" aria-label="Previous"><Icon name="back" size={20} /></button>
+          {!youtube && <button className="b" aria-label="Previous"><Icon name="back" size={20} /></button>}
           <button className="b play" aria-label={youtube ? 'Pause (visible embed)' : 'Pause'}><Icon name="pause" size={24} /></button>
-          <button className="b" aria-label="Next"><Icon name="fwd" size={20} /></button>
+          {!youtube && <button className="b" aria-label="Next"><Icon name="fwd" size={20} /></button>}
           <button className="b" aria-label="Repeat"><Icon name="repeat" size={18} /></button>
         </div>
         <div className="fsp-foot">
@@ -816,7 +801,7 @@ export function FullScreenPlayer({ source = 'ytm' }) {
           <div className="fsp-vol"><Icon name="speaker" size={16} /><div className="bar"><i /></div></div>
           <button className="np-toggle" aria-label="Lyrics"><Icon name="lyrics" size={18} /></button>
         </div>
-        {youtube && <div className="fsp-note">Audio is the visible official YouTube player; these controls drive it via the IFrame API. System AirPlay &amp; routing aren’t available for web playback.</div>}
+        {youtube && <div className="fsp-note">Audio is the visible official YouTube player; PhonoDeck provides queue-aware Previous/Play/Pause/Next and progress. System AirPlay &amp; routing aren’t available for web playback.</div>}
       </div>
     </div>
   );
@@ -851,12 +836,10 @@ export function NowPlayingBar({ mode = 'youtube', standalone = false }) {
       <div className="np-meta">
         <div className="n">{empty ? 'Select a song' : 'Neon Skyline'}</div>
         <div className="a">{empty ? 'Choose a song to start playback' : 'The Midnight'}</div>
-        {!empty && <div className="src" style={{ color: youtube ? 'var(--ytm)' : 'var(--plex)' }}>● {youtube ? 'YT Music' : 'Plex'}</div>}
+        {!empty && <div className="src" style={{ color: youtube ? 'var(--ytm)' : 'var(--spotify)' }}>● {youtube ? 'YT Music' : 'Spotify'}</div>}
       </div>
       <div className="np-transport">
-        <div className="np-btn" role="button" aria-label="Previous"><Icon name="back" size={16} /></div>
-        <div className={'np-btn play' + (empty ? ' disabled' : '')} role="button" aria-label={empty ? 'Play' : 'Pause'}><Icon name={empty ? 'play' : 'pause'} size={20} /></div>
-        <div className="np-btn" role="button" aria-label="Next"><Icon name="fwd" size={16} /></div>
+        <div className={'np-btn play' + (empty ? ' disabled' : '')} role="button" aria-disabled={empty} aria-label={empty ? 'Play selected song' : 'Pause current song'}><Icon name={empty ? 'play' : 'pause'} size={20} /></div>
       </div>
       <div className="np-progress"><span className="t">{empty ? '0:00' : '1:24'}</span><div className="bar"><i style={{ width: empty ? '0%' : '38%' }} /></div><span className="t">{empty ? '-0:00' : '-2:11'}</span></div>
       <div className="np-right">
@@ -868,8 +851,7 @@ export function NowPlayingBar({ mode = 'youtube', standalone = false }) {
           ? <><div className="np-toggle" role="button" aria-label="Volume (adjusts the YouTube player)" title="Volume — adjusts the visible YouTube player"><Icon name="speaker" size={17} /></div>
               <div className="np-toggle disabled" role="button" aria-disabled="true" aria-label="AirPlay unavailable for web playback" title="AirPlay — not available for web playback"><Icon name="airplay" size={17} /></div>
               <div className="np-note">Visible official YouTube player · system AirPlay &amp; routing unavailable</div></>
-          : <><div className="np-toggle" role="button" aria-label="AirPlay" title="AirPlay"><Icon name="airplay" size={17} /></div>
-              <div className="np-toggle" role="button" aria-label="Volume" title="Volume"><Icon name="speaker" size={17} /></div></>}
+            : null}
       </div>
     </div>
   );
@@ -877,9 +859,8 @@ export function NowPlayingBar({ mode = 'youtube', standalone = false }) {
 
 /* ====== Sidebar — brand header (no marketing tag) + consolidated groups ====== */
 const SIDEBAR = [
-  { title: 'PhonoDeck', items: [['library', 'Library', 'music'], ['search', 'Search', 'search']] },
-  { title: 'Library', items: [['playlists', 'Playlists', 'list'], ['albums', 'Albums', 'stack'], ['artists', 'Artists', 'mic'], ['queue', 'Queue', 'list'], ['downloads', 'Downloads', 'down']] },
-  { title: 'System', items: [['devices', 'Devices', 'airplay'], ['settings', 'Settings', 'gear']] },
+  { title: 'PhonoDeck', items: [['library', 'Library', 'music']] },
+  { title: 'Library', items: [['playlists', 'Playlists', 'list'], ['albums', 'Albums', 'stack'], ['artists', 'Artists', 'mic']] },
 ];
 export function SidebarView({ active = 'library' }) {
   return (
@@ -911,28 +892,62 @@ export function LibraryEmptyState() {
   return (
     <div className="empty"><svg className="glyph"><use href="#i-note" /></svg>
       <h2>Bring All Music Into One Place</h2>
-      <p>Connect your music services to build a single library across YouTube Music, Spotify, and Plex.</p>
-      <div className="btns"><button className="btn primary"><Icon name="note" size={15} />Connect YouTube</button><button className="btn bordered"><Icon name="speaker" size={15} />Add Spotify</button><button className="btn bordered"><Icon name="stack" size={15} />Add Plex</button></div>
+      <p>Connect YouTube to build your music library, then add Spotify metadata when ready.</p>
+      <div className="btns"><button className="btn primary"><Icon name="note" size={15} />Connect YouTube</button><button className="btn bordered"><Icon name="speaker" size={15} />Add Spotify</button></div>
     </div>
   );
 }
 
 /* ====== Shell ====== */
 const TITLES = { home: 'Home', firstrun: 'Home', playlist: 'Late Night Drive', queue: 'Queue', search: 'Search', settings: 'Settings', artist: 'Artists', artists: 'Artists', albums: 'Albums', library: 'Library' };
+const TOP_NAV = [
+  ['home', 'Home'], ['playlist', 'Playlists'], ['albums', 'Albums'], ['artists', 'Artists']
+];
 
 function HomeScreen() {
   return (
     <div className="scroll">
       <div className="page-title">Home</div>
-      <div className="page-sub">Recent, recommended, and resumable — across your connected sources.</div>
+      <div className="page-sub">A music-first start page: recent plays, playlist picks, and new songs from your YouTube Music activity.</div>
+      <div className="home-hero-strip">
+        <div className="home-hero-copy">
+          <div className="over">From Your Queue</div>
+          <div className="hh-title">Pick Up Where You Left Off</div>
+          <div className="hh-sub">Lose Yourself, Still D.R.E., The Real Slim Shady, and the rest of Motivate.</div>
+          <button className="btn primary"><Icon name="play" size={15} />Play Motivate</button>
+        </div>
+        <div className="home-hero-art g9" />
+      </div>
       <TopPicksShelf />
-      <FeatureHeroCard />
       <DiscoveryShelf />
       <SongCarouselShelf title="Recently Played" items={sampleSongs} showAll />
       <SongCarouselShelf title="Made for You" items={[...sampleSongs].reverse()} />
-      <div className="shelf"><div className="shelf-h"><h3>Your Playlists</h3><a>Show All ›</a></div><div className="row">{samplePlaylists.map((p, i) => <PlaylistArtworkCard key={i} index={i} title={p.title} count={p.count} src={p.src} />)}</div></div>
+      <PlaylistShelf title="YouTube Music Playlists" playlists={youtubeMusicPlaylists} />
+      <PlaylistShelf title="YouTube Playlists" playlists={youtubePlaylists} />
       <ConnectedServicesRow />
       <div className="shelf"><div className="shelf-h"><h3>Your Subscriptions</h3></div><div className="row">{sampleSubs.map((s, i) => <SubscriptionAvatarCard key={i} index={i} title={s} />)}</div></div>
+    </div>
+  );
+}
+
+function PlaylistShelf({ title, playlists }) {
+  const source = title.includes('Music') ? 'ytm' : 'yt';
+  if (!playlists.length) {
+    return (
+      <div className="shelf">
+        <div className="shelf-h"><h3>{title}</h3></div>
+        <div className="row"><div className="playlist-empty-card">
+          <div className="ic" style={{ color: sourceMeta[source].color, background: `color-mix(in srgb, ${sourceMeta[source].color} 16%, transparent)` }}><Icon name={source === 'ytm' ? 'note' : 'play'} /></div>
+          <div><div className="n">{title}</div><div className="d">Connect Google to show your {title.toLowerCase()} here.</div></div>
+          <SourceBadge src={source} />
+        </div></div>
+      </div>
+    );
+  }
+  return (
+    <div className="shelf">
+      <div className="shelf-h"><h3>{title}</h3><a>Show All ›</a></div>
+      <div className="row">{playlists.map((p, i) => <PlaylistArtworkCard key={p.title} index={i} title={p.title} count={p.count} src={p.src} />)}</div>
     </div>
   );
 }
@@ -956,8 +971,6 @@ function ScreenBody({ screen }) {
     <div className="panel"><h3>Sources</h3>
       <ReadinessCallout src="ytm" status="ready" title="YouTube Music" detail="Search, playlists, likes, and visible official playback are ready." />
       <ReadinessCallout src="spotify" status="notConnected" title="Spotify" detail="Connect Spotify to use metadata/library and the visible official Spotify player." />
-      <ReadinessCallout src="plex" status="notConfigured" title="Plex" detail="No Plex music server is configured. Native playback becomes available after setup." />
-      <ReadinessCallout src="own" status="notConfigured" title="Own Files" detail="Choose a local music folder before Own Files can provide native playback." />
     </div>
     <div className="panel"><h3>Lyrics &amp; Info providers</h3><div className="srow"><div><div className="n">Lyrics provider</div><div className="d">Time-synced lyrics require a licensed provider (Musixmatch / LyricFind).</div></div><span className="pill plan right">Not configured</span></div></div>
   </div>;
@@ -973,11 +986,34 @@ export function Shell({ screen = 'home', showPanel = true, panelTab = 'now' }) {
         <div className="traffic"><i className="r" /><i className="y" /><i className="g" /></div>
         <div className="tb-icon" role="button" aria-label="Toggle sidebar" title="Toggle sidebar"><Icon name="sidebar" /></div>
         <div className="tb-title">{TITLES[screen]}</div>
-        <div className="tb-search"><Icon name="search" size={14} /><span>Search songs</span></div>
+        <div className="tb-search"><Icon name="search" size={14} /><span>Search songs, artists, playlists</span></div>
         <div className="tb-actions"><div className="tb-icon" role="button" aria-label="Share"><Icon name="share" size={16} /></div><div className="tb-icon" role="button" aria-label="Account"><Icon name="person" /></div></div>
       </div>
       <div className="body">
         <SidebarView active={active} />
+        <main className="content"><ScreenBody screen={screen} /></main>
+        {panel && <NowPlayingPanel tab={panelTab} source="ytm" />}
+      </div>
+      {screen !== 'firstrun' && <NowPlayingBar mode="youtube" />}
+    </div>
+  );
+}
+
+export function TopBarShell({ screen = 'home', showPanel = true, panelTab = 'now' }) {
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const active = screen === 'firstrun' ? 'home' : screen;
+  const panel = showPanel && screen !== 'firstrun';
+  return (
+    <div className="window topnav-window">
+      <div className="titlebar topnav-titlebar">
+        <div className="traffic"><i className="r" /><i className="y" /><i className="g" /></div>
+        <nav className="topnav" aria-label="Primary">
+          {TOP_NAV.map(([id, label]) => <div className={'topnav-item' + (active === id ? ' active' : '')} key={id}>{label}</div>)}
+          <button className={'topnav-search-button' + (searchOpen ? ' active' : '')} aria-label="Search" aria-expanded={searchOpen} onClick={() => setSearchOpen(!searchOpen)}><Icon name="search" size={18} /></button>
+        </nav>
+      </div>
+      {searchOpen && <div className="topnav-search-row"><label className="topnav-open-search"><Icon name="search" size={17} /><input autoFocus placeholder="Search songs, artists, playlists" aria-label="Search songs, artists, playlists" /><Icon name="arrow" size={15} /></label></div>}
+      <div className="body topnav-body">
         <main className="content"><ScreenBody screen={screen} /></main>
         {panel && <NowPlayingPanel tab={panelTab} source="ytm" />}
       </div>

@@ -93,7 +93,8 @@ final class YouTubeDataClientTests: XCTestCase {
                   "id": "playlist-item-id",
                   "snippet": {
                     "title": "Playlist Song",
-                    "channelTitle": "Artist - Topic",
+                    "channelTitle": "Playlist Owner",
+                    "videoOwnerChannelTitle": "Artist - Topic",
                     "publishedAt": "2026-06-01T12:00:00Z",
                     "thumbnails": {
                       "default": { "url": "https://i.ytimg.com/vi/playlist-video/default.jpg" }
@@ -114,6 +115,10 @@ final class YouTubeDataClientTests: XCTestCase {
         XCTAssertEqual(result.id, "playlist-video")
         XCTAssertEqual(result.title, "Playlist Song")
         XCTAssertEqual(result.channelTitle, "Artist - Topic")
+        XCTAssertEqual(result.sourceLabel, "Music")
+        XCTAssertEqual(result.musicIdentity.artistName, "Artist")
+        XCTAssertEqual(result.mediaSourceKind, .youtubeMusic)
+        XCTAssertEqual(result.songBadge, "Song")
         XCTAssertEqual(result.playlistItemID, "playlist-item-id")
         XCTAssertEqual(result.playlistAddedAt, "2026-06-01T12:00:00Z")
     }
@@ -295,6 +300,25 @@ final class YouTubeDataClientTests: XCTestCase {
         XCTAssertFalse(clip.isSongLike)
         XCTAssertEqual(clip.resultKind, .clip)
     }
+
+      func testMusicIdentityUsesExposedTopicArtist() {
+        let result = YouTubeVideoSearchResult(id: "lose", title: "Lose Yourself", channelTitle: "Eminem - Topic", thumbnailURL: nil, sourceLabel: "Music")
+
+        XCTAssertEqual(result.musicIdentity.artistName, "Eminem")
+        XCTAssertNil(result.musicIdentity.albumTitle)
+      }
+
+      func testMusicIdentityUsesTitleArtistWhenChannelIsGeneric() {
+        let result = YouTubeVideoSearchResult(id: "title", title: "Eminem - Lose Yourself", channelTitle: "YouTube", thumbnailURL: nil, sourceLabel: "Music")
+
+        XCTAssertEqual(result.musicIdentity.artistName, "Eminem")
+      }
+
+      func testMusicIdentityUsesVEVOArtist() {
+        let result = YouTubeVideoSearchResult(id: "vevo", title: "Lose Yourself", channelTitle: "EminemVEVO", thumbnailURL: nil, sourceLabel: "YouTube")
+
+        XCTAssertEqual(result.musicIdentity.artistName, "Eminem")
+      }
 
     func testCreatedPlaylistDecodesWithoutContentDetails() throws {
         let json = Data(

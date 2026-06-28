@@ -189,14 +189,14 @@ Purpose: fix rapid search/tab-click lag and unverifiable request behavior.
 
 ## Phase 3: Now Playing Panel Controls
 
-Purpose: make every visible player control work and make transport controls discoverable under the video.
+Purpose: make every visible player control honest and keep transport controls discoverable without exposing unsupported YouTube skip chrome.
 
 ### Tasks
 
-- Add a transport control row directly under or over the visible video panel.
-  - Previous, play/pause, next.
-  - Disabled state based on `searchViewModel.canPlayPrevious`, `canControlYouTubePlayer`, `searchViewModel.canPlayNext`.
-  - Same handlers as bottom bar: `playPreviousFromQueue`, `playerController.togglePlayPause`, `playNextFromQueue`.
+- Keep the visible YouTube player in the Now Playing panel and expose only the controls PhonoDeck can honestly route.
+  - Play/pause, progress, and embed volume are supported.
+  - Previous/Next are queue-aware for YouTube; they appear/enable only when PhonoDeck has adjacent explicit queue items. A real ended event advances to the next queued song, while pause/failure never auto-advance.
+  - Native/Plex/local routes keep Previous/Next through `PlaybackCoordinator`.
 - Add loading/ready/error states around the buttons.
   - Ready, buffering, playing, paused, failed.
   - Failed state should show `Try another song` and a Retry/Skip action if possible.

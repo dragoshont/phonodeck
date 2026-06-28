@@ -13,12 +13,10 @@ export const ReadinessRows = {
   render: () => panel(<>
     <ReadinessCallout src="ytm" status="ready" title="YouTube Music" detail="Search, playlists, likes, and visible official playback are ready." />
     <ReadinessCallout src="spotify" status="notConnected" title="Spotify" detail="Connect Spotify to use metadata/library and the visible official Spotify player." />
-    <ReadinessCallout src="plex" status="notConfigured" title="Plex" detail="No Plex music server is configured. Native playback becomes available after setup." />
     <ReadinessCallout src="ytm" status="missingScope" title="YouTube playlists" detail="Reconnect YouTube to grant the playlist write scope." />
     <ReadinessCallout src="spotify" status="authorizationExpired" title="Spotify" detail="Spotify authorization expired. Reconnect to refresh library metadata." />
     <ReadinessCallout src="ytm" status="rateLimited" title="YouTube Music" detail="Showing cached results where available. Try again later." />
     <ReadinessCallout src="ytm" status="policyBlocked" title="Albums" detail="YouTube does not expose canonical album metadata to third-party apps." />
-    <ReadinessCallout src="plex" status="failed" title="Plex" detail="Could not load the Plex server. Retry or manage it in Settings." />
   </>),
 };
 
@@ -26,9 +24,8 @@ export const SourceBadgeVariants = {
   render: () => panel(<div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
     <SourceBadge src="ytm" variant="dot" />
     <SourceBadge src="spotify" variant="dot" />
-    <SourceBadge src="plex" />
     <SourceBadge src="yt" />
-    <div className="art g6" style={{ width: 88, height: 88 }}><SourceBadge src="plex" variant="corner" /></div>
+    <div className="art g6" style={{ width: 88, height: 88 }}><SourceBadge src="ytm" variant="corner" /></div>
   </div>),
 };
 

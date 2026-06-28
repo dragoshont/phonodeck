@@ -146,6 +146,23 @@ final class YouTubeMusicWebPlayerController: NSObject, ObservableObject {
         }
     }
 
+    func seek(to seconds: Double) {
+        guard playerState.acceptsCommands, duration > 0 else {
+            AppLog.player.debug("Ignoring seek command because player is not ready or duration is unavailable; state=\(self.playerState.title, privacy: .public), duration=\(self.duration, privacy: .public), video=\(self.currentVideoID ?? "none", privacy: .public)")
+            return
+        }
+        let clampedSeconds = min(max(seconds, 0), duration)
+        currentTime = clampedSeconds
+        AppLog.player.info("YouTube player seek command; seconds=\(clampedSeconds, privacy: .public), video=\(self.currentVideoID ?? "none", privacy: .public)")
+        webView?.evaluateJavaScript("if (window.phonoDeckPlayer) { window.phonoDeckPlayer.seekTo(\(clampedSeconds), true); window.phonoDeckSyncTime(); }") { [weak self] _, error in
+            guard let error else { return }
+            Task { @MainActor in
+                self?.playerState = .failed(error.localizedDescription)
+                AppLog.player.error("YouTube player seek failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+    }
+
     func goBack() {
         webView?.goBack()
         refreshState()

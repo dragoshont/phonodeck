@@ -108,7 +108,7 @@ struct SourcesOverviewView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(model.registry.ordered, id: \.kind) { adapter in
+            ForEach(model.registry.ordered.filter { $0.kind != .ownFiles && $0.kind != .plex }, id: \.kind) { adapter in
                 SourceCapabilityCard(adapter: adapter, model: model)
             }
             if let error = model.lastError {
@@ -126,9 +126,9 @@ private struct SourceCapabilityCard: View {
     let adapter: MusicSourceAdapter
     @ObservedObject var model: SourcesOverviewModel
 
-    /// Account flows wired today: Spotify (Web API) and Plex (PIN sign-in).
-    /// YouTube uses its own existing Google account flow; Own Files has no account.
-    private var isConnectable: Bool { adapter.kind == .spotify || adapter.kind == .plex }
+    /// Account flows wired today: Spotify (Web API).
+    /// YouTube uses its own existing Google account flow.
+    private var isConnectable: Bool { adapter.kind == .spotify }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

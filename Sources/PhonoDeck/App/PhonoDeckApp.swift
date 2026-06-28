@@ -13,6 +13,9 @@ struct PhonoDeckApp: App {
                 .environmentObject(appState)
         }
         .commands {
+            CommandGroup(replacing: .sidebar) {
+                EmptyView()
+            }
             NavigationCommands(appState: appState)
             PhonoDeckViewCommands(appState: appState)
             PlaybackCommands(appState: appState)
@@ -80,7 +83,7 @@ struct NavigationCommands: Commands {
 
     var body: some Commands {
         CommandMenu("Navigate") {
-            Button("Library") {
+            Button("Home") {
                 appState.open(.library)
             }
             .keyboardShortcut("1", modifiers: [.command])
@@ -100,20 +103,10 @@ struct NavigationCommands: Commands {
             }
             .keyboardShortcut("4", modifiers: [.command])
 
-            Button("Queue") {
-                appState.open(.queue)
-            }
-            .keyboardShortcut("5", modifiers: [.command])
-
             Button("Search") {
-                appState.open(.search)
+                appState.isTopSearchVisible = true
             }
             .keyboardShortcut("f", modifiers: [.command])
-
-            Button("Settings") {
-                appState.open(.settings)
-            }
-            .keyboardShortcut(",", modifiers: [.command])
         }
     }
 }
@@ -145,16 +138,24 @@ struct PlaybackCommands: Commands {
             .disabled(!canPlayPause)
 
             Button("Next Track") {
-                appState.playback.nextTrack()
+                if shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked {
+                    appState.playback.nextTrack()
+                } else {
+                    appState.youtubePlayback.next()
+                }
             }
             .keyboardShortcut(.rightArrow, modifiers: [.command])
-            .disabled(appState.activeSource.isYouTubePlayerBacked || appState.playback.queueSnapshot.currentIndex == nil)
+            .disabled(shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked ? appState.playback.queueSnapshot.currentIndex == nil : !appState.youtubePlayback.canPlayNext)
 
             Button("Previous Track") {
-                appState.playback.previousTrack()
+                if shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked {
+                    appState.playback.previousTrack()
+                } else {
+                    appState.youtubePlayback.previous()
+                }
             }
             .keyboardShortcut(.leftArrow, modifiers: [.command])
-            .disabled(appState.activeSource.isYouTubePlayerBacked || appState.playback.queueSnapshot.currentIndex == nil)
+            .disabled(shouldUseNativeSession || !appState.activeSource.isYouTubePlayerBacked ? appState.playback.queueSnapshot.currentIndex == nil : !appState.youtubePlayback.canPlayPrevious)
         }
     }
 }
@@ -163,23 +164,16 @@ struct PhonoDeckViewCommands: Commands {
     let appState: AppState
 
     var body: some Commands {
-        CommandMenu("View") {
-            Button(appState.isSidebarVisible ? "Hide Sidebar" : "Show Sidebar") {
-                appState.toggleSidebar()
-            }
-            .keyboardShortcut("s", modifiers: [.command, .option])
-
-            Divider()
-
+        CommandGroup(after: .toolbar) {
             Button("Show Up Next") {
                 appState.openNowPlaying(tab: .upNext)
             }
             .keyboardShortcut("u", modifiers: [.command, .option])
 
-            Button("Show Settings") {
-                appState.open(.settings)
+            Button("Show Now Playing") {
+                appState.openNowPlaying(tab: .now)
             }
-            .keyboardShortcut(",", modifiers: [.command])
+            .keyboardShortcut("0", modifiers: [.command])
         }
     }
 }
