@@ -1,5 +1,9 @@
 # PhonoDeck
 
+[![Built with Architrave](https://img.shields.io/badge/built%20with-Architrave-1f6feb?style=for-the-badge)](https://github.com/dragoshont/architrave)
+
+[Latest mockups](https://dragoshont.github.io/phonodeck/) are published from the Storybook UI lab.
+
 PhonoDeck is a native-first macOS music app experiment built while testing Architrave, my judge-gated agent workflow for product and engineering work. It is a personal, exploratory project rather than a polished commercial app, but the current build works with a Google/YouTube account.
 
 The interesting constraint was trying to make a YouTube-backed music app that feels like more than a plain iframe holder. PhonoDeck uses official YouTube account/data APIs for account identity, search, playlists, playlist items, subscriptions, and activity, then uses a visible official YouTube player for playback because YouTube does not expose native third-party audio streams. The surrounding app is SwiftUI: Home, playlists, queue-aware controls, metadata, and source-honest playback chrome.
