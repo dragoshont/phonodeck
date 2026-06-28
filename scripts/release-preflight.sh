@@ -55,7 +55,15 @@ done
 
 marketing_version="$(awk -F: '/^[[:space:]]+MARKETING_VERSION:/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' project.yml)"
 build_version="$(awk -F: '/^[[:space:]]+CURRENT_PROJECT_VERSION:/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' project.yml)"
-bundle_identifier="$(awk -F: '/^[[:space:]]+PRODUCT_BUNDLE_IDENTIFIER:/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2; exit}' project.yml)"
+bundle_identifier="$(awk -F: '
+  /^  PhonoDeck:$/ { in_app = 1; next }
+  /^  [A-Za-z0-9_]+:$/ && in_app { in_app = 0 }
+  in_app && /^[[:space:]]+PRODUCT_BUNDLE_IDENTIFIER:/ {
+    gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2)
+    print $2
+    exit
+  }
+' project.yml)"
 
 if [[ "$marketing_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][A-Za-z0-9.]+)?$ ]]; then ok "marketing version present"; else fail_msg "MARKETING_VERSION must be semantic, e.g. 0.1.0"; fi
 if [[ "$build_version" =~ ^[0-9]+$ ]]; then ok "build number present"; else fail_msg "CURRENT_PROJECT_VERSION must be an integer"; fi
